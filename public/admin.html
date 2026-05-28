@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班级广播 · 管理后台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",sans-serif;background:#f5f7fa;color:#333;min-height:100vh}
+
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:#fff;border-radius:16px;padding:40px 30px;width:100%;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,.08);text-align:center}
+.login-box h1{font-size:22px;margin-bottom:8px}
+.login-box p{color:#888;font-size:14px;margin-bottom:28px}
+.login-box input{width:100%;padding:14px 16px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:16px;outline:none}
+.login-box input:focus{border-color:#4f8cff}
+.login-box button{width:100%;margin-top:16px;padding:14px;background:#333;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
+
+.app{display:none;max-width:800px;margin:0 auto;padding:20px}
+.app h1{font-size:22px;margin-bottom:20px}
+
+.stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.stat-card{background:#fff;border-radius:12px;padding:16px 20px;flex:1;min-width:120px;box-shadow:0 2px 8px rgba(0,0,0,.05);text-align:center}
+.stat-card .num{font-size:28px;font-weight:700;color:#4f8cff}
+.stat-card .label{font-size:13px;color:#999;margin-top:4px}
+
+.user-table{width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.user-table table{width:100%;border-collapse:collapse}
+.user-table th{background:#fafbfc;padding:12px 16px;text-align:left;font-size:13px;color:#888;font-weight:500;border-bottom:1px solid #f0f0f0}
+.user-table td{padding:12px 16px;font-size:14px;border-bottom:1px solid #f5f5f5}
+.user-table tr:last-child td{border:none}
+
+.plan-tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:500}
+.plan-tag.trial{background:#e6f7ff;color:#1890ff}
+.plan-tag.yearly{background:#f6ffed;color:#52c41a}
+.plan-tag.expired{background:#fff1f0;color:#ff4d4f}
+
+.act-btn{padding:4px 12px;border:1px solid #e8e8e8;border-radius:6px;background:#fff;font-size:12px;cursor:pointer;margin-right:4px}
+.act-btn.year{color:#52c41a;border-color:#b7eb8f}
+.act-btn:hover{opacity:.8}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;background:#52c41a;color:#fff;border-radius:10px;font-size:14px;z-index:999;display:none}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginPage">
+  <div class="login-box">
+    <h1>管理后台</h1>
+    <p>仅限管理员访问</p>
+    <input type="password" id="adminPass" placeholder="输入管理密码">
+    <button onclick="adminLogin()">进入</button>
+  </div>
+</div>
+
+<div class="app" id="appPage">
+  <h1>班级广播 · 管理后台</h1>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="user-table">
+    <table>
+      <thead>
+        <tr>
+          <th>用户名</th>
+          <th>称呼</th>
+          <th>状态</th>
+          <th>班级</th>
+          <th>通知</th>
+          <th>注册时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="userList"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var adminToken = '';
+
+function adminLogin() {
+  adminToken = document.getElementById('adminPass').value.trim();
+  if (!adminToken) return;
+  loadData();
+}
+
+function hd() {
+  return { 'Content-Type':'application/json', 'X-Token': adminToken };
+}
+
+function loadData() {
+  Promise.all([
+    fetch('/api/admin/stats', { headers: hd() }).then(function(r) { if (!r.ok) throw 'auth'; return r.json(); }),
+    fetch('/api/admin/users', { headers: hd() }).then(function(r) { return r.json(); })
+  ])
+  .then(function(results) {
+    var stats = results[0];
+    var users = results[1];
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('appPage').style.display = 'block';
+    renderStats(stats);
+    renderUsers(users);
+  })
+  .catch(function() { alert('密码错误'); });
+}
+
+function renderStats(s) {
+  document.getElementById('stats').innerHTML =
+    '<div class="stat-card"><div class="num">' + s.total_users + '</div><div class="label">总用户</div></div>' +
+    '<div class="stat-card"><div class="num">' + s.active_users + '</div><div class="label">活跃用户</div></div>' +
+    '<div class="stat-card"><div class="num">' + s.paid_users + '</div><div class="label">付费用户</div></div>' +
+    '<div class="stat-card"><div class="num">' + s.total_notifications + '</div><div class="label">总通知数</div></div>';
+}
+
+function renderUsers(users) {
+  var el = document.getElementById('userList');
+  el.innerHTML = users.map(function(u) {
+    var status = u.plan_status;
+    var tagClass = status.active ? u.plan : 'expired';
+    var tagText = status.active ? status.label : '已到期';
+    var exp = '';
+    if (status.expires) {
+      var d = new Date(status.expires);
+      exp = ' ' + d.toLocaleDateString('zh-CN');
+    }
+    var regDate = new Date(u.created_at).toLocaleDateString('zh-CN');
+
+    return '<tr>' +
+      '<td>' + esc(u.username) + '</td>' +
+      '<td>' + esc(u.display_name) + '</td>' +
+      '<td><span class="plan-tag ' + tagClass + '">' + tagText + '</span>' + exp + '</td>' +
+      '<td>' + u.class_count + '</td>' +
+      '<td>' + u.notif_count + '</td>' +
+      '<td>' + regDate + '</td>' +
+      '<td>' +
+        '<button class="act-btn year" onclick="activate(\'' + u.id + '\',\'yearly\')">开通年费</button>' +
+      '</td></tr>';
+  }).join('');
+}
+
+function activate(userId, plan) {
+  var label = '年费版';
+  if (!confirm('确定为该用户开通' + label + '？')) return;
+  fetch('/api/admin/activate', {
+    method: 'POST',
+    headers: hd(),
+    body: JSON.stringify({ user_id: userId, plan: plan })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() {
+    var t = document.getElementById('toast');
+    t.textContent = '已开通' + label;
+    t.style.display = 'block';
+    setTimeout(function() { t.style.display = 'none'; }, 2000);
+    loadData();
+  });
+}
+
+function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+document.getElementById('adminPass').addEventListener('keydown', function(e) { if(e.key==='Enter') adminLogin(); });
+</script>
+</body>
+</html>

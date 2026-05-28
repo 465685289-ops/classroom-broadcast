@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Runtime data and local databases
+data.json
+broadcast.db
+broadcast.db-*
+*.sqlite
+*.sqlite3
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+payment-config.json
+
+# macOS / logs
+.DS_Store
+*.log
+npm-debug.log*
+.tools/
+
+# Local marketing drafts and generated promo assets
+promo-*.html
+promo-xhs-text.md
+promo-xhs-real/
+promo-xhs-v2/
+推文.html

@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>班级广播 · 老师端</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",sans-serif;background:#f5f7fa;color:#333;min-height:100vh}
+.page{display:none}
+.page.active{display:block}
+
+/* Auth Page */
+.auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-box{background:#fff;border-radius:16px;padding:40px 30px;width:100%;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.auth-box h1{font-size:22px;text-align:center;margin-bottom:4px}
+.auth-box .subtitle{color:#888;font-size:14px;text-align:center;margin-bottom:28px}
+.auth-tabs{display:flex;margin-bottom:24px;border-bottom:2px solid #f0f0f0}
+.auth-tabs button{flex:1;padding:10px;border:none;background:none;font-size:15px;color:#999;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.auth-tabs button.active{color:#4f8cff;border-bottom-color:#4f8cff;font-weight:600}
+.auth-form{display:none}
+.auth-form.active{display:block}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;color:#888;margin-bottom:6px}
+.form-group input{width:100%;padding:13px 16px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:15px;outline:none;transition:border .2s}
+.form-group input:focus{border-color:#4f8cff}
+.remember-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:14px;color:#666}
+.remember-row input{width:auto}
+.auth-btn{width:100%;padding:14px;background:#4f8cff;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
+.auth-btn:active{background:#3a6fdb}
+.auth-error{color:#ff4d4f;font-size:14px;margin-top:12px;text-align:center}
+
+/* App */
+.app{max-width:500px;margin:0 auto;padding:16px 16px 100px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 0;margin-bottom:12px}
+.header h1{font-size:20px}
+.header .right{display:flex;align-items:center;gap:12px}
+.header .plan-badge{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500}
+.header .plan-badge.trial{background:#e6f7ff;color:#1890ff}
+.header .plan-badge.yearly{background:#f6ffed;color:#52c41a}
+.header .plan-badge.expired{background:#fff1f0;color:#ff4d4f}
+.header .logout{font-size:13px;color:#999;cursor:pointer}
+
+/* Avatar */
+.avatar-circle{width:42px;height:42px;border-radius:50%;overflow:hidden;cursor:pointer;flex-shrink:0;transition:transform .15s;background:#f0f2f5}
+.avatar-circle:active{transform:scale(.92)}
+.avatar-circle svg,.profile-avatar-lg svg,.avatar-option svg,.avatar-circle img,.profile-avatar-lg img,.avatar-option img{width:100%;height:100%;display:block}
+
+/* Profile Layout */
+.profile-layout{display:flex;flex-direction:column;gap:16px}
+.profile-sidebar{}
+.profile-content{min-width:0}
+.profile-sidebar-card{background:#fff;border-radius:14px;padding:30px 24px;box-shadow:0 2px 10px rgba(0,0,0,.05);text-align:center}
+.profile-avatar-lg{width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 12px;background:#f0f2f5}
+.profile-name{font-size:20px;font-weight:600;margin-bottom:4px}
+.profile-username{font-size:13px;color:#999;margin-bottom:8px}
+.profile-stats{display:flex;gap:0;margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0}
+.profile-stat{flex:1;text-align:center}
+.profile-stat .stat-value{font-size:26px;font-weight:700;color:#333}
+.profile-stat .stat-label{font-size:12px;color:#999;margin-top:2px}
+.profile-menu{background:#fff;border-radius:14px;padding:8px;margin-top:12px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.profile-menu-item{padding:14px 16px;font-size:15px;color:#555;cursor:pointer;border-radius:8px;border-left:3px solid transparent;transition:all .15s}
+.profile-menu-item:hover{background:#f5f7fa}
+.profile-menu-item.active{background:#f0f5ff;border-left-color:#4f8cff;color:#4f8cff;font-weight:600}
+.profile-menu-item.logout-item{color:#ff4d4f}
+.profile-menu-item.logout-item:hover{background:#fff1f0}
+
+.profile-info{text-align:left}
+.profile-row{display:flex;justify-content:space-between;padding:12px 0;font-size:14px;border-bottom:1px solid #f5f5f5}
+.profile-row:last-child{border:none}
+.profile-row .label{color:#999}
+.profile-row .value{color:#333;font-weight:500}
+
+.plan-upgrade-cards{display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.plan-upgrade-card{background:#f8f9fa;border:2px solid #e8e8e8;border-radius:14px;padding:24px 20px;text-align:center;flex:1;min-width:140px;max-width:200px;position:relative}
+.plan-upgrade-card.hot{border-color:#ff6b35}
+.plan-upgrade-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;padding:2px 12px;border-radius:10px;font-size:11px;font-weight:600}
+.plan-upgrade-price{font-size:36px;font-weight:800;color:#333}
+.plan-upgrade-price span{font-size:16px;font-weight:500}
+.plan-upgrade-label{font-size:13px;color:#888;margin-top:6px}
+.pay-btn{width:100%;max-width:260px;padding:13px 18px;border:none;border-radius:12px;background:#07c160;color:#fff;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 8px 18px rgba(7,193,96,.22)}
+.pay-btn:active{transform:translateY(1px);background:#06ad56}
+.pay-btn:disabled{background:#a7dcbc;cursor:default;box-shadow:none}
+.pay-note{font-size:12px;color:#999;line-height:1.8;margin-top:10px}
+.pay-status{font-size:13px;color:#666;line-height:1.7;margin-top:12px;text-align:center}
+.pay-status.success{color:#07a35a}
+.pay-status.error{color:#ff4d4f}
+
+.avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:10px 0}
+.avatar-option{width:100%;aspect-ratio:1;border-radius:50%;overflow:hidden;cursor:pointer;border:2px solid #e8e8e8;background:#fff;transition:all .2s;padding:0;box-shadow:0 4px 14px rgba(24,35,52,.08)}
+.avatar-option:hover{transform:scale(1.05);border-color:#b8c6dc}
+.avatar-option.selected{border-color:#4f8cff;box-shadow:0 0 0 3px rgba(79,140,255,.3)}
+
+.edit-name-row{display:flex;gap:8px;margin-top:12px}
+.edit-name-row input{flex:1;padding:10px 14px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:14px;outline:none}
+.edit-name-row button{padding:10px 18px;background:#4f8cff;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;white-space:nowrap}
+
+/* Desktop Responsive */
+@media(min-width:768px){
+  .app{max-width:1100px;padding:24px 40px 80px}
+  .header h1{font-size:24px}
+  .tab-bar button{padding:16px;font-size:16px}
+  .card{padding:28px}
+  .card h3{font-size:17px;margin-bottom:16px}
+  .form-row label{font-size:15px}
+  .form-row input,.form-row select,.form-row textarea{font-size:16px;padding:14px 16px}
+  .btn-send{font-size:18px;padding:16px}
+  .templates button{font-size:14px;padding:10px 18px}
+  .history-item .content{font-size:16px}
+  .history-item .meta{font-size:13px}
+  .preview{font-size:15px}
+  .profile-layout{flex-direction:row}
+  .profile-sidebar{width:280px;flex-shrink:0}
+  .profile-content{flex:1}
+  .profile-name{font-size:22px}
+  .stat-value{font-size:28px}
+  .avatar-grid{grid-template-columns:repeat(8,1fr)}
+  .avatar-circle{width:48px;height:48px}
+  .profile-avatar-lg{width:96px;height:96px}
+  .class-item .name{font-size:16px}
+  .class-item .code{font-size:13px}
+  .expired-banner h3{font-size:18px}
+  .expired-banner p{font-size:15px}
+}
+
+/* Expired banner */
+.expired-banner{background:linear-gradient(135deg,#fff1f0,#ffe6e6);border:1px solid #ffccc7;border-radius:14px;padding:20px;margin-bottom:14px;text-align:center}
+.expired-banner h3{color:#ff4d4f;font-size:17px;margin-bottom:8px}
+.expired-banner p{font-size:14px;color:#666;line-height:1.8;margin-bottom:12px}
+.expired-banner .price-cards{display:flex;gap:10px;justify-content:center;margin:16px 0}
+.expired-banner .price-card{background:#fff;border:2px solid #e8e8e8;border-radius:12px;padding:14px 20px;text-align:center;cursor:default}
+.expired-banner .price-card .amount{font-size:22px;font-weight:700;color:#ff4d4f}
+.expired-banner .price-card .label{font-size:12px;color:#999;margin-top:4px}
+.expired-banner .contact{font-size:14px;color:#333;margin-top:8px;line-height:1.8}
+
+.card{background:#fff;border-radius:14px;padding:20px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.card h3{font-size:15px;color:#666;margin-bottom:12px}
+
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:13px;color:#888;margin-bottom:6px}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:12px 14px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:15px;outline:none;background:#fafbfc;transition:border .2s}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:#4f8cff;background:#fff}
+.form-row textarea{resize:vertical;min-height:80px;font-family:inherit}
+
+.templates{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.templates button{padding:8px 14px;border:1.5px solid #e8e8e8;border-radius:20px;background:#fff;font-size:13px;color:#555;cursor:pointer;transition:all .2s}
+.templates button:active{background:#4f8cff;color:#fff;border-color:#4f8cff}
+
+.preview{background:#f0f5ff;border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px;color:#333;line-height:1.6}
+.preview .label{font-size:12px;color:#4f8cff;margin-bottom:6px}
+
+.char-count{text-align:right;font-size:12px;color:#bbb;margin-top:-8px;margin-bottom:10px}
+
+.btn-send{width:100%;padding:15px;background:#ff6b35;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer}
+.btn-send:active{background:#e55a28}
+.btn-send:disabled{background:#ccc;cursor:not-allowed}
+.btn-clear{width:100%;padding:12px;background:#fff;color:#999;border:1.5px solid #e8e8e8;border-radius:12px;font-size:14px;cursor:pointer;margin-top:10px}
+
+.repeat-row{display:flex;align-items:center;gap:10px}
+.repeat-row input{width:70px;text-align:center}
+.repeat-row span{font-size:13px;color:#888}
+
+.history-item{padding:12px 0;border-bottom:1px solid #f0f0f0}
+.history-item:last-child{border:none}
+.history-item .content{font-size:15px;margin-bottom:4px}
+.history-item .meta{font-size:12px;color:#999}
+.history-item .actions{margin-top:6px}
+.history-item .actions button{padding:4px 12px;border:1px solid #e8e8e8;border-radius:6px;background:#fff;font-size:12px;color:#4f8cff;cursor:pointer}
+
+.class-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.class-item:last-child{border:none}
+.class-item .info{flex:1}
+.class-item .name{font-size:15px;font-weight:500}
+.class-item .code{font-size:12px;color:#999;margin-top:2px}
+.class-item .online-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.class-item .online-dot.on{background:#52c41a}
+.class-item .online-dot.off{background:#ddd}
+.class-item .del{font-size:12px;color:#ff4d4f;cursor:pointer;padding:4px 10px;border:1px solid #ffccc7;border-radius:6px}
+
+.add-class{display:flex;gap:8px;margin-top:12px}
+.add-class input{flex:1;padding:10px 14px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:14px;outline:none}
+.add-class button{padding:10px 18px;background:#4f8cff;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+
+.tab-bar{display:flex;gap:0;margin-bottom:14px;background:#fff;border-radius:12px;overflow-x:auto;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.tab-bar button{flex:1;min-width:72px;padding:12px 8px;border:none;background:#fff;font-size:14px;color:#888;cursor:pointer;transition:all .2s;white-space:nowrap;position:relative}
+.tab-bar button.active{background:#4f8cff;color:#fff;font-weight:600}
+.msg-badge{position:absolute;top:5px;right:8px;min-width:16px;height:16px;line-height:16px;border-radius:8px;background:#ff4d4f;color:#fff;font-size:10px;text-align:center;font-weight:700;display:none}
+
+.message-item{padding:14px 0;border-bottom:1px solid #f0f0f0}
+.message-item:last-child{border:none}
+.message-item.unread .message-title::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff4d4f;margin-right:6px;vertical-align:middle}
+.message-title{font-size:15px;font-weight:600;color:#333;margin-bottom:5px}
+.message-body{font-size:14px;color:#555;line-height:1.6}
+.message-meta{font-size:12px;color:#999;margin-top:6px}
+.message-tools{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.message-tools button,.bulletin-tools button{padding:7px 12px;border:1px solid #e8e8e8;border-radius:8px;background:#fff;font-size:13px;color:#4f8cff;cursor:pointer}
+
+.bulletin-form-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.bulletin-quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.bulletin-list-item{padding:14px 0;border-bottom:1px solid #f0f0f0}
+.bulletin-list-item:last-child{border:none}
+.bulletin-title{font-size:15px;font-weight:600;color:#333;margin-bottom:5px}
+.bulletin-content{font-size:14px;color:#555;line-height:1.7;white-space:pre-wrap}
+.bulletin-meta{font-size:12px;color:#999;margin-top:8px}
+.bulletin-actions{margin-top:8px}
+.bulletin-actions button{padding:5px 10px;border:1px solid #ffccc7;border-radius:7px;background:#fff;color:#ff4d4f;font-size:12px;cursor:pointer}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;background:#333;color:#fff;border-radius:10px;font-size:14px;z-index:999;display:none}
+.toast.success{background:#52c41a}
+.toast.error{background:#ff4d4f}
+
+#replyToast{position:fixed;top:60px;right:20px;padding:14px 20px;background:#222;color:#fff;border-radius:12px;font-size:15px;z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.3);border-left:4px solid #52c41a;max-width:320px}
+</style>
+</head>
+<body>
+
+<!-- Auth Page -->
+<div class="page active" id="authPage">
+  <div class="auth-wrap">
+    <div class="auth-box">
+      <h1>班级广播系统</h1>
+      <p class="subtitle">老师端 · 随时随地发通知到教室</p>
+      <div class="auth-tabs">
+        <button class="active" onclick="switchAuth('login')">登录</button>
+        <button onclick="switchAuth('register')">注册</button>
+      </div>
+      <!-- Login Form -->
+      <div class="auth-form active" id="loginForm">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="loginUser" placeholder="输入用户名" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="loginPass" placeholder="输入密码" autocomplete="current-password">
+        </div>
+        <div class="remember-row">
+          <input type="checkbox" id="rememberMe" checked>
+          <label for="rememberMe">记住密码</label>
+        </div>
+        <button class="auth-btn" onclick="doLogin()">登录</button>
+        <div class="auth-error" id="loginError"></div>
+      </div>
+      <!-- Register Form -->
+      <div class="auth-form" id="registerForm">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="regUser" placeholder="2-20个字符" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="regPass" placeholder="至少4位" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>确认密码</label>
+          <input type="password" id="regPass2" placeholder="再次输入密码" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>称呼（选填）</label>
+          <input type="text" id="regName" placeholder="例如：李老师">
+        </div>
+        <div class="remember-row">
+          <input type="checkbox" id="regRemember" checked>
+          <label for="regRemember">记住密码</label>
+        </div>
+        <button class="auth-btn" onclick="doRegister()">注册</button>
+        <div class="auth-error" id="regError"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- App Page -->
+<div class="page" id="appPage">
+  <div class="app">
+    <div class="header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar-circle" id="headerAvatar" onclick="switchTab('profile',document.querySelectorAll('.tab-bar button')[5])"></div>
+        <h1>班级广播</h1>
+      </div>
+      <div class="right">
+        <span class="plan-badge" id="planBadge"></span>
+        <span class="logout" onclick="logout()">退出</span>
+      </div>
+    </div>
+
+    <!-- Expired Banner -->
+    <div class="expired-banner" id="expiredBanner" style="display:none">
+      <h3>试用已结束</h3>
+      <p>您的免费体验期已到，感谢使用！<br>选择以下方案继续使用班级广播系统：</p>
+      <div class="price-cards">
+        <div class="price-card">
+                    <div class="amount">9.9 元</div>
+          <div class="label">年费版 · 365天</div>
+        </div>
+      </div>
+      <div class="contact">
+        <button class="pay-btn" onclick="startYearlyPayment(this)">微信支付开通年费</button>
+        <div class="pay-note">支付成功后自动开通 365 天，无需等待人工处理</div>
+        <div class="pay-status" id="expiredPaymentStatus"></div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="active" onclick="switchTab('send',this)">发通知</button>
+      <button onclick="switchTab('bulletin',this)">告示栏</button>
+      <button onclick="switchTab('messages',this)">消息<span class="msg-badge" id="messageBadge"></span></button>
+      <button onclick="switchTab('history',this)">发布记录</button>
+      <button onclick="switchTab('manage',this)">班级管理</button>
+      <button onclick="switchTab('profile',this)">个人中心</button>
+    </div>
+
+    <!-- Tab: Send -->
+    <div id="tab-send">
+      <div class="card">
+        <div class="form-row">
+          <label>班级</label>
+          <select id="classSelect" onchange="onClassChange()">
+            <option value="">请选择班级</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>署名（不填则使用账号称呼）</label>
+          <input type="text" id="signature" placeholder="例如：李老师、教导处">
+        </div>
+        <div class="form-row">
+          <label>学生姓名（可选）</label>
+          <input type="text" id="studentName" placeholder="例如：张三">
+        </div>
+        <div class="form-row">
+          <label>播报次数</label>
+          <div class="repeat-row">
+            <input type="number" id="repeatCount" value="2" min="1" max="10">
+            <span>可设置 1 到 10 次</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>常用模板</h3>
+        <div class="templates">
+          <button onclick="useTpl('请到办公室')">请到办公室</button>
+          <button onclick="useTpl('请带作业来办公室')">请带作业来办公室</button>
+          <button onclick="useTpl('请班主任来办公室')">请班主任来办公室</button>
+          <button onclick="useTpl('全班同学请带作业到办公室')">全班带作业</button>
+          <button onclick="useTpl('请班长收作业来办公室')">班长收作业</button>
+          <button onclick="useTpl('请到操场集合')">操场集合</button>
+        </div>
+        <div class="form-row">
+          <label>通知内容</label>
+          <textarea id="content" placeholder="例如：张三同学请到办公室。" oninput="updatePreview()" maxlength="2000"></textarea>
+        </div>
+        <div class="char-count"><span id="charCount">0</span> / 2000</div>
+        <div class="preview">
+          <div class="label">发布预览</div>
+          <div id="previewText">请选择班级并输入内容</div>
+        </div>
+        <button class="btn-send" id="sendBtn" onclick="doSend()" disabled>立即发布</button>
+        <button class="btn-clear" onclick="clearForm()">清空内容</button>
+      </div>
+    </div>
+
+    <!-- Tab: Bulletin -->
+    <div id="tab-bulletin" style="display:none">
+      <div class="card">
+        <h3>发布班级告示</h3>
+        <div class="form-row">
+          <label>班级</label>
+          <select id="bulletinClassSelect" onchange="loadBulletins()">
+            <option value="">请选择班级</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>标题</label>
+          <input type="text" id="bulletinTitle" maxlength="40" placeholder="例如：今日作业、值日安排">
+        </div>
+        <div class="form-row">
+          <label>告示内容</label>
+          <textarea id="bulletinContent" maxlength="1000" placeholder="适合发布作业、值日、上课提醒等不会打扰课堂的内容"></textarea>
+        </div>
+        <div class="form-row">
+          <label>展示到</label>
+          <input type="datetime-local" id="bulletinExpires">
+          <div class="bulletin-quick">
+            <button type="button" onclick="setBulletinExpiry('today5')">今天17:00</button>
+            <button type="button" onclick="setBulletinExpiry('tomorrow5')">明天17:00</button>
+            <button type="button" onclick="setBulletinExpiry('twoHours')">2小时后</button>
+          </div>
+        </div>
+        <button class="btn-send" onclick="postBulletin()">发布到告示栏</button>
+      </div>
+      <div class="card">
+        <h3>当前告示</h3>
+        <div id="bulletinList"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Messages -->
+    <div id="tab-messages" style="display:none">
+      <div class="card">
+        <div class="message-tools">
+          <h3 style="margin:0">消息中心</h3>
+          <button onclick="markMessagesRead()">全部已读</button>
+        </div>
+        <div id="messageList"></div>
+      </div>
+    </div>
+
+    <!-- Tab: History -->
+    <div id="tab-history" style="display:none">
+      <div class="card">
+        <div class="form-row">
+          <label>选择班级查看记录</label>
+          <select id="historyClassSelect" onchange="loadHistory()">
+            <option value="">请选择班级</option>
+          </select>
+        </div>
+        <div id="historyList"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Manage -->
+    <div id="tab-manage" style="display:none">
+      <div class="card">
+        <h3>我的班级</h3>
+        <div id="classList"></div>
+        <div class="add-class" style="flex-wrap:wrap">
+          <select id="newClassGrade" style="padding:10px 14px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:14px;background:#fff">
+            <option value="">选择学段</option>
+            <option value="primary">小学</option>
+            <option value="junior">初中</option>
+            <option value="senior">高中</option>
+          </select>
+          <input type="text" id="newClassName" placeholder="班级名称，如：三年五班">
+          <button onclick="addClass()">新增</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>教室绑定说明</h3>
+        <p style="font-size:14px;color:#666;line-height:1.8;">
+          1. 在上方新增班级后，会生成一个绑定码<br>
+          2. 在教室电脑浏览器打开本网址<br>
+          3. 点击「教室端」，输入绑定码即可连接<br>
+          4. 同一个班级可邀请多位老师协作，任课老师使用自己的账号即可发送到同一块屏幕<br>
+          5. 建议将屏幕端设为浏览器全屏（按 F11）
+        </p>
+      </div>
+    </div>
+
+    <!-- Tab: Profile -->
+    <div id="tab-profile" style="display:none">
+      <div class="profile-layout">
+        <!-- Left Sidebar -->
+        <div class="profile-sidebar">
+          <div class="profile-sidebar-card">
+            <div class="profile-avatar-lg" id="profileAvatar"></div>
+            <div class="profile-name" id="profileName"></div>
+            <div class="profile-username" id="profileUsername"></div>
+            <span class="plan-badge" id="profilePlanBadge" style="display:inline-block"></span>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <div class="stat-value" id="profileClassCount">0</div>
+                <div class="stat-label">班级数</div>
+              </div>
+              <div class="profile-stat" style="border-left:1px solid #f0f0f0">
+                <div class="stat-value" id="profileNotifCount">0</div>
+                <div class="stat-label">已发通知</div>
+              </div>
+            </div>
+          </div>
+          <div class="profile-menu">
+            <div class="profile-menu-item active" onclick="switchProfileSection('edit',this)">&#9998; 编辑资料</div>
+            <div class="profile-menu-item" onclick="switchProfileSection('plan',this)">&#165; 我的套餐</div>
+            <div class="profile-menu-item" onclick="switchProfileSection('contact',this)">&#9742; 联系客服</div>
+            <div class="profile-menu-item logout-item" onclick="logout()">&#10005; 退出登录</div>
+          </div>
+        </div>
+        <!-- Right Content -->
+        <div class="profile-content">
+          <!-- Section: Edit Profile -->
+          <div class="profile-section" id="profileSec-edit">
+            <div class="card">
+              <h3>修改称呼</h3>
+              <div class="edit-name-row">
+                <input type="text" id="editDisplayName" placeholder="输入新的称呼">
+                <button onclick="updateDisplayName()">保存</button>
+              </div>
+            </div>
+            <div class="card">
+              <h3>选择头像</h3>
+              <div class="avatar-grid" id="avatarGrid"></div>
+            </div>
+          </div>
+          <!-- Section: My Plan -->
+          <div class="profile-section" id="profileSec-plan" style="display:none">
+            <div class="card">
+              <h3>套餐信息</h3>
+              <div class="profile-info">
+                <div class="profile-row"><span class="label">账号</span><span class="value" id="profileUser2"></span></div>
+                <div class="profile-row"><span class="label">教师码</span><span class="value"><span id="profileTeacherCode"></span> <button onclick="copyTeacherCode()" style="padding:2px 8px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:12px;color:#4f8cff;cursor:pointer">复制</button></span></div>
+                <div class="profile-row"><span class="label">当前套餐</span><span class="value" id="profilePlan"></span></div>
+                <div class="profile-row"><span class="label">到期时间</span><span class="value" id="profileExpires"></span></div>
+                <div class="profile-row"><span class="label">注册时间</span><span class="value" id="profileCreated"></span></div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>套餐升级</h3>
+              <div class="plan-upgrade-cards">
+                <div class="plan-upgrade-card">
+                            <div class="plan-upgrade-price">9.9<span>元</span></div>
+                  <div class="plan-upgrade-label">年费版 · 365天</div>
+                </div>
+              </div>
+              <div style="text-align:center;margin-top:20px">
+                <button class="pay-btn" onclick="startYearlyPayment(this)">微信支付开通年费</button>
+                <p class="pay-note">新用户自动赠送 3 天体验，支付成功后自动开通 365 天</p>
+                <div class="pay-status" id="paymentStatusText"></div>
+              </div>
+              <div style="text-align:center;margin-top:16px">
+                <a href="/pricing.html" style="font-size:14px;color:#4f8cff;text-decoration:none">查看完整价格方案 →</a>
+              </div>
+            </div>
+          </div>
+          <!-- Section: Contact -->
+          <div class="profile-section" id="profileSec-contact" style="display:none">
+            <div class="card" style="text-align:center;padding:40px 24px">
+              <div style="font-size:48px;margin-bottom:16px">&#128172;</div>
+              <h3 style="font-size:18px;margin-bottom:20px">联系客服</h3>
+              <div style="font-size:28px;font-weight:700;color:#333;letter-spacing:2px;margin-bottom:16px">htttttt_219</div>
+              <button onclick="copyWx()" style="padding:10px 24px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:14px;color:#4f8cff;cursor:pointer">复制微信号</button>
+              <p style="font-size:13px;color:#999;margin-top:20px;line-height:1.8">
+                工作时间：每天 8:00 - 22:00<br>
+                添加时请备注「班级广播」
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="replyToast"><div id="replyToastText"></div></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+var API = '';
+var token = '';
+var classes = [];
+var messages = [];
+var planActive = true;
+var currentAvatar = 'a1';
+var currentProfile = {};
+var paymentPollTimer = null;
+var paymentReturnHandled = false;
+
+// ========== Avatar System ==========
+var avatarIds = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14','a15','a16'];
+
+function getAvatarSrc(id) {
+  return '/avatars/' + (id || 'a1') + '.png';
+}
+
+function getAvatarFallbackSrc(id) {
+  return '/avatars/' + (id || 'a1') + '.svg';
+}
+
+function renderAvatarEl(el, avatarId) {
+  var id = avatarId || 'a1';
+  el.innerHTML = '<img src="' + getAvatarSrc(id) + '" style="width:100%;height:100%;display:block;border-radius:50%;object-fit:cover" onerror="this.onerror=null;this.src=\'' + getAvatarFallbackSrc(id) + '\'">';
+  el.style.background = '#f0f2f5';
+}
+
+function getStorage() {
+  return localStorage;
+}
+
+function headers() {
+  return { 'Content-Type':'application/json', 'X-Token': token };
+}
+
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || '');
+  el.style.display = 'block';
+  setTimeout(function() { el.style.display = 'none'; }, 2000);
+}
+
+function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ========== Auth ==========
+function switchAuth(tab) {
+  var tabs = document.querySelectorAll('.auth-tabs button');
+  tabs[0].className = tab === 'login' ? 'active' : '';
+  tabs[1].className = tab === 'register' ? 'active' : '';
+  document.getElementById('loginForm').className = 'auth-form' + (tab === 'login' ? ' active' : '');
+  document.getElementById('registerForm').className = 'auth-form' + (tab === 'register' ? ' active' : '');
+}
+
+function doLogin() {
+  var username = document.getElementById('loginUser').value.trim();
+  var password = document.getElementById('loginPass').value;
+  var remember = document.getElementById('rememberMe').checked;
+  if (!username || !password) return;
+  document.getElementById('loginError').textContent = '';
+
+  fetch(API + '/api/login', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ username: username, password: password })
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+  .then(function(r) {
+    if (!r.ok) { document.getElementById('loginError').textContent = r.data.error; return; }
+    token = r.data.token;
+    if (remember) {
+      localStorage.setItem('broadcast_token', token);
+      localStorage.setItem('broadcast_user', username);
+    } else {
+      sessionStorage.setItem('broadcast_token', token);
+    }
+    enterApp(r.data.plan_status);
+  })
+  .catch(function() { document.getElementById('loginError').textContent = '网络连接失败'; });
+}
+
+function doRegister() {
+  var username = document.getElementById('regUser').value.trim();
+  var password = document.getElementById('regPass').value;
+  var password2 = document.getElementById('regPass2').value;
+  var display_name = document.getElementById('regName').value.trim();
+  var remember = document.getElementById('regRemember').checked;
+
+  if (!username || !password) { document.getElementById('regError').textContent = '请填写用户名和密码'; return; }
+  if (password !== password2) { document.getElementById('regError').textContent = '两次密码不一致'; return; }
+  document.getElementById('regError').textContent = '';
+
+  fetch(API + '/api/register', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ username: username, password: password, display_name: display_name || username })
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+  .then(function(r) {
+    if (!r.ok) { document.getElementById('regError').textContent = r.data.error; return; }
+    token = r.data.token;
+    if (remember) {
+      localStorage.setItem('broadcast_token', token);
+      localStorage.setItem('broadcast_user', username);
+    } else {
+      sessionStorage.setItem('broadcast_token', token);
+    }
+    toast('注册成功！您有3天免费体验', 'success');
+    enterApp(r.data.plan_status);
+  })
+  .catch(function() { document.getElementById('regError').textContent = '网络连接失败'; });
+}
+
+function logout() {
+  if (socket2) socket2.emit('teacher-logout');
+  token = '';
+  localStorage.removeItem('broadcast_token');
+  localStorage.removeItem('broadcast_user');
+  sessionStorage.removeItem('broadcast_token');
+  document.getElementById('appPage').className = 'page';
+  document.getElementById('authPage').className = 'page active';
+}
+
+function enterApp(planStatus) {
+  document.getElementById('authPage').className = 'page';
+  document.getElementById('appPage').className = 'page active';
+  updatePlanBadge(planStatus);
+  authTeacherSocket();
+  loadClasses();
+  loadProfile();
+  loadMessages();
+  setBulletinExpiry('tomorrow5');
+  handlePaymentReturn();
+}
+
+function updatePlanBadge(status) {
+  var badge = document.getElementById('planBadge');
+  var banner = document.getElementById('expiredBanner');
+  planActive = status.active;
+
+  if (!status.active) {
+    badge.textContent = '已到期';
+    badge.className = 'plan-badge expired';
+    banner.style.display = 'block';
+    return;
+  }
+  banner.style.display = 'none';
+  if (status.plan === 'trial') {
+    var exp = new Date(status.expires);
+    var days = Math.ceil((exp - new Date()) / 86400000);
+    badge.textContent = '试用' + days + '天';
+    badge.className = 'plan-badge trial';
+  } else if (status.plan === 'yearly') {
+    badge.textContent = '年费版';
+    badge.className = 'plan-badge yearly';
+  }
+}
+
+// ========== Classes ==========
+function loadClasses() {
+  fetch(API + '/api/classes', { headers: headers() })
+  .then(function(r) { if (r.status === 401) { logout(); throw 'auth'; } return r.json(); })
+  .then(function(data) {
+    classes = data;
+    renderClassSelects();
+    renderClassList();
+  })
+  .catch(function(e) { if (e !== 'auth') toast('加载班级失败','error'); });
+}
+
+function renderClassSelects() {
+  ['classSelect','historyClassSelect','bulletinClassSelect'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var val = sel.value;
+    sel.innerHTML = '<option value="">请选择班级</option>' +
+      classes.map(function(c) { return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join('');
+    sel.value = val;
+  });
+  updatePreview();
+}
+
+function renderClassList() {
+  var el = document.getElementById('classList');
+  if (!classes.length) { el.innerHTML = '<p style="color:#bbb;font-size:14px;padding:10px 0;">还没有班级，请先新增</p>'; return; }
+  el.innerHTML = classes.map(function(c) {
+    var gl = gradeLabels[c.grade] || '初中';
+    var role = c.is_owner ? '管理员' : '协作老师';
+    var memberNames = (c.members || []).map(function(m) { return esc(m.display_name || m.username); }).join('、');
+    var actions = c.is_owner ? '<span class="del" onclick="delClass(\'' + c.id + '\')">删除</span>' : '';
+    var invite = c.is_owner ? '<div style="margin-top:10px;display:flex;gap:8px;align-items:center"><input id="invite_' + c.id + '" type="text" placeholder="输入对方教师码" style="flex:1;padding:8px 10px;border:1px solid #e8e8e8;border-radius:8px;font-size:13px;text-transform:uppercase"><button onclick="inviteTeacher(\'' + c.id + '\')" style="padding:8px 12px;border:none;border-radius:8px;background:#4f8cff;color:#fff;font-size:13px;cursor:pointer">邀请老师</button></div>' : '';
+    return '<div class="class-item"><div class="info"><div class="name"><span class="online-dot ' + (c.online ? 'on' : 'off') + '"></span>' + esc(c.name) + ' <span style="font-size:11px;color:#999;font-weight:400;background:#f5f5f5;padding:1px 6px;border-radius:4px">' + gl + '</span> <span style="font-size:11px;color:#4f8cff;font-weight:400;background:#eef4ff;padding:1px 6px;border-radius:4px">' + role + '</span></div><div class="code">绑定码：' + c.bind_code + '　' + (c.online ? '在线 ' + c.online + ' 台' : '离线') + '</div><div class="code">老师：' + (memberNames || '-') + '</div>' + invite + '</div>' + actions + '</div>';
+  }).join('');
+}
+
+function addClass() {
+  var input = document.getElementById('newClassName');
+  var gradeSelect = document.getElementById('newClassGrade');
+  var name = input.value.trim();
+  var grade = gradeSelect.value;
+  if (!grade) { toast('请选择学段','error'); return; }
+  if (!name) { toast('请输入班级名称','error'); return; }
+  fetch(API + '/api/classes', { method:'POST', headers:headers(), body:JSON.stringify({name:name, grade:grade}) })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { toast(r.data.error,'error'); return; }
+    input.value = '';
+    loadClasses();
+    toast('班级已添加','success');
+  });
+}
+
+var gradeLabels = {primary:'小学', junior:'初中', senior:'高中'};
+
+function delClass(id) {
+  var name = '';
+  for (var i = 0; i < classes.length; i++) {
+    if (classes[i].id === id) {
+      name = classes[i].name;
+      break;
+    }
+  }
+  if (!confirm('确定删除「' + name + '」？所有通知记录也会一起删除。')) return;
+  fetch(API + '/api/classes/' + id, { method:'DELETE', headers:headers() })
+  .then(function() { loadClasses(); toast('已删除','success'); });
+}
+
+function inviteTeacher(classId) {
+  var input = document.getElementById('invite_' + classId);
+  var teacherCode = input ? input.value.trim().toUpperCase() : '';
+  if (!teacherCode) { toast('请输入对方教师码','error'); return; }
+  fetch(API + '/api/classes/' + classId + '/invite', {
+    method:'POST',
+    headers:headers(),
+    body:JSON.stringify({ teacher_code: teacherCode })
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { toast(r.data.error || '邀请失败','error'); return; }
+    if (input) input.value = '';
+    loadClasses();
+    toast('已邀请' + (r.data.teacher && r.data.teacher.display_name ? '：' + r.data.teacher.display_name : ''),'success');
+  })
+  .catch(function() { toast('网络错误','error'); });
+}
+
+// ========== Notify ==========
+function useTpl(text) {
+  var student = document.getElementById('studentName').value.trim();
+  document.getElementById('content').value = student ? '请' + student + text.replace('请','') : text;
+  updatePreview();
+}
+
+function updatePreview() {
+  var cls = document.getElementById('classSelect');
+  var content = document.getElementById('content').value.trim();
+  var sig = document.getElementById('signature').value.trim() || (currentProfile && currentProfile.display_name ? currentProfile.display_name : '');
+  var opt = cls.options[cls.selectedIndex];
+  var clsName = opt ? opt.textContent : '';
+
+  document.getElementById('charCount').textContent = content.length;
+  document.getElementById('sendBtn').disabled = !cls.value || !content || !planActive;
+
+  if (!cls.value) { document.getElementById('previewText').textContent = '请选择班级'; return; }
+  if (!content) { document.getElementById('previewText').textContent = '已选择 ' + clsName + '，请输入通知内容'; return; }
+  var preview = '发布到 ' + clsName + '：\n' + content;
+  if (sig) preview += '\n—— ' + sig;
+  document.getElementById('previewText').textContent = preview;
+}
+
+function onClassChange() { updatePreview(); }
+
+function doSend() {
+  if (!planActive) { toast('请续费后继续使用','error'); return; }
+  var btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  btn.textContent = '发送中...';
+
+  var body = {
+    class_id: document.getElementById('classSelect').value,
+    content: document.getElementById('content').value.trim(),
+    signature: document.getElementById('signature').value.trim(),
+    student_name: document.getElementById('studentName').value.trim(),
+    repeat_count: parseInt(document.getElementById('repeatCount').value) || 2
+  };
+
+  fetch(API + '/api/notify', { method:'POST', headers:headers(), body:JSON.stringify(body) })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { toast(r.data.error || '发送失败','error'); return; }
+    toast('发送成功！','success');
+    document.getElementById('content').value = '';
+    updatePreview();
+  })
+  .catch(function() { toast('网络错误','error'); })
+  .finally(function() { btn.disabled = false; btn.textContent = '立即发布'; });
+}
+
+function clearForm() {
+  document.getElementById('content').value = '';
+  document.getElementById('studentName').value = '';
+  updatePreview();
+}
+
+// ========== History ==========
+function loadHistory() {
+  var classId = document.getElementById('historyClassSelect').value;
+  var el = document.getElementById('historyList');
+  if (!classId) { el.innerHTML = ''; return; }
+
+  fetch(API + '/api/history/' + classId, { headers:headers() })
+  .then(function(r) { return r.json(); })
+  .then(function(list) {
+    if (!list.length) { el.innerHTML = '<p style="color:#bbb;padding:16px 0;font-size:14px;">暂无记录</p>'; return; }
+    el.innerHTML = list.map(function(n) {
+      var t = new Date(n.created_at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      var sender = n.sender_name || n.signature || '';
+      return '<div class="history-item"><div class="content">' + esc(n.content) + '</div><div class="meta">' + (sender ? '发送人：' + esc(sender) + '　' : '') + t + '　播报：' + n.repeat_count + ' 次</div><div class="actions"><button onclick="resend(' + n.id + ')">重发</button></div></div>';
+    }).join('');
+  });
+}
+
+function resend(id) {
+  fetch(API + '/api/resend/' + id, { method:'POST', headers:headers() })
+  .then(function(r) {
+    if (r.ok) toast('已重发','success');
+    else toast('重发失败','error');
+  });
+}
+
+// ========== Bulletin ==========
+function toLocalDatetimeValue(date) {
+  var y = date.getFullYear();
+  var m = date.getMonth() + 1;
+  var d = date.getDate();
+  var h = date.getHours();
+  var min = date.getMinutes();
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  return y + '-' + pad(m) + '-' + pad(d) + 'T' + pad(h) + ':' + pad(min);
+}
+
+function setBulletinExpiry(type) {
+  var input = document.getElementById('bulletinExpires');
+  if (!input) return;
+  var d = new Date();
+  if (type === 'today5') {
+    d.setHours(17, 0, 0, 0);
+    if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+  } else if (type === 'twoHours') {
+    d = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  } else {
+    d.setDate(d.getDate() + 1);
+    d.setHours(17, 0, 0, 0);
+  }
+  input.value = toLocalDatetimeValue(d);
+}
+
+function ensureBulletinClass() {
+  var sel = document.getElementById('bulletinClassSelect');
+  if (sel && !sel.value && classes.length) sel.value = classes[0].id;
+}
+
+function loadBulletins() {
+  var sel = document.getElementById('bulletinClassSelect');
+  var el = document.getElementById('bulletinList');
+  if (!sel || !el) return;
+  var classId = sel.value;
+  if (!classId) { el.innerHTML = '<p style="color:#bbb;padding:12px 0;font-size:14px;">请选择班级</p>'; return; }
+  fetch(API + '/api/bulletins/' + classId, { headers:headers() })
+  .then(function(r) { return r.json(); })
+  .then(function(list) {
+    if (!list.length) { el.innerHTML = '<p style="color:#bbb;padding:12px 0;font-size:14px;">当前没有告示</p>'; return; }
+    el.innerHTML = list.map(function(b) {
+      var exp = new Date(b.expires_at).toLocaleString('zh-CN', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
+      var html = '<div class="bulletin-list-item">';
+      html += '<div class="bulletin-title">' + esc(b.title || '班级告示') + '</div>';
+      html += '<div class="bulletin-content">' + esc(b.content || '') + '</div>';
+      html += '<div class="bulletin-meta">' + esc(b.sender_name || '老师') + '　展示到：' + exp + '</div>';
+      if (b.can_delete) html += '<div class="bulletin-actions"><button onclick="deleteBulletin(' + b.id + ')">删除</button></div>';
+      html += '</div>';
+      return html;
+    }).join('');
+  })
+  .catch(function() { el.innerHTML = '<p style="color:#ff4d4f;padding:12px 0;font-size:14px;">加载告示失败</p>'; });
+}
+
+function postBulletin() {
+  if (!planActive) { toast('请续费后继续使用','error'); return; }
+  var classId = document.getElementById('bulletinClassSelect').value;
+  var title = document.getElementById('bulletinTitle').value.trim();
+  var content = document.getElementById('bulletinContent').value.trim();
+  var expires = document.getElementById('bulletinExpires').value;
+  if (!classId) { toast('请选择班级','error'); return; }
+  if (!content) { toast('请输入告示内容','error'); return; }
+  if (!expires) { toast('请选择展示截止时间','error'); return; }
+  var expiresDate = new Date(expires);
+  if (!expiresDate.getTime() || expiresDate.getTime() <= Date.now()) { toast('展示时间必须在未来','error'); return; }
+
+  fetch(API + '/api/bulletins', {
+    method:'POST',
+    headers:headers(),
+    body:JSON.stringify({
+      class_id: classId,
+      title: title || '班级告示',
+      content: content,
+      expires_at: expiresDate.toISOString()
+    })
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { toast(r.data.error || '发布失败','error'); return; }
+    document.getElementById('bulletinContent').value = '';
+    document.getElementById('bulletinTitle').value = '';
+    loadBulletins();
+    toast('告示已发布','success');
+  })
+  .catch(function() { toast('网络错误','error'); });
+}
+
+function deleteBulletin(id) {
+  if (!confirm('确定删除这条告示？')) return;
+  fetch(API + '/api/bulletins/' + id, { method:'DELETE', headers:headers() })
+  .then(function(r) {
+    if (r.ok) { toast('已删除','success'); loadBulletins(); }
+    else toast('删除失败','error');
+  });
+}
+
+// ========== Message Center ==========
+function loadMessages() {
+  fetch(API + '/api/messages', { headers:headers() })
+  .then(function(r) { if (!r.ok) return []; return r.json(); })
+  .then(function(list) {
+    messages = list || [];
+    renderMessages();
+  });
+}
+
+function renderMessages() {
+  var el = document.getElementById('messageList');
+  var badge = document.getElementById('messageBadge');
+  if (!el || !badge) return;
+  var unread = 0;
+  for (var i = 0; i < messages.length; i++) {
+    if (!messages[i].read_at) unread++;
+  }
+  badge.style.display = unread ? 'block' : 'none';
+  badge.textContent = unread > 99 ? '99+' : unread;
+  if (!messages.length) {
+    el.innerHTML = '<p style="color:#bbb;padding:12px 0;font-size:14px;">暂无消息</p>';
+    return;
+  }
+  el.innerHTML = messages.map(function(m) {
+    var t = new Date(m.created_at).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    var cls = m.read_at ? 'message-item' : 'message-item unread';
+    var meta = t;
+    if (m.class_name) meta += '　' + esc(m.class_name);
+    return '<div class="' + cls + '"><div class="message-title">' + esc(m.title || '消息') + '</div><div class="message-body">' + esc(m.body || '') + '</div><div class="message-meta">' + meta + '</div></div>';
+  }).join('');
+}
+
+function markMessagesRead() {
+  fetch(API + '/api/messages/read', { method:'POST', headers:headers(), body:JSON.stringify({}) })
+  .then(function() { loadMessages(); });
+}
+
+// ========== Tabs ==========
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-bar button').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  ['send','bulletin','messages','history','manage','profile'].forEach(function(t) {
+    document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  if (name === 'bulletin') { ensureBulletinClass(); loadBulletins(); }
+  if (name === 'messages') loadMessages();
+  if (name === 'history') loadHistory();
+  if (name === 'manage') loadClasses();
+  if (name === 'profile') loadProfile();
+}
+
+// ========== Profile ==========
+function switchProfileSection(name, btn) {
+  var items = document.querySelectorAll('.profile-menu-item');
+  for (var i = 0; i < items.length; i++) {
+    if (!items[i].classList.contains('logout-item')) items[i].classList.remove('active');
+  }
+  if (btn) btn.classList.add('active');
+  var sections = ['edit','plan','contact'];
+  for (var j = 0; j < sections.length; j++) {
+    var el = document.getElementById('profileSec-' + sections[j]);
+    if (el) el.style.display = sections[j] === name ? 'block' : 'none';
+  }
+}
+
+function loadProfile() {
+  fetch(API + '/api/profile', { headers: headers() })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    currentProfile = data;
+    currentAvatar = data.avatar || 'a1';
+    renderAvatarEl(document.getElementById('headerAvatar'), currentAvatar);
+    renderAvatarEl(document.getElementById('profileAvatar'), currentAvatar);
+    document.getElementById('profileName').textContent = data.display_name;
+    document.getElementById('profileUsername').textContent = '@' + data.username;
+    document.getElementById('profileUser2').textContent = data.username;
+    document.getElementById('profileTeacherCode').textContent = data.teacher_code || '-';
+    document.getElementById('editDisplayName').value = data.display_name;
+
+    var planText = '免费试用';
+    if (data.plan === 'yearly') planText = '年费版';
+    if (data.plan_status && !data.plan_status.active) planText = '已到期';
+    document.getElementById('profilePlan').textContent = planText;
+
+    var badge2 = document.getElementById('profilePlanBadge');
+    if (data.plan_status) {
+      if (!data.plan_status.active) { badge2.textContent = '已到期'; badge2.className = 'plan-badge expired'; }
+      else if (data.plan === 'trial') { badge2.textContent = '试用中'; badge2.className = 'plan-badge trial'; }
+      else if (data.plan === 'yearly') { badge2.textContent = '年费版'; badge2.className = 'plan-badge yearly'; }
+    }
+
+    var expires = '无';
+    if (data.plan_status && data.plan_status.expires) expires = new Date(data.plan_status.expires).toLocaleDateString('zh-CN');
+    document.getElementById('profileExpires').textContent = expires;
+    document.getElementById('profileCreated').textContent = new Date(data.created_at).toLocaleDateString('zh-CN');
+
+    document.getElementById('profileClassCount').textContent = data.class_count !== undefined ? data.class_count : classes.length;
+    document.getElementById('profileNotifCount').textContent = (data.notif_count || 0);
+
+    renderAvatarGrid();
+  });
+}
+
+function renderAvatarGrid() {
+  var grid = document.getElementById('avatarGrid');
+  grid.innerHTML = avatarIds.map(function(id) {
+    var sel = id === currentAvatar ? ' selected' : '';
+    return '<div class="avatar-option' + sel + '" onclick="selectAvatar(\'' + id + '\')"><img src="' + getAvatarSrc(id) + '" style="width:100%;height:100%;display:block;border-radius:50%;object-fit:cover" onerror="this.onerror=null;this.src=\'' + getAvatarFallbackSrc(id) + '\'"></div>';
+  }).join('');
+}
+
+function selectAvatar(id) {
+  currentAvatar = id;
+  fetch(API + '/api/profile', { method:'POST', headers:headers(), body:JSON.stringify({avatar:id}) })
+  .then(function(r) { return r.json(); })
+  .then(function() {
+    renderAvatarEl(document.getElementById('headerAvatar'), id);
+    renderAvatarEl(document.getElementById('profileAvatar'), id);
+    renderAvatarGrid();
+    toast('头像已更新','success');
+  });
+}
+
+function updateDisplayName() {
+  var name = document.getElementById('editDisplayName').value.trim();
+  if (!name) { toast('请输入称呼','error'); return; }
+  fetch(API + '/api/profile', { method:'POST', headers:headers(), body:JSON.stringify({display_name:name}) })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { toast(r.data.error,'error'); return; }
+    document.getElementById('profileName').textContent = name;
+    toast('称呼已更新','success');
+  });
+}
+
+// ========== Payment ==========
+function setPaymentStatus(text, type) {
+  var ids = ['paymentStatusText', 'expiredPaymentStatus'];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (!el) continue;
+    el.textContent = text || '';
+    el.className = 'pay-status' + (type ? ' ' + type : '');
+  }
+}
+
+function getQueryValue(name) {
+  var q = window.location.search.replace(/^\?/, '').split('&');
+  for (var i = 0; i < q.length; i++) {
+    var parts = q[i].split('=');
+    if (decodeURIComponent(parts[0] || '') === name) return decodeURIComponent((parts[1] || '').replace(/\+/g, ' '));
+  }
+  return '';
+}
+
+function cleanPayQuery() {
+  if (!window.history || !window.history.replaceState) return;
+  if (window.location.search.indexOf('pay_order=') === -1) return;
+  window.history.replaceState(null, document.title, window.location.pathname + window.location.hash);
+}
+
+function startYearlyPayment(btn) {
+  if (!token) { toast('请先登录','error'); return; }
+  var originalText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '创建支付订单...';
+  }
+  setPaymentStatus('正在创建微信支付订单，请稍候');
+
+  fetch(API + '/api/payments/yearly', {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({})
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) {
+      setPaymentStatus(r.data.error || '创建支付订单失败', 'error');
+      toast(r.data.error || '创建支付订单失败', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = originalText; }
+      return;
+    }
+    localStorage.setItem('broadcast_pay_order', r.data.out_trade_no);
+    setPaymentStatus('订单已创建，正在前往微信支付');
+    if (btn) btn.textContent = '正在前往微信支付...';
+    window.location.href = r.data.pay_url;
+  })
+  .catch(function() {
+    setPaymentStatus('网络错误，创建支付订单失败', 'error');
+    toast('网络错误','error');
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  });
+}
+
+function handlePaymentReturn() {
+  if (paymentReturnHandled) return;
+  var orderNo = getQueryValue('pay_order') || localStorage.getItem('broadcast_pay_order') || '';
+  if (!orderNo) return;
+  paymentReturnHandled = true;
+  cleanPayQuery();
+  pollPaymentStatus(orderNo, 0);
+}
+
+function pollPaymentStatus(orderNo, count) {
+  if (paymentPollTimer) clearTimeout(paymentPollTimer);
+  setPaymentStatus('正在确认支付结果...');
+  fetch(API + '/api/payments/' + encodeURIComponent(orderNo), { headers: headers() })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) {
+      setPaymentStatus(r.data.error || '未找到支付订单', 'error');
+      return;
+    }
+    if (r.data.status === 'paid') {
+      localStorage.removeItem('broadcast_pay_order');
+      setPaymentStatus('支付成功，年费版已开通', 'success');
+      toast('年费版已开通','success');
+      if (r.data.plan_status) updatePlanBadge(r.data.plan_status);
+      loadProfile();
+      return;
+    }
+    if (count >= 10) {
+      setPaymentStatus('还没有收到支付成功通知，如已付款请稍后刷新页面查看');
+      return;
+    }
+    paymentPollTimer = setTimeout(function() { pollPaymentStatus(orderNo, count + 1); }, 3000);
+  })
+  .catch(function() {
+    setPaymentStatus('确认支付结果失败，请稍后刷新页面', 'error');
+  });
+}
+
+// ========== Socket ==========
+var socket2 = null;
+try { socket2 = io(); } catch(e) {}
+function authTeacherSocket() {
+  if (socket2 && token) socket2.emit('teacher-auth', token);
+}
+if (socket2) {
+  socket2.on('connect', function() { authTeacherSocket(); });
+  socket2.on('online-update', function() { loadClasses(); });
+  socket2.on('screen-reply', function(data) {
+    var el = document.getElementById('replyToast');
+    var text = document.getElementById('replyToastText');
+    text.innerHTML = '<strong>' + esc(data.class_name) + '</strong> 回复：' + esc(data.reply_text) +
+      '<div style="font-size:12px;color:#999;margin-top:4px;">' + new Date().toLocaleTimeString('zh-CN') + '</div>';
+    el.style.display = 'block';
+    setTimeout(function() { el.style.display = 'none'; }, 6000);
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  });
+  socket2.on('teacher-message', function() {
+    loadMessages();
+  });
+}
+
+// ========== Auto Login ==========
+document.getElementById('loginUser').addEventListener('keydown', function(e) { if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+document.getElementById('loginPass').addEventListener('keydown', function(e) { if(e.key==='Enter') doLogin(); });
+document.getElementById('regPass2').addEventListener('keydown', function(e) { if(e.key==='Enter') doRegister(); });
+
+// Try saved token
+var savedToken = localStorage.getItem('broadcast_token') || sessionStorage.getItem('broadcast_token');
+var savedUser = localStorage.getItem('broadcast_user');
+if (savedUser) document.getElementById('loginUser').value = savedUser;
+
+if (savedToken) {
+  token = savedToken;
+  fetch(API + '/api/profile', { headers: headers() })
+  .then(function(r) { if (r.ok) return r.json(); throw 'auth'; })
+  .then(function(data) { enterApp(data.plan_status); })
+  .catch(function() { token = ''; });
+}
+
+function copyWx() {
+  var wx = 'htttttt_219';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(wx).then(function() { toast('已复制微信号','success'); });
+  } else {
+    var inp = document.createElement('input');
+    inp.value = wx;
+    document.body.appendChild(inp);
+    inp.select();
+    document.execCommand('copy');
+    document.body.removeChild(inp);
+    toast('已复制微信号','success');
+  }
+}
+
+function copyTeacherCode() {
+  var code = currentProfile && currentProfile.teacher_code ? currentProfile.teacher_code : '';
+  if (!code) {
+    var el = document.getElementById('profileTeacherCode');
+    code = el ? el.textContent : '';
+  }
+  code = String(code || '').trim();
+  if (!code || code === '-') { toast('教师码尚未生成','error'); return; }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(function() { toast('已复制教师码','success'); });
+  } else {
+    var inp = document.createElement('input');
+    inp.value = code;
+    document.body.appendChild(inp);
+    inp.select();
+    document.execCommand('copy');
+    document.body.removeChild(inp);
+    toast('已复制教师码','success');
+  }
+}
+</script>
+</body>
+</html>

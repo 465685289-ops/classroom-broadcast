@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班级广播系统 · 价格方案</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",sans-serif;background:#f5f7fa;color:#333;min-height:100vh}
+.header{text-align:center;padding:60px 20px 40px}
+.header h1{font-size:32px;font-weight:700;margin-bottom:8px}
+.header p{font-size:16px;color:#888;line-height:1.6}
+.plans{display:flex;justify-content:center;gap:20px;padding:0 20px 40px;flex-wrap:wrap;max-width:900px;margin:0 auto}
+.plan{background:#fff;border-radius:16px;padding:36px 30px;width:260px;box-shadow:0 4px 20px rgba(0,0,0,.06);text-align:center;position:relative}
+.plan.hot{border:2px solid #ff6b35;transform:scale(1.05)}
+.plan.hot .tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;padding:4px 16px;border-radius:20px;font-size:12px;font-weight:600}
+.plan h3{font-size:18px;margin-bottom:8px;color:#333}
+.plan .price{font-size:48px;font-weight:800;color:#333;margin:16px 0 4px}
+.plan .price span{font-size:18px;font-weight:500}
+.plan .unit{font-size:14px;color:#999;margin-bottom:20px}
+.plan .features{text-align:left;margin-bottom:24px}
+.plan .features li{list-style:none;font-size:14px;color:#666;line-height:2.2;padding-left:22px;position:relative}
+.plan .features li:before{content:"✓";position:absolute;left:0;color:#52c41a;font-weight:700}
+.plan .btn{display:block;width:100%;padding:14px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center}
+.plan .btn.primary{background:#ff6b35;color:#fff}
+.plan .btn.secondary{background:#f0f0f0;color:#666}
+.plan .btn:hover{opacity:.9}
+
+.trial-info{max-width:600px;margin:0 auto 40px;background:#e6f7ff;border-radius:14px;padding:24px 30px;text-align:center}
+.trial-info h3{font-size:18px;color:#1890ff;margin-bottom:8px}
+.trial-info p{font-size:14px;color:#666;line-height:1.8}
+
+.pay-section{max-width:700px;margin:0 auto;padding:0 20px 60px}
+.pay-section h2{font-size:22px;text-align:center;margin-bottom:24px}
+.pay-steps{background:#fff;border-radius:14px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.pay-step{display:flex;gap:16px;align-items:flex-start;margin-bottom:24px}
+.pay-step:last-child{margin-bottom:0}
+.pay-step .num{width:32px;height:32px;background:#4f8cff;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0}
+.pay-step .text h4{font-size:16px;color:#333;margin-bottom:4px}
+.pay-step .text p{font-size:14px;color:#888;line-height:1.6}
+
+.contact-box{max-width:500px;margin:0 auto 60px;background:#fff;border-radius:14px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.06);text-align:center}
+.contact-box h3{font-size:18px;margin-bottom:12px}
+.contact-box .wx{font-size:24px;font-weight:700;color:#333;letter-spacing:2px;margin-bottom:8px}
+.contact-box .copy-btn{padding:6px 16px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:13px;color:#4f8cff;cursor:pointer}
+.contact-box p{font-size:13px;color:#999;margin-top:12px}
+
+.faq{max-width:700px;margin:0 auto;padding:0 20px 60px}
+.faq h2{font-size:22px;text-align:center;margin-bottom:24px}
+.faq-item{background:#fff;border-radius:12px;padding:20px 24px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.faq-item h4{font-size:15px;color:#333;margin-bottom:8px}
+.faq-item p{font-size:14px;color:#888;line-height:1.8}
+
+.footer{text-align:center;padding:30px;font-size:13px;color:#bbb;border-top:1px solid #f0f0f0}
+.footer a{color:#999;text-decoration:none}
+
+.back-link{display:inline-block;margin-bottom:20px;font-size:14px;color:#4f8cff;text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="/" class="back-link">← 返回首页</a>
+  <h1>选择适合您的方案</h1>
+  <p>手机发通知，教室大屏显示 + 语音播报<br>让教室通知更高效</p>
+</div>
+
+<div class="trial-info">
+  <h3>🎁 新用户免费体验3天</h3>
+  <p>注册即可使用全部功能，不限次数，无需付费。<br>体验期满后可选择年费版继续使用。</p>
+</div>
+
+<div class="plans">
+  <div class="plan">
+    <h3>免费试用</h3>
+    <div class="price"><span>¥</span>0</div>
+    <div class="unit">3天体验</div>
+    <ul class="features">
+      <li>全部功能不限制</li>
+      <li>不限发送次数</li>
+      <li>语音播报</li>
+      <li>学生快捷回复</li>
+    </ul>
+    <a href="/teacher.html" class="btn secondary">免费注册体验</a>
+  </div>
+
+  <div class="plan">
+    <h3>年费版</h3>
+        <div class="price"><span>¥</span>9.9</div>
+    <div class="unit">/ 年 · 有效期365天</div>
+    <ul class="features">
+      <li>全部功能不限制</li>
+      <li>不限发送次数</li>
+      <li>最多管理20个班级</li>
+      <li>语音播报</li>
+      <li>学生快捷回复</li>
+      <li>通知历史记录</li>
+      <li>到期后可续费</li>
+    </ul>
+    <a href="/teacher.html" class="btn primary">微信支付开通</a>
+  </div>
+</div>
+
+<div class="trial-info">
+  <h3>服务有效期说明</h3>
+  <p>所有付费服务有效期均为365天，到期后可续费继续使用。</p>
+</div>
+
+<div class="pay-section">
+  <h2>购买流程</h2>
+  <div class="pay-steps">
+    <div class="pay-step">
+      <div class="num">1</div>
+      <div class="text">
+        <h4>注册并体验</h4>
+        <p>在老师端注册账号，免费体验3天全部功能。确认满意后再购买。</p>
+      </div>
+    </div>
+    <div class="pay-step">
+      <div class="num">2</div>
+      <div class="text">
+        <h4>登录老师端付款</h4>
+        <p>进入「个人中心 - 我的套餐」，点击微信支付开通年费版。</p>
+      </div>
+    </div>
+    <div class="pay-step">
+      <div class="num">3</div>
+      <div class="text">
+        <h4>自动开通</h4>
+        <p>支付成功后系统自动开通365天，无需等待人工处理。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="contact-box" id="contact">
+  <h3>使用中遇到问题可联系客服</h3>
+  <div class="wx" id="wxId">htttttt_219</div>
+  <button class="copy-btn" onclick="copyWx()">复制微信号</button>
+  <p>工作时间：每天 8:00 - 22:00<br>添加时请备注「班级广播」</p>
+</div>
+
+<div class="faq">
+  <h2>常见问题</h2>
+  <div class="faq-item">
+    <h4>教室电脑需要安装软件吗？</h4>
+    <p>不需要。教室电脑打开浏览器访问网址即可，支持Chrome、Edge、360等主流浏览器。</p>
+  </div>
+  <div class="faq-item">
+    <h4>一个账号能管几个班级？</h4>
+    <p>最多管理20个班级，每个班级独立绑定一台教室电脑。</p>
+  </div>
+  <div class="faq-item">
+    <h4>需要学校网络支持吗？</h4>
+    <p>只要教室电脑和您的手机都能上网就行，不需要IT部门配合。</p>
+  </div>
+  <div class="faq-item">
+    <h4>年费到期后数据还在吗？</h4>
+    <p>到期后数据保留，续费后可继续使用。</p>
+  </div>
+  <div class="faq-item">
+    <h4>可以退款吗？</h4>
+    <p>购买前有3天免费体验，确认满意再付款。购买后不支持退款。</p>
+  </div>
+</div>
+
+<div class="footer">
+  <p>班级广播系统 · 让教室通知更高效</p>
+  <p style="margin-top:8px"><a href="/">首页</a> · <a href="/teacher.html">老师端</a> · <a href="/screen.html">教室端</a></p>
+</div>
+
+<div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;background:#52c41a;color:#fff;border-radius:10px;font-size:14px;z-index:999;display:none"></div>
+
+<script>
+function copyWx() {
+  var wx = document.getElementById('wxId').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(wx).then(function() { showToast('已复制微信号'); });
+  } else {
+    var inp = document.createElement('input');
+    inp.value = wx;
+    document.body.appendChild(inp);
+    inp.select();
+    document.execCommand('copy');
+    document.body.removeChild(inp);
+    showToast('已复制微信号');
+  }
+}
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(function() { t.style.display = 'none'; }, 2000);
+}
+</script>
+</body>
+</html>

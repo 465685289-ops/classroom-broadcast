@@ -1,0 +1,7 @@
+{
+  "public_base_url": "https://your-domain.example",
+  "yearly_plan_price": "9.90",
+  "yungou_mch_id": "your_yungou_mch_id",
+  "yungou_pay_key": "your_yungou_pay_key",
+  "yungou_app_id": ""
+}

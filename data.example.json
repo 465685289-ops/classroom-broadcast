@@ -1,0 +1,12 @@
+{
+  "users": [],
+  "classes": [],
+  "notifications": [],
+  "replies": [],
+  "messages": [],
+  "bulletins": [],
+  "payments": [],
+  "nextNotifId": 1,
+  "nextMessageId": 1,
+  "nextBulletinId": 1
+}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班级广播系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",sans-serif;background:#f5f7fa;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.wrap{text-align:center;max-width:400px;width:100%}
+h1{font-size:28px;color:#333;margin-bottom:4px}
+.sub{color:#999;font-size:13px;margin-bottom:36px}
+a{display:block;padding:22px;margin-bottom:16px;background:#fff;border-radius:14px;text-decoration:none;color:#333;font-size:17px;font-weight:500;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:transform .15s,box-shadow .15s}
+a:active{transform:scale(.98);box-shadow:0 1px 6px rgba(0,0,0,.1)}
+a .desc{font-size:13px;color:#999;margin-top:4px;font-weight:400}
+.t{border-left:4px solid #4f8cff}
+.s{border-left:4px solid #ff6b35}
+.features{margin-top:32px;text-align:left;background:#fff;border-radius:14px;padding:20px 24px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.features h3{font-size:15px;color:#666;margin-bottom:12px}
+.features li{font-size:14px;color:#888;line-height:2;list-style:none;padding-left:20px;position:relative}
+.features li:before{content:"✓";position:absolute;left:0;color:#52c41a}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>班级广播系统</h1>
+  <p class="sub">手机发通知 · 教室大屏显示 · 语音播报</p>
+  <a href="/teacher.html" class="t">
+    老师端 · 发送通知
+    <div class="desc">在手机或电脑上发通知到教室</div>
+  </a>
+  <a href="/screen.html" class="s">
+    教室端 · 接收通知
+    <div class="desc">在教室电脑上打开，全屏显示通知</div>
+  </a>
+  <a href="/teacher.html" style="border-left:4px solid #52c41a">
+    免费注册体验
+    <div class="desc">新用户免费体验3天，全部功能不限制</div>
+  </a>
+  <div class="features">
+    <h3>功能特点</h3>
+    <ul>
+      <li>手机随时随地发送通知</li>
+      <li>教室大屏醒目滚动显示</li>
+      <li>语音自动播报，下课也能听到</li>
+      <li>教室一键回复「收到」「已完成」</li>
+      <li>新用户免费体验3天</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

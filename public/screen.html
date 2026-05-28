@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班级广播 · 教室屏幕</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:"Microsoft YaHei","SimHei",sans-serif; background:#111822; color:#fff; height:100vh; overflow:hidden; }
+.screen-bg { position:fixed; top:0; left:0; right:0; bottom:0; background:linear-gradient(135deg,#111822 0%,#182734 42%,#24302b 72%,#12161d 100%); z-index:0; }
+.screen-bg::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px); background-size:56px 56px; opacity:.75; }
+.screen-bg::after { content:''; position:absolute; left:0; right:0; bottom:0; height:34%; background:linear-gradient(180deg,transparent,rgba(215,174,91,.12)); }
+@keyframes bgShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+
+/* Bind Page */
+.bind-page { display:flex; align-items:center; justify-content:center; height:100vh; }
+.bind-box { text-align:center; }
+.bind-box h1 { font-size:36px; margin-bottom:12px; font-weight:300; }
+.bind-box p { color:#888; font-size:16px; margin-bottom:40px; }
+.bind-box input { width:300px; padding:18px 24px; font-size:28px; text-align:center; letter-spacing:8px; text-transform:uppercase; background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.15); border-radius:14px; color:#fff; outline:none; transition:border .3s; }
+.bind-box input:focus { border-color:#4f8cff; }
+.bind-box button { display:block; width:300px; margin:20px auto 0; padding:16px; background:#4f8cff; color:#fff; border:none; border-radius:14px; font-size:18px; font-weight:600; cursor:pointer; }
+.bind-box button:hover { background:#3a6fdb; }
+.bind-box .error { color:#ff6b6b; margin-top:16px; font-size:15px; }
+.bind-box .saved-hint { color:#666; font-size:13px; margin-top:20px; }
+
+/* Screen Page */
+.screen-page { display:none; height:100vh; position:relative; }
+.screen-header { position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:18px 34px; z-index:10; }
+.screen-header .class-name { font-size:19px; color:rgba(255,255,255,.72); font-weight:500; letter-spacing:1px; }
+.screen-header .right-btns { display:flex; align-items:center; gap:12px; }
+.screen-header .status { display:flex; align-items:center; gap:6px; font-size:13px; color:rgba(255,255,255,.4); }
+.screen-header .status .dot { width:8px; height:8px; border-radius:50%; background:#52c41a; }
+.screen-header .status .dot.off { background:#ff4d4f; }
+.screen-header .history-btn { padding:4px 12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:8px; color:rgba(255,255,255,.4); font-size:13px; cursor:pointer; }
+.screen-header .history-btn:hover { color:rgba(255,255,255,.7); border-color:rgba(255,255,255,.3); }
+
+/* Idle screen with clock and bulletin board */
+.screen-idle { display:flex; gap:28px; height:100vh; padding:86px 42px 42px; position:relative; z-index:1; }
+.idle-main { width:42%; min-width:360px; min-height:0; display:flex; flex-direction:column; justify-content:center; padding:36px; border:1px solid rgba(255,255,255,.1); border-radius:24px; background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.035)); box-shadow:0 24px 80px rgba(0,0,0,.28); }
+.idle-clock { font-size:108px; font-weight:200; color:rgba(255,255,255,.9); letter-spacing:4px; font-variant-numeric:tabular-nums; }
+.idle-date { font-size:23px; color:rgba(255,255,255,.46); margin-top:8px; font-weight:300; }
+.idle-weekday { font-size:20px; color:rgba(255,255,255,.34); margin-top:4px; }
+.idle-classname { font-size:34px; color:rgba(255,255,255,.74); font-weight:400; margin-bottom:20px; letter-spacing:2px; }
+.idle-quote { margin-top:32px; max-width:100%; }
+.idle-quote .quote-text { font-size:21px; color:rgba(255,255,255,.46); font-weight:300; line-height:1.8; }
+.idle-quote .quote-author { font-size:14px; color:rgba(255,255,255,.24); margin-top:8px; }
+.idle-stats { margin-top:28px; font-size:14px; color:rgba(255,255,255,.28); }
+.idle-status { margin-top:16px; display:flex; align-items:center; gap:10px; color:rgba(255,255,255,.32); font-size:16px; }
+.idle-status .pulse-dot { width:10px; height:10px; border-radius:50%; background:rgba(82,196,26,.6); animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.3)} }
+
+.bulletin-board { flex:1; min-height:0; display:flex; flex-direction:column; border:1px solid rgba(255,255,255,.13); border-radius:24px; background:rgba(248,245,235,.92); color:#1f2a32; box-shadow:0 24px 80px rgba(0,0,0,.32); overflow:hidden; }
+.bulletin-head { display:flex; justify-content:space-between; align-items:flex-end; padding:28px 32px 20px; border-bottom:1px solid rgba(31,42,50,.1); background:linear-gradient(135deg,#fbf7ec,#edf4ef); }
+.bulletin-kicker { font-size:14px; color:#7b6a43; letter-spacing:3px; margin-bottom:8px; }
+.bulletin-head h2 { font-size:34px; color:#1f2a32; font-weight:700; }
+.bulletin-count { font-size:14px; color:#7a868e; }
+.bulletin-list { flex:1; overflow:hidden; padding:22px 26px 26px; }
+.bulletin-item { padding:18px 18px 16px; border:1px solid rgba(31,42,50,.09); border-left:5px solid #d7ae5b; border-radius:16px; background:#fff; box-shadow:0 10px 28px rgba(31,42,50,.08); margin-bottom:16px; }
+.bulletin-item-title { font-size:24px; font-weight:700; color:#17222b; margin-bottom:10px; line-height:1.3; }
+.bulletin-item-content { font-size:20px; line-height:1.65; color:#34434c; white-space:pre-wrap; word-break:break-word; }
+.bulletin-item-meta { margin-top:14px; font-size:14px; color:#7a868e; display:flex; justify-content:space-between; gap:18px; }
+.bulletin-empty { height:100%; display:flex; align-items:center; justify-content:center; text-align:center; color:#9aa1a6; font-size:22px; line-height:1.8; border:1px dashed rgba(31,42,50,.16); border-radius:18px; }
+
+@media(max-width:900px){
+  .screen-idle { flex-direction:column; padding:78px 24px 28px; overflow:hidden; }
+  .idle-main { width:100%; min-width:0; }
+  .idle-main { padding:28px; }
+  .idle-clock { font-size:82px; }
+  .bulletin-board { min-height:300px; }
+}
+
+/* Notification Display - Character Animation */
+.notification-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:#1a1a2e; z-index:100; opacity:0; transition:opacity .5s; pointer-events:none; }
+.notification-overlay.show { opacity:1; pointer-events:auto; }
+
+.notif-stage { position:absolute; top:0; left:0; right:0; bottom:80px; display:flex; align-items:center; justify-content:center; gap:50px; padding:40px; }
+
+/* CSS-based character */
+.notif-character { flex-shrink:0; position:relative; width:250px; height:330px; animation:charWalkIn 1.2s cubic-bezier(.25,.46,.45,.94) forwards; }
+@keyframes charWalkIn { 0%{transform:translateX(-50vw)} 60%{transform:translateX(20px)} 80%{transform:translateX(-5px)} 100%{transform:translateX(0)} }
+@keyframes charBounce { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-8px) rotate(1deg)} }
+.notif-character.arrived { animation:charBounce 1.5s ease-in-out infinite; }
+
+.assistant-figure { position:absolute; left:0; right:0; bottom:0; height:100%; }
+.assistant-img { position:absolute; left:50%; bottom:0; width:250px; height:auto; transform:translateX(-50%); filter:drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+.assistant-wave { position:absolute; right:-18px; top:135px; width:64px; height:64px; border:4px solid rgba(255,255,255,.65); border-left:0; border-bottom:0; border-radius:0 70px 0 0; opacity:0; transform:rotate(28deg) scale(.6); animation:soundPulse 1.2s ease-out infinite; }
+.assistant-wave.w2 { right:-36px; top:117px; width:96px; height:96px; animation-delay:.25s; opacity:0; }
+.assistant-wave.w3 { right:-58px; top:96px; width:132px; height:132px; animation-delay:.5s; opacity:0; }
+
+.speech-bubble { background:#fff; color:#333; border-radius:24px; padding:40px 50px; max-width:55vw; font-size:48px; font-weight:700; line-height:1.6; word-break:break-word; position:relative; opacity:0; transform:scale(.8); transition:opacity .5s ease,transform .5s ease; box-shadow:0 10px 50px rgba(0,0,0,.4); }
+.speech-bubble.show { opacity:1; transform:scale(1); }
+.speech-bubble::before { content:''; position:absolute; left:-22px; top:40px; border:12px solid transparent; border-right-color:#fff; }
+.speech-sig { font-size:18px; color:#999; font-weight:400; margin-top:16px; }
+
+.notification-meta { position:absolute; bottom:20px; left:0; right:0; text-align:center; font-size:16px; color:rgba(255,255,255,.4); transition:all .8s ease; }
+.notification-meta span { margin:0 12px; }
+
+/* Minimized state */
+.notification-overlay.minimized .notif-stage { flex-direction:row; align-items:flex-start; justify-content:flex-start; padding:20px 30px; gap:20px; bottom:auto; top:0; }
+.notification-overlay.minimized .notif-character { width:86px; height:112px; animation:none; }
+.notification-overlay.minimized .assistant-img { width:86px; }
+.notification-overlay.minimized .assistant-wave { display:none; }
+.notification-overlay.minimized .speech-bubble { font-size:22px; padding:16px 24px; max-width:70vw; border-radius:14px; box-shadow:none; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.08); color:#fff; }
+.notification-overlay.minimized .speech-bubble::before { display:none; }
+.notification-overlay.minimized .speech-bubble .speech-sig { font-size:13px; color:rgba(255,255,255,.4); }
+.notification-overlay.minimized .notification-meta { position:static; text-align:left; padding:4px 30px; font-size:13px; }
+
+/* Sound wave animation on megaphone */
+@keyframes soundPulse { 0%{opacity:0;transform:scale(.8)} 50%{opacity:.7} 100%{opacity:0;transform:scale(1.3)} }
+.sound-wave { animation:soundPulse 1s ease-out infinite; }
+.sound-wave.sw2 { animation-delay:.3s; }
+.sound-wave.sw3 { animation-delay:.6s; }
+
+/* Scrolling marquee banner */
+.scroll-banner { position:fixed; bottom:0; left:0; right:0; height:70px; background:linear-gradient(90deg, #ff6b35, #ff3535, #ff6b35); z-index:101; overflow:hidden; display:none; }
+.scroll-banner .scroll-track { display:inline-block; white-space:nowrap; animation:scrollLeft linear infinite; padding-top:10px; }
+.scroll-banner .scroll-text { font-size:40px; font-weight:900; color:#fff; text-shadow:2px 2px 4px rgba(0,0,0,.4); padding:0 100px; }
+@keyframes scrollLeft { 0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)} }
+
+/* Quick reply buttons */
+.quick-reply { position:fixed; bottom:90px; left:0; right:0; display:none; justify-content:center; gap:20px; z-index:102; transition:all .8s ease; }
+.quick-reply.centered { bottom:auto; top:55%; transform:translateY(-50%); }
+.quick-reply button { padding:16px 40px; border:2px solid rgba(255,255,255,.5); border-radius:30px; background:rgba(255,255,255,.1); color:#fff; font-size:20px; font-weight:600; cursor:pointer; transition:all .2s; }
+.quick-reply button:hover { background:rgba(255,255,255,.25); border-color:#fff; transform:scale(1.05); }
+.quick-reply button.sent { background:#52c41a; border-color:#52c41a; pointer-events:none; }
+
+/* Waiting reply hint */
+.reply-hint { display:none; position:fixed; bottom:160px; left:0; right:0; text-align:center; font-size:16px; color:rgba(255,255,255,.3); z-index:102; animation:pulse 2s ease-in-out infinite; }
+.reply-hint.show { display:block; }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(30px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* History panel */
+.history-panel { position:fixed; top:0; right:-400px; width:380px; height:100vh; background:#222244; z-index:200; transition:right .3s; padding:20px; overflow-y:auto; box-shadow:-4px 0 20px rgba(0,0,0,.5); }
+.history-panel.show { right:0; }
+.history-panel h3 { font-size:18px; margin-bottom:16px; font-weight:400; color:rgba(255,255,255,.7); }
+.history-panel .close-btn { position:absolute; top:16px; right:16px; width:32px; height:32px; border:none; background:rgba(255,255,255,.1); color:#fff; border-radius:50%; font-size:18px; cursor:pointer; }
+.history-panel .h-item { padding:14px; margin-bottom:10px; background:rgba(255,255,255,.06); border-radius:10px; }
+.history-panel .h-item .h-content { font-size:15px; line-height:1.5; margin-bottom:6px; }
+.history-panel .h-item .h-meta { font-size:12px; color:rgba(255,255,255,.35); }
+
+.unbind-btn { position:absolute; bottom:16px; left:16px; padding:6px 14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; color:rgba(255,255,255,.3); font-size:12px; cursor:pointer; z-index:10; }
+.unbind-btn:hover { color:rgba(255,255,255,.6); border-color:rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+
+<!-- Bind Page -->
+<div class="bind-page" id="bindPage">
+  <div class="bind-box">
+    <h1>班级通知屏</h1>
+    <p>请输入老师端提供的绑定码</p>
+    <input type="text" id="bindCodeInput" placeholder="绑定码" maxlength="6" autocomplete="off">
+    <button onclick="doBind()">绑定当前教室</button>
+    <div class="error" id="bindError"></div>
+    <div class="saved-hint" id="savedHint" style="display:none">上次绑定的班级将自动连接...</div>
+  </div>
+</div>
+
+<!-- Screen Page -->
+<div class="screen-page" id="screenPage">
+  <div class="screen-bg"></div>
+  <div class="screen-header">
+    <span class="class-name" id="screenClassName"></span>
+    <div class="right-btns">
+      <span class="history-btn" onclick="toggleHistory()">历史记录</span>
+      <span class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">连接中</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="screen-idle" id="screenIdle">
+    <div class="idle-main">
+      <div class="idle-classname" id="idleClassName"></div>
+      <div class="idle-clock" id="idleClock">--:--</div>
+      <div class="idle-date" id="idleDate"></div>
+      <div class="idle-weekday" id="idleWeekday"></div>
+      <div class="idle-quote" id="idleQuote">
+        <div class="quote-text" id="quoteText"></div>
+        <div class="quote-author" id="quoteAuthor"></div>
+      </div>
+      <div class="idle-stats" id="idleStats">今日通知：0 条</div>
+      <div class="idle-status" id="idleStatus">
+        <span class="pulse-dot"></span>
+        <span>已连接 · 等待通知中</span>
+      </div>
+    </div>
+    <div class="bulletin-board">
+      <div class="bulletin-head">
+        <div>
+          <div class="bulletin-kicker">CLASS NOTICE</div>
+          <h2>班级告示栏</h2>
+        </div>
+        <div class="bulletin-count" id="bulletinCount">0 条</div>
+      </div>
+      <div class="bulletin-list" id="bulletinList">
+        <div class="bulletin-empty">暂无告示<br>老师发布后会显示在这里</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notification-overlay" id="notifOverlay">
+    <div class="notif-stage">
+      <div class="notif-character" id="notifCharacter">
+        <div class="assistant-figure">
+          <img class="assistant-img" id="assistantImg" src="" alt="">
+          <div class="assistant-wave w1"></div>
+          <div class="assistant-wave w2"></div>
+          <div class="assistant-wave w3"></div>
+        </div>
+      </div>
+      <div class="speech-bubble" id="speechBubble">
+        <div id="speechText"></div>
+        <div class="speech-sig" id="speechSig"></div>
+      </div>
+    </div>
+    <div class="notification-meta" id="notifMeta"></div>
+  </div>
+
+  <!-- Scrolling banner -->
+  <div class="scroll-banner" id="scrollBanner">
+    <div class="scroll-track" id="scrollTrack">
+      <span class="scroll-text" id="scrollText"></span>
+    </div>
+  </div>
+
+  <!-- Quick reply buttons -->
+  <div class="quick-reply" id="quickReply">
+    <button onclick="sendReply('收到')">收到</button>
+    <button onclick="sendReply('已完成')">已完成</button>
+    <button onclick="sendReply('请再发一次')">请再发一次</button>
+  </div>
+  <div class="reply-hint" id="replyHint">请点击上方按钮回复老师</div>
+
+  <!-- History panel -->
+  <div class="history-panel" id="historyPanel">
+    <button class="close-btn" onclick="toggleHistory()">&times;</button>
+    <h3>通知记录</h3>
+    <div id="historyList"></div>
+  </div>
+
+  <div class="unbind-btn" onclick="unbind()">解除绑定</div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+var socket;
+var currentClass = null;
+var currentGrade = 'junior';
+var notifTimer = null;
+var bubbleTimer = null;
+var speakStartTimer = null;
+var notifQueue = [];
+var notifShowing = false;
+var ttsRunId = 0;
+var activeAudio = null;
+var activeAudioSource = null;
+var activeTtsXhr = null;
+var activeReplayTimer = null;
+var savedBind = localStorage.getItem('screen_bind_code') || '';
+var audioCtx = null;
+var notifHistory = [];
+var activeBulletins = [];
+var todayNotifCount = 0;
+var weekdays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+
+// ========== Avatar ==========
+function getAvatarSrc(id) {
+  return '/avatars/' + (id || 'a1') + '.png';
+}
+
+function getAvatarFallbackSrc(id) {
+  return '/avatars/' + (id || 'a1') + '.svg';
+}
+
+function getAssistantSrc(id) {
+  return '/assistants/' + (id || 'a1') + '.png';
+}
+
+// ========== Quotes ==========
+var quotes = {
+  primary: [
+    {t:'少壮不努力，老大徒伤悲。', a:'《长歌行》'},
+    {t:'书山有路勤为径，学海无涯苦作舟。', a:'韩愈'},
+    {t:'千里之行，始于足下。', a:'老子'},
+    {t:'读书破万卷，下笔如有神。', a:'杜甫'},
+    {t:'欲穷千里目，更上一层楼。', a:'王之涣'},
+    {t:'黑发不知勤学早，白首方悔读书迟。', a:'颜真卿'},
+    {t:'不积跬步，无以至千里。', a:'荀子'},
+    {t:'一寸光阴一寸金，寸金难买寸光阴。', a:'《增广贤文》'},
+    {t:'天行健，君子以自强不息。', a:'《周易》'},
+    {t:'宝剑锋从磨砺出，梅花香自苦寒来。', a:'《警世贤文》'},
+    {t:'世上无难事，只怕有心人。', a:'谚语'},
+    {t:'好学近乎知，力行近乎仁。', a:'《中庸》'},
+    {t:'三人行，必有我师焉。', a:'孔子'},
+    {t:'书犹药也，善读之可以医愚。', a:'刘向'},
+    {t:'学而不思则罔，思而不学则殆。', a:'孔子'},
+    {t:'鸟欲高飞先振翅，人求上进先读书。', a:'李苦禅'},
+    {t:'知之为知之，不知为不知，是知也。', a:'孔子'},
+    {t:'路漫漫其修远兮，吾将上下而求索。', a:'屈原'},
+    {t:'业精于勤荒于嬉，行成于思毁于随。', a:'韩愈'},
+    {t:'勿以恶小而为之，勿以善小而不为。', a:'刘备'},
+    {t:'虚心使人进步，骄傲使人落后。', a:'毛泽东'},
+    {t:'只要功夫深，铁杵磨成针。', a:'谚语'},
+    {t:'绳锯木断，水滴石穿。', a:'《鹤林玉露》'},
+    {t:'吾生也有涯，而知也无涯。', a:'庄子'},
+    {t:'读万卷书，行万里路。', a:'刘彝'},
+    {t:'己所不欲，勿施于人。', a:'孔子'},
+    {t:'有志者事竟成。', a:'《后汉书》'},
+    {t:'敏而好学，不耻下问。', a:'孔子'},
+    {t:'温故而知新，可以为师矣。', a:'孔子'},
+    {t:'合抱之木，生于毫末。', a:'老子'}
+  ],
+  junior: [
+    {t:'先天下之忧而忧，后天下之乐而乐。', a:'范仲淹'},
+    {t:'出淤泥而不染，濯清涟而不妖。', a:'周敦颐'},
+    {t:'长风破浪会有时，直挂云帆济沧海。', a:'李白'},
+    {t:'会当凌绝顶，一览众山小。', a:'杜甫'},
+    {t:'落红不是无情物，化作春泥更护花。', a:'龚自珍'},
+    {t:'人生自古谁无死，留取丹心照汗青。', a:'文天祥'},
+    {t:'沉舟侧畔千帆过，病树前头万木春。', a:'刘禹锡'},
+    {t:'山重水复疑无路，柳暗花明又一村。', a:'陆游'},
+    {t:'不畏浮云遮望眼，自缘身在最高层。', a:'王安石'},
+    {t:'海内存知己，天涯若比邻。', a:'王勃'},
+    {t:'苟利国家生死以，岂因祸福避趋之。', a:'林则徐'},
+    {t:'安得广厦千万间，大庇天下寒士俱欢颜。', a:'杜甫'},
+    {t:'天生我材必有用，千金散尽还复来。', a:'李白'},
+    {t:'老骥伏枥，志在千里。', a:'曹操'},
+    {t:'千磨万击还坚劲，任尔东西南北风。', a:'郑燮'},
+    {t:'纸上得来终觉浅，绝知此事要躬行。', a:'陆游'},
+    {t:'知人者智，自知者明。', a:'老子'},
+    {t:'富贵不能淫，贫贱不能移，威武不能屈。', a:'孟子'},
+    {t:'穷则独善其身，达则兼济天下。', a:'孟子'},
+    {t:'博学之，审问之，慎思之，明辨之，笃行之。', a:'《中庸》'},
+    {t:'生于忧患，死于安乐。', a:'孟子'},
+    {t:'大道之行也，天下为公。', a:'《礼记》'},
+    {t:'其身正，不令而行；其身不正，虽令不从。', a:'孔子'},
+    {t:'岁寒，然后知松柏之后凋也。', a:'孔子'},
+    {t:'吾日三省吾身。', a:'曾子'},
+    {t:'见贤思齐焉，见不贤而内自省也。', a:'孔子'},
+    {t:'士不可以不弘毅，任重而道远。', a:'曾子'},
+    {t:'知之者不如好之者，好之者不如乐之者。', a:'孔子'},
+    {t:'锲而不舍，金石可镂。', a:'荀子'},
+    {t:'青，取之于蓝，而青于蓝。', a:'荀子'}
+  ],
+  senior: [
+    {t:'大学之道，在明明德，在亲民，在止于至善。', a:'《大学》'},
+    {t:'虽千万人，吾往矣。', a:'孟子'},
+    {t:'知我者谓我心忧，不知我者谓我何求。', a:'《诗经》'},
+    {t:'世界上只有一种英雄主义，就是认清了生活的真相后依然热爱生活。', a:'罗曼·罗兰'},
+    {t:'我思故我在。', a:'笛卡尔'},
+    {t:'未经审视的人生不值得过。', a:'苏格拉底'},
+    {t:'人是生而自由的，却无往不在枷锁之中。', a:'卢梭'},
+    {t:'真正的勇气不是没有恐惧，而是心怀恐惧仍然前行。', a:'曼德拉'},
+    {t:'博学而笃志，切问而近思，仁在其中矣。', a:'孔子'},
+    {t:'寄蜉蝣于天地，渺沧海之一粟。', a:'苏轼'},
+    {t:'大鹏一日同风起，扶摇直上九万里。', a:'李白'},
+    {t:'亦余心之所善兮，虽九死其犹未悔。', a:'屈原'},
+    {t:'横眉冷对千夫指，俯首甘为孺子牛。', a:'鲁迅'},
+    {t:'每个人都是自己命运的建筑师。', a:'萨卢斯特'},
+    {t:'自由不是想做什么就做什么，而是不想做什么就可以不做什么。', a:'康德'},
+    {t:'吾心信其可行，则移山填海之难，终有成功之日。', a:'孙中山'},
+    {t:'真理只有一个，它不在宗教中，而在科学中。', a:'达·芬奇'},
+    {t:'人不是因为没有信念而失败，而是因为不能把信念化成行动。', a:'巴斯德'},
+    {t:'教育的本质是一棵树摇动另一棵树，一朵云推动另一朵云。', a:'雅斯贝尔斯'},
+    {t:'我们终此一生，就是要摆脱他人的期待，找到真正的自己。', a:'伍尔夫'},
+    {t:'当你凝视深渊时，深渊也在凝视你。', a:'尼采'},
+    {t:'万物皆有裂痕，那是光照进来的地方。', a:'莱昂纳德·科恩'},
+    {t:'不要温和地走进那个良夜。', a:'狄兰·托马斯'},
+    {t:'人的一切痛苦，本质上都是对自己无能的愤怒。', a:'王小波'},
+    {t:'我来不及认真地年轻，待明白过来时，只能选择认真地老去。', a:'三毛'},
+    {t:'凡是过往，皆为序章。', a:'莎士比亚'},
+    {t:'所有伟大的事都是由不起眼的小事积累而来。', a:'《道德经》意译'},
+    {t:'人最宝贵的东西是生命，生命属于人只有一次。', a:'奥斯特洛夫斯基'},
+    {t:'道阻且长，行则将至。', a:'《荀子》'},
+    {t:'如果你能够梦想到，你就能做到。', a:'华特·迪士尼'}
+  ]
+};
+
+function getDailyQuote() {
+  var list = quotes[currentGrade] || quotes.junior;
+  var today = new Date();
+  var dayIndex = (today.getFullYear() * 1000 + today.getMonth() * 31 + today.getDate()) % list.length;
+  return list[dayIndex];
+}
+
+function updateQuote() {
+  var q = getDailyQuote();
+  var textEl = document.getElementById('quoteText');
+  var authorEl = document.getElementById('quoteAuthor');
+  if (textEl) {
+    textEl.textContent = q.t;
+    authorEl.textContent = '—— ' + q.a;
+  }
+}
+
+function updateStats() {
+  var el = document.getElementById('idleStats');
+  if (el) el.textContent = '今日通知：' + todayNotifCount + ' 条';
+}
+
+function renderBulletins() {
+  var listEl = document.getElementById('bulletinList');
+  var countEl = document.getElementById('bulletinCount');
+  if (!listEl || !countEl) return;
+  var now = Date.now();
+  var list = [];
+  for (var i = 0; i < activeBulletins.length; i++) {
+    if (new Date(activeBulletins[i].expires_at).getTime() > now) list.push(activeBulletins[i]);
+  }
+  countEl.textContent = list.length + ' 条';
+  if (!list.length) {
+    listEl.innerHTML = '<div class="bulletin-empty">暂无告示<br>老师发布后会显示在这里</div>';
+    return;
+  }
+  var html = '';
+  for (var j = 0; j < list.length; j++) {
+    var b = list[j];
+    var exp = new Date(b.expires_at).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    html += '<div class="bulletin-item">';
+    html += '<div class="bulletin-item-title">' + esc(b.title || '班级告示') + '</div>';
+    html += '<div class="bulletin-item-content">' + esc(b.content || '') + '</div>';
+    html += '<div class="bulletin-item-meta"><span>' + esc(b.sender_name || '老师') + '</span><span>展示到 ' + exp + '</span></div>';
+    html += '</div>';
+  }
+  listEl.innerHTML = html;
+}
+setInterval(renderBulletins, 60000);
+
+// ========== Clock ==========
+function updateClock() {
+  var now = new Date();
+  var h = now.getHours();
+  var m = now.getMinutes();
+  var clockEl = document.getElementById('idleClock');
+  var dateEl = document.getElementById('idleDate');
+  var wdEl = document.getElementById('idleWeekday');
+  if (clockEl) {
+    clockEl.textContent = (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+    dateEl.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日';
+    wdEl.textContent = weekdays[now.getDay()];
+  }
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ========== Alert Sound ==========
+function playAlertSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    var pattern = [
+      {freq:523, time:0}, {freq:659, time:0.2}, {freq:784, time:0.4}
+    ];
+    for (var i = 0; i < pattern.length; i++) {
+      (function(p) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = p.freq;
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime + p.time);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + p.time + 0.4);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + p.time);
+        osc.stop(audioCtx.currentTime + p.time + 0.4);
+      })(pattern[i]);
+    }
+  } catch(e) {}
+}
+
+// ========== System Notification ==========
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function showSystemNotification(title, body) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  try {
+    var n = new Notification(title, {
+      body: body,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">📢</text></svg>',
+      requireInteraction: true,
+      tag: 'classroom-broadcast'
+    });
+    setTimeout(function() { n.close(); }, 15000);
+  } catch(e) {}
+}
+
+// ========== Socket ==========
+function initSocket() {
+  socket = io({ reconnection: true, reconnectionDelay: 2000 });
+
+  socket.on('connect', function() {
+    updateStatus(true);
+    if (currentClass) {
+      socket.emit('bind-screen', savedBind);
+    }
+  });
+
+  socket.on('disconnect', function() { updateStatus(false); });
+
+  socket.on('bind-success', function(cls) {
+    currentClass = cls;
+    localStorage.setItem('screen_bind_code', savedBind);
+    document.getElementById('bindPage').style.display = 'none';
+    document.getElementById('screenPage').style.display = 'block';
+    document.getElementById('screenClassName').textContent = cls.name;
+    document.getElementById('idleClassName').textContent = cls.name;
+    currentGrade = cls.grade || 'junior';
+    updateQuote();
+    updateStats();
+    updateStatus(true);
+    requestNotifPermission();
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+  });
+
+  socket.on('bind-error', function(msg) {
+    document.getElementById('bindError').textContent = msg;
+    localStorage.removeItem('screen_bind_code');
+    savedBind = '';
+  });
+
+  socket.on('notification', function(data) {
+    showNotification(data);
+  });
+
+  socket.on('bulletins-update', function(list) {
+    activeBulletins = list || [];
+    renderBulletins();
+  });
+}
+
+function updateStatus(online) {
+  document.getElementById('statusDot').className = 'dot' + (online ? '' : ' off');
+  document.getElementById('statusText').textContent = online ? '已连接' : '连接断开，重连中...';
+}
+
+function doBind() {
+  var code = document.getElementById('bindCodeInput').value.trim().toUpperCase();
+  if (!code) return;
+  savedBind = code;
+  document.getElementById('bindError').textContent = '';
+  socket.emit('bind-screen', code);
+}
+
+function unbind() {
+  if (!confirm('确定解除绑定？')) return;
+  localStorage.removeItem('screen_bind_code');
+  location.reload();
+}
+
+// ========== Notification Display ==========
+function showNotification(data) {
+  notifQueue.push(data);
+  showNextNotification();
+}
+
+function showNextNotification() {
+  if (notifShowing || !notifQueue.length) return;
+  notifShowing = true;
+  displayNotification(notifQueue.shift());
+}
+
+function displayNotification(data) {
+  var overlay = document.getElementById('notifOverlay');
+  var charEl = document.getElementById('notifCharacter');
+  var bubbleEl = document.getElementById('speechBubble');
+  var speechText = document.getElementById('speechText');
+  var speechSig = document.getElementById('speechSig');
+  var metaEl = document.getElementById('notifMeta');
+  var idle = document.getElementById('screenIdle');
+  var banner = document.getElementById('scrollBanner');
+  var scrollText = document.getElementById('scrollText');
+  var scrollTrack = document.getElementById('scrollTrack');
+  var quickReply = document.getElementById('quickReply');
+
+  playAlertSound();
+  todayNotifCount++;
+  updateStats();
+
+  var senderName = data.sender_name || data.signature || '';
+  var sender = senderName ? '（' + senderName + '）' : '';
+  showSystemNotification('班级通知' + sender, data.content);
+
+  var now = new Date();
+  var timeStr = now.toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  notifHistory.unshift({
+    content: data.content,
+    signature: senderName,
+    time: timeStr,
+    date: now.toLocaleDateString('zh-CN')
+  });
+  if (notifHistory.length > 50) notifHistory = notifHistory.slice(0, 50);
+  renderHistory();
+
+  // Set matching assistant figure
+  var avatarId = data.avatar || 'a1';
+  var assistantImg = document.getElementById('assistantImg');
+  assistantImg.onerror = function() {
+    this.onerror = null;
+    this.src = getAvatarSrc(avatarId);
+  };
+  assistantImg.src = getAssistantSrc(avatarId);
+  charEl.classList.remove('arrived');
+  // Force reflow to restart walk-in animation
+  charEl.style.animation = 'none';
+  charEl.offsetHeight;
+  charEl.style.animation = '';
+
+  // Set speech bubble content
+  speechText.textContent = data.content;
+  adjustBubbleFont(speechText, data.content);
+  speechSig.textContent = senderName ? '—— ' + senderName : '';
+  bubbleEl.classList.remove('show');
+
+  var meta = '';
+  if (senderName) meta += '<span>发送人：' + esc(senderName) + '</span>';
+  meta += '<span>时间：' + timeStr + '</span>';
+  meta += '<span>播报：' + data.repeat_count + ' 次</span>';
+  metaEl.innerHTML = meta;
+
+  idle.style.display = 'none';
+  overlay.classList.remove('minimized');
+  quickReply.classList.remove('centered');
+  document.getElementById('replyHint').classList.remove('show');
+  overlay.classList.add('show');
+
+  // Character walks in, then speech bubble appears after 1.2s
+  if (bubbleTimer) clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(function() {
+    charEl.classList.add('arrived');
+    bubbleEl.classList.add('show');
+  }, 1200);
+
+  var marqueeText = '【通知】' + data.content;
+  if (senderName) marqueeText += ' —— ' + senderName;
+  scrollText.textContent = marqueeText + '　　　　　' + marqueeText + '　　　　　';
+  var duration = Math.max(marqueeText.length * 0.4, 8);
+  scrollTrack.style.animationDuration = duration + 's';
+  banner.style.display = 'block';
+
+  quickReply.style.display = 'flex';
+  var btns = quickReply.querySelectorAll('button');
+  var replyTexts = ['收到', '已完成', '请再发一次'];
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].className = '';
+    btns[i].textContent = replyTexts[i] || btns[i].textContent;
+    btns[i].disabled = false;
+  }
+
+  // TTS after character arrives, then minimize when done
+  if (notifTimer) clearTimeout(notifTimer);
+  notifTimer = null;
+  if (speakStartTimer) clearTimeout(speakStartTimer);
+  speakStartTimer = setTimeout(function() {
+    var voiceText = senderName ? senderName + '通知，' + data.content : data.content;
+    speakText(voiceText, data.repeat_count, function() {
+      minimizeNotification();
+    });
+  }, 1800);
+}
+
+function adjustBubbleFont(el, text) {
+  if (text.length <= 8) el.style.fontSize = '56px';
+  else if (text.length <= 15) el.style.fontSize = '48px';
+  else if (text.length <= 30) el.style.fontSize = '38px';
+  else if (text.length <= 60) el.style.fontSize = '28px';
+  else el.style.fontSize = '22px';
+}
+
+function minimizeNotification() {
+  if (notifTimer) { clearTimeout(notifTimer); notifTimer = null; }
+  var overlay = document.getElementById('notifOverlay');
+  var quickReply = document.getElementById('quickReply');
+  var replyHint = document.getElementById('replyHint');
+  var banner = document.getElementById('scrollBanner');
+
+  if (!overlay.classList.contains('show')) return;
+  if (overlay.classList.contains('minimized')) return;
+
+  overlay.classList.add('minimized');
+  banner.style.display = 'none';
+  quickReply.classList.add('centered');
+  replyHint.classList.add('show');
+  if (notifTimer) clearTimeout(notifTimer);
+  notifTimer = setTimeout(function() {
+    dismissNotification();
+  }, notifQueue.length ? 5000 : 15000);
+}
+
+function dismissNotification() {
+  var hadActiveNotification = notifShowing;
+  var overlay = document.getElementById('notifOverlay');
+  var quickReply = document.getElementById('quickReply');
+  var replyHint = document.getElementById('replyHint');
+  var banner = document.getElementById('scrollBanner');
+  var idle = document.getElementById('screenIdle');
+  var charEl = document.getElementById('notifCharacter');
+  var bubbleEl = document.getElementById('speechBubble');
+
+  bubbleEl.classList.remove('show');
+  charEl.classList.remove('arrived');
+  overlay.classList.remove('show');
+  overlay.classList.remove('minimized');
+  banner.style.display = 'none';
+  quickReply.style.display = 'none';
+  quickReply.classList.remove('centered');
+  replyHint.classList.remove('show');
+  idle.style.display = 'flex';
+  if (notifTimer) { clearTimeout(notifTimer); notifTimer = null; }
+  if (bubbleTimer) { clearTimeout(bubbleTimer); bubbleTimer = null; }
+  if (speakStartTimer) { clearTimeout(speakStartTimer); speakStartTimer = null; }
+  stopCurrentTTS();
+  notifShowing = false;
+  if (hadActiveNotification && notifQueue.length) {
+    setTimeout(function() { showNextNotification(); }, 300);
+  }
+}
+
+// adjustFontSize replaced by adjustBubbleFont in showNotification
+
+// ========== Quick Reply ==========
+function sendReply(text) {
+  if (!socket || !currentClass) return;
+  socket.emit('screen-reply', { reply_text: text });
+  var btns = document.getElementById('quickReply').querySelectorAll('button');
+  for (var i = 0; i < btns.length; i++) {
+    if (btns[i].textContent === text) {
+      btns[i].className = 'sent';
+      btns[i].textContent = '已发送';
+      btns[i].disabled = true;
+    }
+  }
+  setTimeout(function() { dismissNotification(); }, 1500);
+}
+
+// ========== History ==========
+function toggleHistory() {
+  var panel = document.getElementById('historyPanel');
+  panel.classList.toggle('show');
+}
+
+function renderHistory() {
+  var el = document.getElementById('historyList');
+  if (!notifHistory.length) {
+    el.innerHTML = '<p style="color:rgba(255,255,255,.3);font-size:14px;">暂无记录</p>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < notifHistory.length; i++) {
+    var item = notifHistory[i];
+    html += '<div class="h-item">';
+    html += '<div class="h-content">' + esc(item.content) + '</div>';
+    html += '<div class="h-meta">';
+    if (item.signature) html += esc(item.signature) + '　';
+    html += item.date + ' ' + item.time;
+    html += '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+// ========== TTS via Web Audio API ==========
+// TTS: 浏览器直接请求百度TTS（绕过服务器IP限流）
+function finishTTS(runId, onDone) {
+  if (runId !== ttsRunId) return;
+  activeAudio = null;
+  activeAudioSource = null;
+  activeTtsXhr = null;
+  if (activeReplayTimer) { clearTimeout(activeReplayTimer); activeReplayTimer = null; }
+  if (onDone) onDone();
+}
+
+function stopCurrentTTS() {
+  ttsRunId++;
+  if (activeReplayTimer) { clearTimeout(activeReplayTimer); activeReplayTimer = null; }
+  if (activeTtsXhr) {
+    try { activeTtsXhr.abort(); } catch(e) {}
+    activeTtsXhr = null;
+  }
+  if (activeAudio) {
+    try {
+      activeAudio.onended = null;
+      activeAudio.onerror = null;
+      activeAudio.pause();
+      activeAudio.removeAttribute('src');
+      activeAudio.load();
+    } catch(e) {}
+    activeAudio = null;
+  }
+  if (activeAudioSource) {
+    try {
+      activeAudioSource.onended = null;
+      activeAudioSource.stop(0);
+    } catch(e) {}
+    activeAudioSource = null;
+  }
+}
+
+function playAudioElement(audio, runId, onPlayError) {
+  try {
+    var result = audio.play();
+    if (result && result.catch) {
+      result.catch(function() {
+        if (runId === ttsRunId && onPlayError) onPlayError();
+      });
+    }
+  } catch(e) {
+    if (onPlayError) onPlayError();
+  }
+}
+
+function speakText(text, repeatCount, onDone) {
+  stopCurrentTTS();
+  var runId = ++ttsRunId;
+  var url = 'https://tts.baidu.com/text2audio?tex=' + encodeURIComponent(text) +
+    '&cuid=baidu_speech_demo&lan=zh&ctp=1&pdt=301&vol=15&rate=32&per=0&spd=4';
+  var audio = document.createElement('audio');
+  audio.src = url;
+  // 不设crossOrigin，避免百度不返回CORS头导致音频被拦截
+  audio.volume = 1.0;
+  activeAudio = audio;
+  var count = 0;
+
+  audio.onended = function() {
+    if (runId !== ttsRunId) return;
+    count++;
+    if (count < repeatCount) {
+      activeReplayTimer = setTimeout(function() {
+        if (runId !== ttsRunId) return;
+        audio.currentTime = 0;
+        playAudioElement(audio, runId, function() {
+          audio.onended = null;
+          audio.onerror = null;
+          activeAudio = null;
+          speakTextFallback(text, repeatCount - count, onDone, runId);
+        });
+      }, 800);
+    } else {
+      finishTTS(runId, onDone);
+    }
+  };
+  audio.onerror = function() {
+    // 直连失败，回退到服务器代理
+    if (runId !== ttsRunId) return;
+    audio.onended = null;
+    audio.onerror = null;
+    activeAudio = null;
+    speakTextFallback(text, repeatCount, onDone, runId);
+  };
+
+  playAudioElement(audio, runId, function() {
+    audio.onended = null;
+    audio.onerror = null;
+    activeAudio = null;
+    speakTextFallback(text, repeatCount, onDone, runId);
+  });
+}
+
+// 服务器代理回退方案
+function speakTextFallback(text, repeatCount, onDone, runId) {
+  if (runId !== ttsRunId) return;
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { finishTTS(runId, onDone); return; }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  var xhr = new XMLHttpRequest();
+  activeTtsXhr = xhr;
+  xhr.open('POST', '/api/tts', true);
+  xhr.responseType = 'arraybuffer';
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function() {
+    if (runId !== ttsRunId) return;
+    activeTtsXhr = null;
+    if (xhr.status !== 200) { finishTTS(runId, onDone); return; }
+    audioCtx.decodeAudioData(xhr.response, function(buffer) {
+      if (runId !== ttsRunId) return;
+      playTTSBuffer(buffer, repeatCount, 0, onDone, runId);
+    }, function() { finishTTS(runId, onDone); });
+  };
+  xhr.onerror = function() {
+    if (runId !== ttsRunId) return;
+    activeTtsXhr = null;
+    finishTTS(runId, onDone);
+  };
+  xhr.send(JSON.stringify({ text: text }));
+}
+
+function playTTSBuffer(buffer, repeatCount, count, onDone, runId) {
+  if (runId !== ttsRunId) return;
+  if (count >= repeatCount) { finishTTS(runId, onDone); return; }
+  var source = audioCtx.createBufferSource();
+  var gainNode = audioCtx.createGain();
+  activeAudioSource = source;
+  source.buffer = buffer;
+  gainNode.gain.value = 3.0;
+  source.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  source.onended = function() {
+    if (runId !== ttsRunId) return;
+    activeAudioSource = null;
+    if (count + 1 < repeatCount) {
+      activeReplayTimer = setTimeout(function() { playTTSBuffer(buffer, repeatCount, count + 1, onDone, runId); }, 800);
+    } else {
+      finishTTS(runId, onDone);
+    }
+  };
+  source.start();
+}
+
+function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+document.getElementById('bindCodeInput').addEventListener('keydown', function(e) { if(e.key==='Enter') doBind(); });
+
+if (savedBind) {
+  document.getElementById('savedHint').style.display = 'block';
+}
+
+function keepAwake() {
+  try {
+    if ('wakeLock' in navigator) navigator.wakeLock.request('screen');
+  } catch(e) {}
+}
+
+document.addEventListener('click', function() {
+  requestNotifPermission();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+});
+
+initSocket();
+keepAwake();
+
+document.addEventListener('click', function goFS() {
+  if (currentClass && document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(function(){});
+  }
+}, { once: true });
+</script>
+</body>
+</html>
