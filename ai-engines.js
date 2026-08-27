@@ -158,7 +158,8 @@ function deepseekChatStream(messages, opts, res) {
       messages,
       stream: true,
       temperature: opts && opts.temperature != null ? opts.temperature : 0.85,
-      max_tokens: (opts && opts.max_tokens) || 800
+      max_tokens: (opts && opts.max_tokens) || 800,
+      reasoning_effort: 'none'
     });
     const upstream = https.request({
       hostname: 'api.deepseek.com',
