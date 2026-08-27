@@ -5,6 +5,13 @@ const dbStore = require('./db');
 const state = require('./state');
 const { PAID_PLAN_DAYS, FREE_TRIAL_DAYS, AUTH_TOKEN_TTL_MS } = require('./platform-config');
 
+// 时间安全的字符串比较（邀请Cookie校验 / 支付回调验签共用）
+function safeEqual(a, b) {
+  const aa = Buffer.from(String(a || ''), 'utf8');
+  const bb = Buffer.from(String(b || ''), 'utf8');
+  return aa.length === bb.length && crypto.timingSafeEqual(aa, bb);
+}
+
 function paidPlanExpiresFromNow() {
   return new Date(Date.now() + PAID_PLAN_DAYS * 24 * 60 * 60 * 1000).toISOString();
 }
@@ -118,6 +125,7 @@ function getUserPlanStatus(user) {
 }
 
 module.exports = {
+  safeEqual,
   paidPlanExpiresFromNow,
   paidPlanExpiresForUser,
   activateYearlyPlan,
