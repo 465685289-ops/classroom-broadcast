@@ -2,6 +2,7 @@
 // HTTP 工具层：子域识别 / Cookie 签名与解析 / 访客分析埋点 / 邀请归因。
 const crypto = require('crypto');
 const dbStore = require('./db');
+const { isLearningHost } = require('./learning-membership');
 const { safeEqual } = require('./auth-core');
 const {
   AUTH_COOKIE_NAME, ANALYTICS_COOKIE_NAME, INVITE_COOKIE_NAME, DEVICE_COOKIE_NAME, INVITE_COOKIE_MAX_AGE_MS, INVITE_COOKIE_SECRET, ANALYTICS_HASH_SALT
