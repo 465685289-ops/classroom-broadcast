@@ -21,9 +21,16 @@ const {
   polishNeedsRetry
 } = require('./learning-tools');
 
+const state = require('./state');
+
 // 可选：从本机私有密钥文件加载环境变量（优先级低于真实环境变量，不覆盖已有值）。
 // 格式：每行 KEY=VALUE，# 开头为注释；路径可用 SECRETS_FILE 环境变量覆盖。
 // 文件不存在是常态（服务器上用 systemd/nginx 注入环境变量），静默跳过。
+// ---- 认证核心（自 auth-core.js 引入）----
+const {
+  paidPlanExpiresFromNow, paidPlanExpiresForUser, activateYearlyPlan, genCode, genUniqueBindCode, genUniqueTeacherCode, hashPassword, verifyPassword, setUserPassword, genToken, issueUserToken, revokeUserToken, findUserByToken, refreshUserTokenExpiry, getUserPlanStatus
+} = require('./auth-core');
+
 (function loadSecretsFile() {
   const secretsPath = process.env.SECRETS_FILE
     || path.join(require('os').homedir(), '.config', 'classroom-broadcast', 'secrets.env');
@@ -52,6 +59,7 @@ const {
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+state.io = io;
 
 // ---- 平台配置层（自 platform-config.js 引入）----
 const {
@@ -69,23 +77,8 @@ function saveDB(data) {
 }
 
 let store = loadDB();
+state.store = store;
 if (normalizeStore(store)) saveDB(store);
-
-function paidPlanExpiresFromNow() {
-  return new Date(Date.now() + PAID_PLAN_DAYS * 24 * 60 * 60 * 1000).toISOString();
-}
-
-function paidPlanExpiresForUser(user) {
-  const current = user && user.plan === 'yearly' && user.plan_expires ? Date.parse(user.plan_expires) : 0;
-  const base = current && current > Date.now() ? current : Date.now();
-  return new Date(base + PAID_PLAN_DAYS * 24 * 60 * 60 * 1000).toISOString();
-}
-
-function activateYearlyPlan(user) {
-  user.plan = 'yearly';
-  user.plan_expires = paidPlanExpiresForUser(user);
-  return getUserPlanStatus(user);
-}
 
 function normalizeStore(data) {
   let changed = false;
@@ -147,25 +140,6 @@ function normalizeStore(data) {
   return changed;
 }
 
-function genCode(length = 6) {
-  let code = '';
-  while (code.length < length) {
-    code += crypto.randomBytes(6).toString('base64').replace(/[^A-Z0-9]/gi, '').toUpperCase();
-  }
-  return code.slice(0, length);
-}
-
-function genUniqueBindCode() {
-  let code = genCode();
-  while (store.classes.find(c => c.bind_code === code)) code = genCode();
-  return code;
-}
-
-function genUniqueTeacherCode() {
-  let code = genCode();
-  while (store.users.find(u => u.teacher_code === code)) code = genCode();
-  return code;
-}
 
 function isClassMember(cls, userId) {
   return cls && (cls.user_id === userId || (cls.member_ids || []).includes(userId));
@@ -400,24 +374,6 @@ function emitBulletins(classId) {
   io.to(`class:${classId}`).emit('bulletins-update', getActiveBulletins(classId));
 }
 
-function hashPassword(password, salt) {
-  if (!salt) salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
-  return { hash, salt };
-}
-
-function verifyPassword(password, hash, salt) {
-  const result = crypto.scryptSync(password, salt, 64).toString('hex');
-  return result === hash;
-}
-
-function setUserPassword(user, password) {
-  const { hash, salt } = hashPassword(password);
-  user.password_hash = hash;
-  user.password_salt = salt;
-  issueUserToken(user); // 改密码即吊销旧登录
-  dbStore.upsertUser(user);
-}
 
 function mailConfigured() {
   return !!(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && MAIL_FROM);
@@ -982,62 +938,6 @@ function markPaymentPaid(payment, normalized, raw) {
   return payment;
 }
 
-function genToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
-
-function issueUserToken(user) {
-  user.token = genToken();
-  user.token_expires = new Date(Date.now() + AUTH_TOKEN_TTL_MS).toISOString();
-  return user.token;
-}
-
-function revokeUserToken(user) {
-  user.token = null;
-  user.token_expires = null;
-  dbStore.upsertUser(user);
-}
-
-// 按 token 查找用户并校验有效期。老数据没有 token_expires 的，首次访问时补发有效期。
-function findUserByToken(token) {
-  if (!token) return null;
-  const user = store.users.find(u => u.token === token);
-  if (!user) return null;
-  if (!user.token_expires) {
-    user.token_expires = new Date(Date.now() + AUTH_TOKEN_TTL_MS).toISOString();
-    dbStore.upsertUser(user);
-    return user;
-  }
-  if (Date.parse(user.token_expires) <= Date.now()) return null;
-  return user;
-}
-
-// 滑动续期：剩余有效期不足一半时才写库，避免每个请求都写
-function refreshUserTokenExpiry(user) {
-  const expires = user.token_expires ? Date.parse(user.token_expires) : 0;
-  if (expires - Date.now() < AUTH_TOKEN_TTL_MS / 2) {
-    user.token_expires = new Date(Date.now() + AUTH_TOKEN_TTL_MS).toISOString();
-    dbStore.upsertUser(user);
-  }
-}
-
-function getUserPlanStatus(user) {
-  if (!user) return { active: false, reason: 'not_found' };
-  if (user.plan === 'yearly') {
-    const label = '会员';
-    if (user.plan_expires && new Date(user.plan_expires) > new Date()) {
-      return { active: true, plan: user.plan, label, expires: user.plan_expires };
-    }
-    return { active: false, reason: 'expired', label: label + '已过期' };
-  }
-  // trial
-  const created = new Date(user.created_at);
-  const trialEnd = new Date(created.getTime() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000);
-  if (new Date() < trialEnd) {
-    return { active: true, plan: 'trial', label: '免费试用', expires: trialEnd.toISOString() };
-  }
-  return { active: false, reason: 'trial_expired', label: '试用已结束' };
-}
 
 function commentHost(req) {
   const host = String(req.get('host') || '').split(':')[0].toLowerCase();
