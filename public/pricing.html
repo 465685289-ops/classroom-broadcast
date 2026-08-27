@@ -6,68 +6,95 @@
 <title>班级广播系统 · 价格方案</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",sans-serif;background:#f5f7fa;color:#333;min-height:100vh}
-.header{text-align:center;padding:60px 20px 40px}
-.header h1{font-size:32px;font-weight:700;margin-bottom:8px}
-.header p{font-size:16px;color:#888;line-height:1.6}
-.plans{display:flex;justify-content:center;gap:20px;padding:0 20px 40px;flex-wrap:wrap;max-width:900px;margin:0 auto}
-.plan{background:#fff;border-radius:16px;padding:36px 30px;width:260px;box-shadow:0 4px 20px rgba(0,0,0,.06);text-align:center;position:relative}
-.plan.hot{border:2px solid #ff6b35;transform:scale(1.05)}
-.plan.hot .tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;padding:4px 16px;border-radius:20px;font-size:12px;font-weight:600}
-.plan h3{font-size:18px;margin-bottom:8px;color:#333}
-.plan .price{font-size:48px;font-weight:800;color:#333;margin:16px 0 4px}
-.plan .price span{font-size:18px;font-weight:500}
-.plan .unit{font-size:14px;color:#999;margin-bottom:20px}
-.plan .features{text-align:left;margin-bottom:24px}
-.plan .features li{list-style:none;font-size:14px;color:#666;line-height:2.2;padding-left:22px;position:relative}
-.plan .features li:before{content:"✓";position:absolute;left:0;color:#52c41a;font-weight:700}
-.plan .btn{display:block;width:100%;padding:14px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center}
-.plan .btn.primary{background:#ff6b35;color:#fff}
-.plan .btn.secondary{background:#f0f0f0;color:#666}
-.plan .btn:hover{opacity:.9}
+body{
+  font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;color:#3a3026;min-height:100vh;
+  background:
+    radial-gradient(1100px 520px at 85% -6%, #f8f1e4 0%, transparent 55%),
+    #f4ece0;
+  -webkit-font-smoothing:antialiased;
+}
+.header{text-align:center;padding:56px 20px 30px}
+.brand-kicker{font-size:12px;color:#7c5722;letter-spacing:3px;margin-bottom:12px}
+.header h1{font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;font-size:34px;font-weight:600;margin-bottom:10px;letter-spacing:.5px}
+.header p{font-size:15px;color:#9a8a72;line-height:1.7}
+.plans{display:flex;justify-content:center;gap:22px;padding:0 20px 36px;flex-wrap:wrap;max-width:900px;margin:0 auto}
+.plan{
+  background:#fbf6ec;border:1px solid #e0d4bd;border-radius:14px;
+  padding:36px 30px;width:266px;text-align:center;position:relative;
+  box-shadow:0 1px 0 #fffaf2 inset, 0 16px 34px -24px rgba(58,48,38,.5);
+}
+.plan.hot{border:1.5px solid #9a6f2e;box-shadow:0 1px 0 #fffaf2 inset, 0 18px 40px -22px rgba(124,87,34,.6)}
+.plan.hot .tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#a9793a,#8a6228);color:#fdf6e7;padding:4px 18px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:1px}
+.plan h3{font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;font-size:20px;margin-bottom:8px;color:#7c5722;font-weight:600}
+.plan .price{font-family:Georgia,"Times New Roman","Songti SC","STSong","SimSun",serif;font-size:52px;font-weight:700;color:#3a3026;margin:14px 0 4px}
+.plan .price span{font-size:20px;font-weight:500;color:#9a6f2e}
+.plan .unit{font-size:14px;color:#9a8a72;margin-bottom:22px}
+.plan .features{text-align:left;margin-bottom:26px}
+.plan .features li{list-style:none;font-size:14px;color:#6f6354;line-height:2.2;padding-left:24px;position:relative}
+.plan .features li:before{content:"❧";position:absolute;left:0;color:#9a6f2e;font-size:12px}
+.plan .btn{display:block;width:100%;padding:14px;border:1px solid #8a6228;border-radius:9px;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;font-family:inherit;letter-spacing:1px;transition:.18s}
+.plan .btn.primary{background:linear-gradient(180deg,#a9793a,#8a6228);color:#fdf6e7}
+.plan .btn.primary:hover{filter:brightness(1.06)}
+.plan .btn.secondary{background:transparent;color:#7c5722;border-color:#d9cdb8}
+.plan .btn.secondary:hover{border-color:#9a6f2e;background:#efe1c4}
 
-.trial-info{max-width:600px;margin:0 auto 40px;background:#e6f7ff;border-radius:14px;padding:24px 30px;text-align:center}
-.trial-info h3{font-size:18px;color:#1890ff;margin-bottom:8px}
-.trial-info p{font-size:14px;color:#666;line-height:1.8}
+.trial-info{max-width:600px;margin:0 auto 36px;background:#efe7d6;border:1px solid #e0d4bd;border-radius:13px;padding:24px 30px;text-align:center}
+.trial-info h3{font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;font-size:19px;color:#7c5722;margin-bottom:8px;font-weight:600}
+.trial-info p{font-size:14px;color:#6f6354;line-height:1.9}
 
-.pay-section{max-width:700px;margin:0 auto;padding:0 20px 60px}
-.pay-section h2{font-size:22px;text-align:center;margin-bottom:24px}
-.pay-steps{background:#fff;border-radius:14px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
-.pay-step{display:flex;gap:16px;align-items:flex-start;margin-bottom:24px}
+.pay-section{max-width:700px;margin:0 auto;padding:0 20px 56px}
+.pay-section h2{font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;font-size:24px;text-align:center;margin-bottom:26px;font-weight:600}
+.pay-steps{background:#fbf6ec;border:1px solid #e0d4bd;border-radius:13px;padding:30px;box-shadow:0 16px 34px -26px rgba(58,48,38,.5)}
+.pay-step{display:flex;gap:18px;align-items:flex-start;margin-bottom:24px}
 .pay-step:last-child{margin-bottom:0}
-.pay-step .num{width:32px;height:32px;background:#4f8cff;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0}
-.pay-step .text h4{font-size:16px;color:#333;margin-bottom:4px}
-.pay-step .text p{font-size:14px;color:#888;line-height:1.6}
+.pay-step .num{width:34px;height:34px;background:radial-gradient(circle at 30% 25%,#b8893f,#8a6228);color:#fdf6e7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Georgia,"Times New Roman","Songti SC","STSong","SimSun",serif;font-weight:700;font-size:17px;flex-shrink:0}
+.pay-step .text h4{font-size:16px;color:#3a3026;margin-bottom:5px;font-weight:600}
+.pay-step .text p{font-size:14px;color:#6f6354;line-height:1.7}
 
-.contact-box{max-width:500px;margin:0 auto 60px;background:#fff;border-radius:14px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.06);text-align:center}
-.contact-box h3{font-size:18px;margin-bottom:12px}
-.contact-box .wx{font-size:24px;font-weight:700;color:#333;letter-spacing:2px;margin-bottom:8px}
-.contact-box .copy-btn{padding:6px 16px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:13px;color:#4f8cff;cursor:pointer}
-.contact-box p{font-size:13px;color:#999;margin-top:12px}
+.contact-box{max-width:500px;margin:0 auto 56px;background:#fbf6ec;border:1px solid #e0d4bd;border-radius:13px;padding:30px;box-shadow:0 16px 34px -26px rgba(58,48,38,.5);text-align:center}
+.contact-box h3{font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;font-size:19px;margin-bottom:14px;font-weight:600;color:#7c5722}
+.contact-box .contact-value{font-family:Georgia,"Times New Roman","Songti SC","STSong","SimSun",serif;font-size:24px;font-weight:700;color:#3a3026;letter-spacing:.5px;margin-bottom:10px;word-break:break-all}
+.contact-box .copy-btn{padding:7px 18px;border:1px solid #d9cdb8;border-radius:8px;background:transparent;font-size:13px;color:#7c5722;cursor:pointer;font-family:inherit;transition:.18s}
+.contact-box .copy-btn:hover{border-color:#9a6f2e;background:#efe1c4}
+.contact-box p{font-size:13px;color:#9a8a72;margin-top:14px;line-height:1.7}
 
-.faq{max-width:700px;margin:0 auto;padding:0 20px 60px}
-.faq h2{font-size:22px;text-align:center;margin-bottom:24px}
-.faq-item{background:#fff;border-radius:12px;padding:20px 24px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.faq-item h4{font-size:15px;color:#333;margin-bottom:8px}
-.faq-item p{font-size:14px;color:#888;line-height:1.8}
+.faq{max-width:700px;margin:0 auto;padding:0 20px 56px}
+.faq h2{font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;font-size:24px;text-align:center;margin-bottom:26px;font-weight:600}
+.faq-item{background:#fbf6ec;border:1px solid #e6dcc9;border-radius:11px;padding:20px 24px;margin-bottom:12px}
+.faq-item h4{font-size:15px;color:#3a3026;margin-bottom:8px;font-weight:600}
+.faq-item p{font-size:14px;color:#6f6354;line-height:1.8}
+.sibling-product{max-width:700px;margin:0 auto 48px;padding:0 20px}
+.sibling-inner{background:#efe7d6;border:1px solid #ddcba9;border-radius:13px;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;gap:18px;box-shadow:0 14px 30px -26px rgba(58,48,38,.48)}
+.sibling-copy{min-width:0}
+.sibling-copy h3{font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;font-size:18px;color:#7c5722;margin-bottom:6px;font-weight:600}
+.sibling-copy p{font-size:14px;color:#6f6354;line-height:1.8}
+.sibling-link{flex-shrink:0;padding:10px 16px;border:1px solid #8a6228;border-radius:9px;color:#7c5722;text-decoration:none;font-size:14px;font-weight:600}
+.sibling-link:hover{background:#fbf6ec;text-decoration:none}
 
-.footer{text-align:center;padding:30px;font-size:13px;color:#bbb;border-top:1px solid #f0f0f0}
-.footer a{color:#999;text-decoration:none}
+.footer{text-align:center;padding:30px;font-size:13px;color:#a4977f;border-top:1px solid #e0d4bd}
+.footer a{color:#7c5722;text-decoration:none}
+.footer a:hover{text-decoration:underline}
 
-.back-link{display:inline-block;margin-bottom:20px;font-size:14px;color:#4f8cff;text-decoration:none}
+.back-link{display:inline-block;margin-bottom:20px;font-size:14px;color:#7c5722;text-decoration:none}
+.back-link:hover{text-decoration:underline}
+@media(max-width:560px){
+  .sibling-inner{align-items:flex-start;flex-direction:column}
+  .sibling-link{width:100%;text-align:center;justify-content:center}
+}
 </style>
 </head>
 <body>
 
 <div class="header">
   <a href="/" class="back-link">← 返回首页</a>
+  <div class="brand-kicker">师行出品</div>
   <h1>选择适合您的方案</h1>
   <p>手机发通知，教室大屏显示 + 语音播报<br>让教室通知更高效</p>
 </div>
 
 <div class="trial-info">
-  <h3>🎁 新用户免费体验3天</h3>
-  <p>注册即可使用全部功能，不限次数，无需付费。<br>体验期满后可选择年费版继续使用。</p>
+  <h3>新用户免费体验3天</h3>
+  <p>注册即可使用全部功能，不限次数，无需付费。<br>体验期满后可选择半年会员继续使用。</p>
 </div>
 
 <div class="plans">
@@ -84,10 +111,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
     <a href="/teacher.html" class="btn secondary">免费注册体验</a>
   </div>
 
-  <div class="plan">
-    <h3>年费版</h3>
+  <div class="plan hot">
+    <div class="tag">推荐</div>
+    <h3>半年会员</h3>
         <div class="price"><span>¥</span>9.9</div>
-    <div class="unit">/ 年 · 有效期365天</div>
+    <div class="unit">/ 半年 · 有效期180天</div>
     <ul class="features">
       <li>全部功能不限制</li>
       <li>不限发送次数</li>
@@ -103,7 +131,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 
 <div class="trial-info">
   <h3>服务有效期说明</h3>
-  <p>所有付费服务有效期均为365天，到期后可续费继续使用。</p>
+  <p>所有付费服务有效期均为180天，到期后可续费继续使用。</p>
 </div>
 
 <div class="pay-section">
@@ -120,24 +148,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
       <div class="num">2</div>
       <div class="text">
         <h4>登录老师端付款</h4>
-        <p>进入「个人中心 - 我的套餐」，点击微信支付开通年费版。</p>
+        <p>进入「个人中心 - 账户充值」，点击微信支付开通半年会员。</p>
       </div>
     </div>
     <div class="pay-step">
       <div class="num">3</div>
       <div class="text">
         <h4>自动开通</h4>
-        <p>支付成功后系统自动开通365天，无需等待人工处理。</p>
+        <p>支付成功后系统自动开通180天，无需等待人工处理。</p>
       </div>
     </div>
   </div>
 </div>
 
+<div class="sibling-product">
+  <div class="sibling-inner">
+    <div class="sibling-copy">
+      <h3>期末批量写评语？</h3>
+      <p>AI 评语生成助手同属师行教师工具，适合按学生画像批量生成、编辑和打印期末评语。</p>
+    </div>
+    <a class="sibling-link" href="https://comment.yingyuzuowen.asia/" target="_blank" rel="noopener">去看看</a>
+  </div>
+</div>
+
 <div class="contact-box" id="contact">
-  <h3>使用中遇到问题可联系客服</h3>
-  <div class="wx" id="wxId">htttttt_219</div>
-  <button class="copy-btn" onclick="copyWx()">复制微信号</button>
-  <p>工作时间：每天 8:00 - 22:00<br>添加时请备注「班级广播」</p>
+  <h3>使用中遇到问题可联系开发者</h3>
+  <div class="contact-value" id="developerEmail">465685289@qq.com</div>
+  <button class="copy-btn" onclick="copyDeveloperEmail()">复制邮箱</button>
+  <p>功能建议、问题反馈、商务合作都可以发到这个邮箱。<br>邮件标题建议注明「班级广播」</p>
 </div>
 
 <div class="faq">
@@ -155,7 +193,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
     <p>只要教室电脑和您的手机都能上网就行，不需要IT部门配合。</p>
   </div>
   <div class="faq-item">
-    <h4>年费到期后数据还在吗？</h4>
+    <h4>会员到期后数据还在吗？</h4>
     <p>到期后数据保留，续费后可继续使用。</p>
   </div>
   <div class="faq-item">
@@ -165,25 +203,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 </div>
 
 <div class="footer">
-  <p>班级广播系统 · 让教室通知更高效</p>
-  <p style="margin-top:8px"><a href="/">首页</a> · <a href="/teacher.html">老师端</a> · <a href="/screen.html">教室端</a></p>
+  <p>师行出品 · 班级广播系统 · 让教室通知更高效</p>
+  <p style="margin-top:8px"><a href="/">首页</a> · <a href="/teacher.html">老师端</a> · <a href="/screen.html">教室端</a> · <a href="https://comment.yingyuzuowen.asia/" target="_blank" rel="noopener">AI 评语生成助手</a></p>
 </div>
 
-<div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;background:#52c41a;color:#fff;border-radius:10px;font-size:14px;z-index:999;display:none"></div>
+<div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;background:#4a5d44;color:#fdf6e7;border-radius:10px;font-size:14px;z-index:999;display:none"></div>
 
 <script>
-function copyWx() {
-  var wx = document.getElementById('wxId').textContent;
+function copyDeveloperEmail() {
+  var email = document.getElementById('developerEmail').textContent;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(wx).then(function() { showToast('已复制微信号'); });
+    navigator.clipboard.writeText(email).then(function() { showToast('已复制邮箱'); });
   } else {
     var inp = document.createElement('input');
-    inp.value = wx;
+    inp.value = email;
     document.body.appendChild(inp);
     inp.select();
     document.execCommand('copy');
     document.body.removeChild(inp);
-    showToast('已复制微信号');
+    showToast('已复制邮箱');
   }
 }
 function showToast(msg) {

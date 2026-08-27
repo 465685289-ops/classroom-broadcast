@@ -1,167 +1,119 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>班级广播 · 管理后台</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>师行 · 统一管理后台</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",sans-serif;background:#f5f7fa;color:#333;min-height:100vh}
-
-.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-.login-box{background:#fff;border-radius:16px;padding:40px 30px;width:100%;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,.08);text-align:center}
-.login-box h1{font-size:22px;margin-bottom:8px}
-.login-box p{color:#888;font-size:14px;margin-bottom:28px}
-.login-box input{width:100%;padding:14px 16px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:16px;outline:none}
-.login-box input:focus{border-color:#4f8cff}
-.login-box button{width:100%;margin-top:16px;padding:14px;background:#333;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
-
-.app{display:none;max-width:800px;margin:0 auto;padding:20px}
-.app h1{font-size:22px;margin-bottom:20px}
-
-.stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.stat-card{background:#fff;border-radius:12px;padding:16px 20px;flex:1;min-width:120px;box-shadow:0 2px 8px rgba(0,0,0,.05);text-align:center}
-.stat-card .num{font-size:28px;font-weight:700;color:#4f8cff}
-.stat-card .label{font-size:13px;color:#999;margin-top:4px}
-
-.user-table{width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.user-table table{width:100%;border-collapse:collapse}
-.user-table th{background:#fafbfc;padding:12px 16px;text-align:left;font-size:13px;color:#888;font-weight:500;border-bottom:1px solid #f0f0f0}
-.user-table td{padding:12px 16px;font-size:14px;border-bottom:1px solid #f5f5f5}
-.user-table tr:last-child td{border:none}
-
-.plan-tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:500}
-.plan-tag.trial{background:#e6f7ff;color:#1890ff}
-.plan-tag.yearly{background:#f6ffed;color:#52c41a}
-.plan-tag.expired{background:#fff1f0;color:#ff4d4f}
-
-.act-btn{padding:4px 12px;border:1px solid #e8e8e8;border-radius:6px;background:#fff;font-size:12px;cursor:pointer;margin-right:4px}
-.act-btn.year{color:#52c41a;border-color:#b7eb8f}
-.act-btn:hover{opacity:.8}
-
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;background:#52c41a;color:#fff;border-radius:10px;font-size:14px;z-index:999;display:none}
+:root{--bg:#f5f0e7;--paper:#fffaf1;--card:#fffdf8;--ink:#3d3328;--soft:#7d6f5e;--faint:#a39786;--line:#e5d9c6;--gold:#9a6d2e;--gold2:#79511d;--green:#537b58;--red:#a04d45;--blue:#5a6f94;--shadow:0 12px 34px rgba(69,53,34,.09)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--bg)}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}.muted{color:var(--faint)}
+.login-view{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 0,#fffaf0 0,var(--bg) 58%)}.login-card{width:min(420px,100%);padding:38px;background:rgba(255,250,241,.96);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);text-align:center}.seal{width:54px;height:54px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;margin:0 auto 16px;color:var(--gold);font:700 25px "Songti SC",STSong,serif}.login-card h1{font:700 28px "Songti SC",STSong,serif;margin:0 0 8px}.login-card p{color:var(--soft);font-size:13px;margin:0 0 22px}.field{text-align:left;margin:12px 0}.field label{display:block;font-size:12px;color:var(--soft);margin-bottom:6px}.field input,.field select,.field textarea,.toolbar input,.toolbar select{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 12px;color:var(--ink);outline:none}.field textarea{min-height:78px;resize:vertical}.field input:focus,.field textarea:focus,.toolbar input:focus{border-color:#bd945a;box-shadow:0 0 0 3px rgba(189,148,90,.12)}
+.btn{border:1px solid var(--line);border-radius:9px;padding:9px 14px;background:var(--card);color:var(--ink)}.btn:hover{border-color:#c7ad84}.btn.primary{background:var(--gold);border-color:var(--gold);color:white}.btn.danger{color:var(--red);border-color:#dec0bc}.btn.small{padding:5px 9px;font-size:12px}.login-card .btn{width:100%;margin-top:8px;padding:12px}.error{min-height:18px;margin-top:10px;color:var(--red);font-size:13px}
+.shell{min-height:100vh;display:grid;grid-template-columns:224px 1fr}.sidebar{position:sticky;top:0;height:100vh;padding:24px 16px;background:#443629;color:#f8eddc;display:flex;flex-direction:column}.brand{padding:0 10px 22px;border-bottom:1px solid rgba(255,255,255,.12)}.brand strong{display:block;font:700 25px "Songti SC",STSong,serif;letter-spacing:4px}.brand span{font-size:11px;color:#cdbda8;letter-spacing:2px}.nav{display:grid;gap:6px;margin-top:20px}.nav button{border:0;border-radius:10px;padding:11px 13px;text-align:left;background:transparent;color:#d8c8b3;font-size:14px}.nav button.active,.nav button:hover{background:rgba(255,250,240,.12);color:white}.sidebar-foot{margin-top:auto;padding:14px 10px 0;border-top:1px solid rgba(255,255,255,.12)}.sidebar-foot button{width:100%;background:transparent;color:#cdbda8;border:1px solid rgba(255,255,255,.15)}
+.main{min-width:0;padding:26px 30px 50px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.topbar h1{font:700 27px "Songti SC",STSong,serif;margin:0}.topbar p{margin:4px 0 0;color:var(--soft);font-size:13px}.top-actions{display:flex;gap:8px}.section{display:none}.section.active{display:block}.grid{display:grid;gap:14px}.cards{grid-template-columns:repeat(5,minmax(130px,1fr))}.two{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:repeat(3,minmax(0,1fr))}.card,.panel{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:0 5px 18px rgba(69,53,34,.045)}.card{padding:18px}.card .value{font-size:27px;font-weight:750;color:var(--gold2)}.card .label{font-size:13px;color:var(--soft);margin-top:5px}.card .sub{font-size:11px;color:var(--faint);margin-top:6px}.panel{padding:18px;margin-top:14px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.panel h2{font-size:16px;margin:0}.status{font-size:12px;color:var(--faint)}
+.chart{height:180px;display:flex;align-items:flex-end;gap:4px;border-bottom:1px solid var(--line);padding-top:16px}.bar{flex:1;min-width:3px;border-radius:4px 4px 0 0;background:linear-gradient(#c99a60,#9a6d2e);position:relative}.bar:hover:after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);white-space:nowrap;background:#443629;color:#fff;padding:5px 7px;border-radius:5px;font-size:11px;z-index:5}.stack{display:flex;flex-direction:column-reverse;overflow:hidden}.stack i{display:block;width:100%}.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:6px}
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:13px}.toolbar input{width:min(360px,100%)}.toolbar select{width:auto;min-width:130px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:white}table{border-collapse:collapse;width:100%;min-width:720px}th,td{text-align:left;padding:11px 12px;border-bottom:1px solid #eee5d7;font-size:12px;vertical-align:middle}th{background:#faf5eb;color:var(--soft);font-weight:650;white-space:nowrap}tr:last-child td{border-bottom:0}.actions{display:flex;gap:5px;flex-wrap:wrap}.tag{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;background:#f3eadc;color:#795a2d;font-size:11px}.tag.green{background:#e8f0e6;color:var(--green)}.tag.red{background:#f4e6e4;color:var(--red)}.pager{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:12px;font-size:12px;color:var(--soft)}
+.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.product-card{padding:18px;background:var(--card);border:1px solid var(--line);border-radius:15px}.product-card h3{font-size:15px;margin:0 0 13px}.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.metric{background:#faf4e9;border-radius:9px;padding:10px}.metric b{display:block;font-size:19px;color:var(--gold2)}.metric span{font-size:11px;color:var(--soft)}.list-item{padding:11px 2px;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;gap:14px;font-size:13px}.list-item:last-child{border:0}.list-meta{font-size:11px;color:var(--faint);margin-top:4px}.empty{padding:24px;text-align:center;color:var(--faint);font-size:13px}.section-error{padding:12px;border:1px solid #e2c0bc;background:#fbefed;color:var(--red);border-radius:9px;font-size:12px}
+.modal-mask{position:fixed;inset:0;background:rgba(50,39,28,.42);backdrop-filter:blur(5px);display:grid;place-items:center;padding:20px;z-index:100}.modal{width:min(520px,100%);max-height:88vh;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 25px 70px rgba(45,34,23,.24);padding:24px}.modal-head{display:flex;justify-content:space-between;align-items:flex-start}.modal h2{margin:0;font:700 22px "Songti SC",STSong,serif}.modal-summary{background:#f5ecde;border-radius:10px;padding:11px 13px;margin:14px 0;color:var(--soft);font-size:13px;line-height:1.7}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.close{border:0;background:transparent;font-size:22px;color:var(--faint)}.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.detail-cell{padding:10px;background:#faf4e9;border-radius:9px}.detail-cell span{display:block;color:var(--faint);font-size:11px}.detail-cell b{font-size:13px}.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:#443629;color:white;padding:10px 18px;border-radius:9px;z-index:200;box-shadow:var(--shadow);font-size:13px}
+@media(max-width:1050px){.cards{grid-template-columns:repeat(3,1fr)}.product-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.shell{display:block}.sidebar{position:sticky;height:auto;padding:12px;z-index:20}.brand{display:none}.nav{display:flex;overflow:auto;margin:0;gap:4px}.nav button{white-space:nowrap;padding:8px 10px}.sidebar-foot{display:none}.main{padding:18px 12px 40px}.topbar{align-items:flex-start}.top-actions{flex-direction:column}.cards{grid-template-columns:repeat(2,1fr)}.two,.three,.product-grid{grid-template-columns:1fr}.panel{padding:14px}.chart{height:140px}}
 </style>
 </head>
 <body>
+<section id="loginView" class="login-view">
+  <form class="login-card" id="loginForm">
+    <div class="seal">师</div><h1>师行管理后台</h1><p>一个入口，查看和管理全部师行产品</p>
+    <div class="field"><label for="adminPassword">管理员密码</label><input id="adminPassword" type="password" autocomplete="current-password" required></div>
+    <button class="btn primary" type="submit">进入后台</button><div id="loginError" class="error" aria-live="polite"></div>
+  </form>
+</section>
 
-<div class="login-wrap" id="loginPage">
-  <div class="login-box">
-    <h1>管理后台</h1>
-    <p>仅限管理员访问</p>
-    <input type="password" id="adminPass" placeholder="输入管理密码">
-    <button onclick="adminLogin()">进入</button>
-  </div>
+<div id="appView" class="shell hidden">
+  <aside class="sidebar"><div class="brand"><strong>师行</strong><span>管理工作台</span></div>
+    <nav class="nav" aria-label="后台模块">
+      <button data-section="overview">概览</button><button data-section="conversions">转化</button><button data-section="users">用户</button><button data-section="finance">财务</button><button data-section="products">产品</button><button data-section="referrals">邀请</button><button data-section="support">客服</button><button data-section="system">系统</button>
+    </nav>
+    <div class="sidebar-foot"><button class="btn" id="logoutBtn">退出登录</button></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div><h1 id="pageTitle">数据概览</h1><p id="pageSub">掌握收入、用户与全平台使用情况</p></div><div class="top-actions"><a class="btn" href="https://shixing.yingyuzuowen.asia/" target="_blank" rel="noopener" style="text-decoration:none">打开师行首页</a><button class="btn" id="refreshBtn">刷新本页</button></div></header>
+
+    <section id="section-overview" class="section"><div id="overviewContent"><div class="empty">正在加载概览…</div></div></section>
+    <section id="section-conversions" class="section"><div class="toolbar"><select id="conversionDays"><option value="7">近 7 天</option><option value="30" selected>近 30 天</option><option value="90">近 90 天</option></select></div><div id="conversionContent"><div class="empty">正在加载转化数据…</div></div></section>
+
+    <section id="section-users" class="section">
+      <div class="panel"><div class="panel-head"><h2>用户管理</h2><span class="status" id="userTotal"></span></div>
+        <div class="toolbar"><input id="userSearch" placeholder="搜索用户名、称呼、邮箱或手机号"><button class="btn primary" id="userSearchBtn">搜索</button></div>
+        <div id="usersContent"><div class="empty">正在加载用户…</div></div><div class="pager" id="userPager"></div>
+      </div>
+    </section>
+
+    <section id="section-finance" class="section">
+      <div class="panel"><div class="panel-head"><h2>支付订单</h2><span class="status" id="orderTotal"></span></div>
+        <div class="toolbar"><input id="orderSearch" placeholder="搜索订单号、用户名或用户 ID"><select id="orderStatus"><option value="">全部状态</option><option value="paid">已支付</option><option value="pending">待支付</option><option value="created">创建中</option><option value="create_failed">创建失败</option></select><select id="orderProduct"><option value="">全部产品</option><option value="broadcast">教室广播</option><option value="comment">评语</option><option value="essay">作文</option><option value="roundtable">思想圆桌</option><option value="edulab">数学课件</option><option value="learning">作文学习</option></select><button class="btn primary" id="orderSearchBtn">查询</button></div>
+        <div id="ordersContent"><div class="empty">正在加载订单…</div></div><div class="pager" id="orderPager"></div>
+      </div>
+    </section>
+
+    <section id="section-products" class="section"><div id="productsContent"><div class="empty">正在加载产品数据…</div></div></section>
+    <section id="section-referrals" class="section"><div id="referralsContent"><div class="empty">正在加载邀请数据…</div></div></section>
+    <section id="section-support" class="section"><div class="grid three"><div class="panel" style="margin-top:0"><div class="panel-head"><h2>密码重置</h2></div><div id="resetContent"><div class="empty">加载中…</div></div></div><div class="panel" style="margin-top:0"><div class="panel-head"><h2>功能订阅</h2></div><div id="featureContent"><div class="empty">加载中…</div></div></div><div class="panel" style="margin-top:0"><div class="panel-head"><h2>用户反馈</h2></div><div id="feedbackContent"><div class="empty">加载中…</div></div></div></div></section>
+    <section id="section-system" class="section"><div class="panel"><div class="panel-head"><h2>管理员操作记录</h2><span class="status">最近 100 条</span></div><div id="auditContent"><div class="empty">正在加载操作记录…</div></div></div></section>
+  </main>
 </div>
 
-<div class="app" id="appPage">
-  <h1>班级广播 · 管理后台</h1>
-
-  <div class="stats" id="stats"></div>
-
-  <div class="user-table">
-    <table>
-      <thead>
-        <tr>
-          <th>用户名</th>
-          <th>称呼</th>
-          <th>状态</th>
-          <th>班级</th>
-          <th>通知</th>
-          <th>注册时间</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody id="userList"></tbody>
-    </table>
-  </div>
+<div id="actionMask" class="modal-mask hidden" role="dialog" aria-modal="true" aria-labelledby="actionTitle">
+  <form class="modal" id="actionForm"><div class="modal-head"><h2 id="actionTitle">管理操作</h2><button type="button" class="close" data-close-modal aria-label="关闭">×</button></div><div id="actionSummary" class="modal-summary"></div>
+    <input type="hidden" id="actionKind"><input type="hidden" id="actionUserId"><input type="hidden" id="actionRequestId"><input type="hidden" id="actionEventId"><input type="hidden" id="actionDecision">
+    <div class="field hidden" id="valueField"><label id="valueLabel" for="actionValue">数值</label><input id="actionValue"></div>
+    <div class="field"><label for="actionNote">操作备注</label><textarea id="actionNote" maxlength="500" required placeholder="请说明操作原因，便于以后追溯"></textarea></div>
+    <div id="actionError" class="error"></div><div class="modal-actions"><button type="button" class="btn" data-close-modal>取消</button><button type="submit" class="btn primary" id="actionSubmit">确认执行</button></div>
+  </form>
 </div>
 
-<div class="toast" id="toast"></div>
+<div id="detailMask" class="modal-mask hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="modal" style="width:min(720px,100%)"><div class="modal-head"><h2 id="detailTitle">用户详情</h2><button type="button" class="close" data-close-detail aria-label="关闭">×</button></div><div id="detailContent" style="margin-top:15px"><div class="empty">加载中…</div></div></div></div>
+<div id="toast" class="toast hidden" aria-live="polite"></div>
 
 <script>
-var adminToken = '';
-
-function adminLogin() {
-  adminToken = document.getElementById('adminPass').value.trim();
-  if (!adminToken) return;
-  loadData();
-}
-
-function hd() {
-  return { 'Content-Type':'application/json', 'X-Token': adminToken };
-}
-
-function loadData() {
-  Promise.all([
-    fetch('/api/admin/stats', { headers: hd() }).then(function(r) { if (!r.ok) throw 'auth'; return r.json(); }),
-    fetch('/api/admin/users', { headers: hd() }).then(function(r) { return r.json(); })
-  ])
-  .then(function(results) {
-    var stats = results[0];
-    var users = results[1];
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('appPage').style.display = 'block';
-    renderStats(stats);
-    renderUsers(users);
-  })
-  .catch(function() { alert('密码错误'); });
-}
-
-function renderStats(s) {
-  document.getElementById('stats').innerHTML =
-    '<div class="stat-card"><div class="num">' + s.total_users + '</div><div class="label">总用户</div></div>' +
-    '<div class="stat-card"><div class="num">' + s.active_users + '</div><div class="label">活跃用户</div></div>' +
-    '<div class="stat-card"><div class="num">' + s.paid_users + '</div><div class="label">付费用户</div></div>' +
-    '<div class="stat-card"><div class="num">' + s.total_notifications + '</div><div class="label">总通知数</div></div>';
-}
-
-function renderUsers(users) {
-  var el = document.getElementById('userList');
-  el.innerHTML = users.map(function(u) {
-    var status = u.plan_status;
-    var tagClass = status.active ? u.plan : 'expired';
-    var tagText = status.active ? status.label : '已到期';
-    var exp = '';
-    if (status.expires) {
-      var d = new Date(status.expires);
-      exp = ' ' + d.toLocaleDateString('zh-CN');
-    }
-    var regDate = new Date(u.created_at).toLocaleDateString('zh-CN');
-
-    return '<tr>' +
-      '<td>' + esc(u.username) + '</td>' +
-      '<td>' + esc(u.display_name) + '</td>' +
-      '<td><span class="plan-tag ' + tagClass + '">' + tagText + '</span>' + exp + '</td>' +
-      '<td>' + u.class_count + '</td>' +
-      '<td>' + u.notif_count + '</td>' +
-      '<td>' + regDate + '</td>' +
-      '<td>' +
-        '<button class="act-btn year" onclick="activate(\'' + u.id + '\',\'yearly\')">开通年费</button>' +
-      '</td></tr>';
-  }).join('');
-}
-
-function activate(userId, plan) {
-  var label = '年费版';
-  if (!confirm('确定为该用户开通' + label + '？')) return;
-  fetch('/api/admin/activate', {
-    method: 'POST',
-    headers: hd(),
-    body: JSON.stringify({ user_id: userId, plan: plan })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function() {
-    var t = document.getElementById('toast');
-    t.textContent = '已开通' + label;
-    t.style.display = 'block';
-    setTimeout(function() { t.style.display = 'none'; }, 2000);
-    loadData();
-  });
-}
-
-function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-
-document.getElementById('adminPass').addEventListener('keydown', function(e) { if(e.key==='Enter') adminLogin(); });
+var state={section:'overview',userPage:1,orderPage:1,userPages:1,orderPages:1,loading:{}};
+var sectionMeta={overview:['数据概览','掌握收入、用户与全平台使用情况'],conversions:['转化统计','查看访问、登录注册与各产品入口转化'],users:['用户管理','查询账号、积分、会员和使用记录'],finance:['财务订单','统一查看各产品支付订单'],products:['产品数据','查看六个产品和共享积分的核心数据'],referrals:['邀请系统','查看邀请转化与处理待审核奖励'],support:['客服处理','集中处理密码重置、功能订阅和用户反馈'],system:['系统记录','追踪管理员执行过的关键操作']};
+function $(id){return document.getElementById(id)}
+function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function date(value){if(!value)return '—';var d=new Date(value);return isNaN(d.getTime())?'—':d.toLocaleString('zh-CN')}
+function money(value){return '¥'+(Number(value)||0).toFixed(2)}
+function productName(key){return {shixing:'师行首页',broadcast:'教室广播',comment:'期末评语',essay:'作文批改',english:'英语批改',roundtable:'思想圆桌',edulab:'数学课件',learning:'作文学习',shared_points:'师行积分',other:'其他'}[key]||key||'其他'}
+async function api(path,options){options=options||{};var response=await fetch(path,{method:options.method||'GET',headers:options.body?{'Content-Type':'application/json'}:{},body:options.body?JSON.stringify(options.body):undefined});var text=await response.text(),data={};try{data=JSON.parse(text)}catch(e){data={error:text||'请求失败'}}if(response.status===401){showLogin();throw new Error('登录已过期')}if(!response.ok)throw new Error(data.error||'请求失败');return data}
+function toast(text){$('toast').textContent=text;$('toast').classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(function(){$('toast').classList.add('hidden')},2200)}
+function showLogin(){$('loginView').classList.remove('hidden');$('appView').classList.add('hidden')}
+function showApp(){$('loginView').classList.add('hidden');$('appView').classList.remove('hidden')}
+async function login(event){event.preventDefault();$('loginError').textContent='';try{await api('/api/admin/login',{method:'POST',body:{password:$('adminPassword').value}});$('adminPassword').value='';showApp();navigate(location.hash.slice(1)||'overview')}catch(e){$('loginError').textContent=e.message}}
+async function logout(){try{await api('/api/admin/logout',{method:'POST'})}catch(e){}showLogin()}
+function setSectionError(id,error){$(id).innerHTML='<div class="section-error">'+esc(error.message||error)+'。可点击右上角“刷新本页”重试。</div>'}
+function navigate(name){if(!sectionMeta[name])name='overview';state.section=name;location.hash=name;document.querySelectorAll('.section').forEach(function(el){el.classList.toggle('active',el.id==='section-'+name)});document.querySelectorAll('.nav button').forEach(function(btn){btn.classList.toggle('active',btn.dataset.section===name)});$('pageTitle').textContent=sectionMeta[name][0];$('pageSub').textContent=sectionMeta[name][1];loadSection(name)}
+function loadSection(name){if(name==='overview')loadOverview();if(name==='conversions')loadConversions();if(name==='users')loadUsers();if(name==='finance')loadOrders();if(name==='products')loadProducts();if(name==='referrals')loadReferrals();if(name==='support')loadSupport();if(name==='system')loadAudit()}
+function statCard(value,label,sub){return '<div class="card"><div class="value">'+esc(value)+'</div><div class="label">'+esc(label)+'</div>'+(sub?'<div class="sub">'+esc(sub)+'</div>':'')+'</div>'}
+function simpleChart(rows,valueKey){var max=Math.max.apply(null,rows.map(function(r){return Number(r[valueKey])||0}).concat([1]));return '<div class="chart">'+rows.map(function(r){var v=Number(r[valueKey])||0;return '<div class="bar" data-tip="'+esc(String(r.date||'').slice(5)+' · '+v)+'" style="height:'+Math.max(v?3:1,Math.round(v/max*100))+'%"></div>'}).join('')+'</div><div class="axis"><span>'+esc(rows.length?String(rows[0].date).slice(5):'')+'</span><span>'+esc(rows.length?String(rows[rows.length-1].date).slice(5):'')+'</span></div>'}
+async function loadOverview(){var id='overviewContent';$(id).innerHTML='<div class="empty">正在加载概览…</div>';try{var d=await api('/api/admin/dashboard'),o=d.overview,ref=d.referrals||{},act=ref.events&&ref.events.activation||{};$(id).innerHTML='<div class="grid cards">'+statCard(money(o.revenue_total),'累计收入','本月 '+money(o.revenue_month))+statCard(money(o.revenue_today),'今日收入','')+statCard(o.paid_orders,'付费订单','')+statCard(o.total_users,'注册用户','近 7 天 '+o.week_new_users)+statCard(act.pending||0,'邀请待审核','绑定 '+(ref.relationships||0))+'</div><div class="grid two"><div class="panel"><div class="panel-head"><h2>近 30 天收入</h2><span class="status">更新于 '+date(d.generated_at)+'</span></div>'+simpleChart(d.revenue_daily,'amount')+'</div><div class="panel"><div class="panel-head"><h2>近 14 天评语使用量</h2><span class="status">其他产品见“产品”</span></div>'+simpleChart(d.usage_daily.comment_generations,'n')+'</div></div><div class="grid two"><div class="panel"><div class="panel-head"><h2>最近支付</h2></div>'+renderOrderList(d.recent_payments)+'</div><div class="panel"><div class="panel-head"><h2>最近注册</h2></div>'+((d.recent_users||[]).map(function(u){return '<div class="list-item"><div><strong>'+esc(u.display_name||u.username)+'</strong><div class="list-meta">@'+esc(u.username)+'</div></div><span class="muted">'+date(u.created_at)+'</span></div>'}).join('')||'<div class="empty">暂无注册</div>')+'</div></div>'}catch(e){setSectionError(id,e)}}
+async function loadConversions(){var id='conversionContent',days=$('conversionDays').value||30;$(id).innerHTML='<div class="empty">正在加载转化数据…</div>';try{var d=await api('/api/admin/conversions?days='+encodeURIComponent(days)),s=d.summary||{};var funnel=[['访问人数',s.unique_visitors],['唤起登录',s.auth_prompts],['发送验证码',s.code_requests],['注册成功',s.registrations],['登录成功',s.logins]];$(id).innerHTML='<div class="grid cards">'+statCard(s.unique_visitors||0,'访问人数',(s.page_views||0)+' 次浏览')+statCard(s.product_clicks||0,'产品点击','从师行首页进入')+statCard(s.auth_prompts||0,'唤起登录','')+statCard(s.code_requests||0,'发送验证码','访问→发码 '+(s.visit_to_code_rate||0)+'%')+statCard(s.registrations||0,'注册成功','访问→注册 '+(s.visit_to_register_rate||0)+'%')+'</div><div class="grid two"><div class="panel"><div class="panel-head"><h2>访问趋势</h2><span class="status">近 '+d.days+' 天，30 分钟内刷新去重</span></div>'+simpleChart(d.daily||[],'unique_visitors')+'</div><div class="panel"><div class="panel-head"><h2>注册漏斗</h2><span class="status">匿名第一方统计</span></div>'+funnel.map(function(x,i){return '<div class="list-item"><div><span class="tag">'+(i+1)+'</span> '+esc(x[0])+'</div><strong>'+esc(x[1]||0)+'</strong></div>'}).join('')+'</div></div><div class="grid two"><div class="panel"><div class="panel-head"><h2>各产品转化</h2><span class="status">访问人数 / 登录注册动作</span></div><div class="table-wrap"><table><thead><tr><th>产品</th><th>访问人数</th><th>浏览</th><th>入口点击</th><th>登录框</th><th>发码</th><th>注册</th></tr></thead><tbody>'+((d.products||[]).map(function(p){return '<tr><td><strong>'+esc(productName(p.product))+'</strong></td><td>'+p.unique_visitors+'</td><td>'+p.page_views+'</td><td>'+p.product_clicks+'</td><td>'+p.auth_prompts+'</td><td>'+p.code_requests+'</td><td>'+p.registrations+'</td></tr>'}).join('')||'<tr><td colspan="7" class="empty">暂无数据</td></tr>')+'</tbody></table></div></div><div class="panel"><div class="panel-head"><h2>访问来源</h2><span class="status">仅保存渠道或来源域名</span></div>'+((d.sources||[]).map(function(row){return '<div class="list-item"><div><strong>'+esc(row.source)+'</strong><div class="list-meta">'+row.page_views+' 次浏览</div></div><strong>'+row.unique_visitors+' 人</strong></div>'}).join('')||'<div class="empty">暂无来源数据</div>')+'</div></div>'}catch(e){setSectionError(id,e)}}
+function renderOrderList(items){if(!items||!items.length)return '<div class="empty">暂无支付记录</div>';return items.map(function(p){return '<div class="list-item"><div><strong>'+esc(p.username||p.user_id||'用户')+'</strong><div class="list-meta">'+esc(productName(p.product))+' · '+esc(p.out_trade_no||'')+'</div></div><div style="text-align:right"><strong>'+money(p.amount)+'</strong><div class="list-meta">'+date(p.paid_at||p.created_at)+'</div></div></div>'}).join('')}
+async function loadUsers(page){state.userPage=page||state.userPage||1;var id='usersContent';$(id).innerHTML='<div class="empty">正在加载用户…</div>';try{var q=$('userSearch').value.trim(),d=await api('/api/admin/users/search?page='+state.userPage+'&limit=30&q='+encodeURIComponent(q));state.userPages=d.pages;$('userTotal').textContent='共 '+d.total+' 人';$(id).innerHTML='<div class="table-wrap"><table><thead><tr><th>账号</th><th>联系方式</th><th>师行积分</th><th>广播状态</th><th>班级/通知</th><th>注册时间</th><th>操作</th></tr></thead><tbody>'+d.items.map(function(u){var ps=u.plan_status||{};return '<tr><td><strong>'+esc(u.display_name||u.username)+'</strong><div class="muted">@'+esc(u.username)+'</div></td><td>'+esc(u.contact_value||'—')+'</td><td><strong>'+esc(u.point_balance)+'</strong></td><td><span class="tag '+(ps.active?'green':'red')+'">'+esc(ps.active?(ps.label||'有效'):'已到期')+'</span></td><td>'+u.class_count+' / '+u.notif_count+'</td><td>'+date(u.created_at)+'</td><td><div class="actions"><button class="btn small" data-user-detail="'+esc(u.id)+'">详情</button><button class="btn small" data-action="points" data-id="'+esc(u.id)+'" data-name="'+esc(u.username)+'" data-balance="'+esc(u.point_balance)+'">调积分</button><button class="btn small" data-action="broadcast" data-id="'+esc(u.id)+'" data-name="'+esc(u.username)+'">开通半年会员</button><button class="btn small" data-action="learning" data-id="'+esc(u.id)+'" data-name="'+esc(u.username)+'">学习续费</button><button class="btn small danger" data-action="password" data-id="'+esc(u.id)+'" data-name="'+esc(u.username)+'">重置密码</button></div></td></tr>'}).join('')+'</tbody></table></div>';renderPager('userPager',state.userPage,d.pages,'user')}catch(e){setSectionError(id,e)}}
+function renderPager(id,page,pages,type){$(id).innerHTML='<button class="btn small" data-page-type="'+type+'" data-page="'+(page-1)+'" '+(page<=1?'disabled':'')+'>上一页</button><span>第 '+page+' / '+pages+' 页</span><button class="btn small" data-page-type="'+type+'" data-page="'+(page+1)+'" '+(page>=pages?'disabled':'')+'>下一页</button>'}
+async function openUserDetail(id){$('detailMask').classList.remove('hidden');$('detailContent').innerHTML='<div class="empty">加载中…</div>';try{var d=await api('/api/admin/users/'+encodeURIComponent(id)),u=d.user,p=d.payments||[],l=d.point_ledger||[];$('detailTitle').textContent=(u.display_name||u.username)+' · 用户详情';$('detailContent').innerHTML='<div class="detail-grid"><div class="detail-cell"><span>用户名</span><b>'+esc(u.username)+'</b></div><div class="detail-cell"><span>联系方式</span><b>'+esc(u.contact_value||'—')+'</b></div><div class="detail-cell"><span>师行积分</span><b>'+esc(u.point_balance)+'</b></div><div class="detail-cell"><span>广播会员</span><b>'+esc((u.plan_status||{}).label||'—')+'</b></div><div class="detail-cell"><span>邀请好友</span><b>'+esc((d.invited||{}).invited_count||0)+' 人</b></div><div class="detail-cell"><span>注册时间</span><b>'+date(u.created_at)+'</b></div></div><div class="panel"><div class="panel-head"><h2>最近订单</h2></div>'+renderOrderList(p)+'</div><div class="panel"><div class="panel-head"><h2>最近积分记录</h2></div>'+(l.map(function(x){return '<div class="list-item"><div>'+esc(x.note||x.reason)+'</div><strong style="color:'+(Number(x.delta)>=0?'var(--green)':'var(--red)')+'">'+(Number(x.delta)>0?'+':'')+esc(x.delta)+'</strong></div>'}).join('')||'<div class="empty">暂无积分记录</div>')+'</div>'}catch(e){setSectionError('detailContent',e)}}
+async function loadOrders(page){state.orderPage=page||state.orderPage||1;var id='ordersContent';$(id).innerHTML='<div class="empty">正在加载订单…</div>';try{var q=$('orderSearch').value.trim(),st=$('orderStatus').value,pd=$('orderProduct').value,d=await api('/api/admin/orders?page='+state.orderPage+'&limit=30&q='+encodeURIComponent(q)+'&status='+encodeURIComponent(st)+'&product='+encodeURIComponent(pd));state.orderPages=d.pages;$('orderTotal').textContent='共 '+d.total+' 单';$(id).innerHTML='<div class="table-wrap"><table><thead><tr><th>时间</th><th>用户</th><th>产品</th><th>套餐</th><th>金额</th><th>状态</th><th>订单号</th></tr></thead><tbody>'+d.items.map(function(o){return '<tr><td>'+date(o.paid_at||o.created_at)+'</td><td>'+esc(o.username||o.user_id||'—')+'</td><td>'+esc(productName(o.product))+'</td><td>'+esc(o.plan||o.package||'—')+'</td><td><strong>'+money(o.amount)+'</strong></td><td><span class="tag '+(o.status==='paid'?'green':o.status==='create_failed'?'red':'')+'">'+esc(o.status||'—')+'</span></td><td>'+esc(o.out_trade_no||'—')+'</td></tr>'}).join('')+'</tbody></table></div>';renderPager('orderPager',state.orderPage,d.pages,'order')}catch(e){setSectionError(id,e)}}
+function metric(value,label){return '<div class="metric"><b>'+esc(value==null?0:value)+'</b><span>'+esc(label)+'</span></div>'}
+async function loadProducts(){var id='productsContent';$(id).innerHTML='<div class="empty">正在加载产品数据…</div>';try{var d=await api('/api/admin/products');var cards=[['教室广播',d.broadcast,[['active_members','有效会员'],['total_classes','班级'],['total_notifications','通知']]],['期末评语',d.comment,[['total_generations','累计生成'],['active_comment_users','使用用户'],['consumed_credits','消耗积分']]],['作文批改',d.essay,[['total_gradings','累计批改'],['active_essay_users','使用用户'],['consumed_credits','历史消耗']]],['英语批改',d.english,[['total_gradings','累计批改'],['active_users','使用用户'],['consumed_points','消耗积分']]],['思想圆桌',d.roundtable,[['total_topics','累计话题'],['active_users','使用用户'],['consumed_credits','历史消耗']]],['数学课件',d.edulab,[['total_generations','累计生成'],['active_users','使用用户'],['generations_today','今日生成']]],['作文学习',d.learning,[['total_usage','累计使用'],['active_users','使用用户'],['active_members','有效会员']]],['师行积分',d.shared_points,[['current_balance','全站余额'],['consumed','累计消耗'],['users','积分用户']]]];$(id).innerHTML='<div class="product-grid">'+cards.map(function(c){return '<div class="product-card"><h3>'+esc(c[0])+'</h3><div class="metrics">'+c[2].map(function(m){return metric(c[1]&&c[1][m[0]],m[1])}).join('')+'</div></div>'}).join('')+'</div>'}catch(e){setSectionError(id,e)}}
+async function loadReferrals(){var id='referralsContent';$(id).innerHTML='<div class="empty">正在加载邀请数据…</div>';try{var d=await api('/api/admin/referrals'),s=d.stats||{},a=s.events&&s.events.activation||{},p=s.events&&s.events.first_purchase||{};$(id).innerHTML='<div class="grid cards">'+statCard(s.clicks||0,'邀请点击','')+statCard(s.relationships||0,'绑定关系','')+statCard(a.approved||0,'首次使用到账','')+statCard(p.approved||0,'首次付费到账','')+statCard(a.pending||0,'待审核','')+'</div><div class="panel"><div class="panel-head"><h2>待审核奖励</h2><span class="status">同设备异常或月度超限</span></div>'+((d.pending||[]).map(function(item){return '<div class="list-item"><div><strong>'+esc(item.inviter_username||item.inviter_user_id)+'</strong> 邀请 '+esc(item.invitee_username||item.invitee_user_id)+'<div class="list-meta">'+esc(item.source_product||'')+' · '+esc(item.risk_reason||'')+' · '+date(item.created_at)+'</div></div><div class="actions"><button class="btn small" data-ref-review="approve" data-event="'+item.id+'">通过</button><button class="btn small danger" data-ref-review="reject" data-event="'+item.id+'">拒绝</button></div></div>'}).join('')||'<div class="empty">暂无待审核邀请</div>')+'</div>'}catch(e){setSectionError(id,e)}}
+function loadSupport(){loadReset();loadFeatures();loadFeedback()}
+async function loadReset(){try{var list=await api('/api/admin/password-resets');$('resetContent').innerHTML=list.map(function(r){return '<div class="list-item"><div><strong>'+esc(r.display_name||r.username)+'</strong><div class="list-meta">'+esc(r.contact_value||'—')+' · '+date(r.requested_at)+'</div></div><button class="btn small danger" data-action="password" data-id="'+esc(r.user_id)+'" data-name="'+esc(r.username)+'" data-request="'+r.id+'">设置临时密码</button></div>'}).join('')||'<div class="empty">暂无待处理申请</div>'}catch(e){setSectionError('resetContent',e)}}
+async function loadFeatures(){try{var d=await api('/api/admin/feature-subscriptions');$('featureContent').innerHTML=(d.stats||[]).map(function(x){return '<div class="list-item"><div><strong>'+esc(x.feature_name||x.feature_key)+'</strong><div class="list-meta">最近 '+date(x.latest_at)+'</div></div><strong>'+esc(x.total)+' 人</strong></div>'}).join('')||'<div class="empty">暂无功能订阅</div>'}catch(e){setSectionError('featureContent',e)}}
+async function loadFeedback(){try{var list=await api('/api/admin/feedback');$('feedbackContent').innerHTML=list.map(function(f){return '<div class="list-item" style="display:block"><strong>'+esc(f.display_name||f.username)+' · '+esc(f.category||'反馈')+'</strong><div style="margin-top:6px;line-height:1.6">'+esc(f.content||'')+'</div><div class="list-meta">'+date(f.created_at)+'</div></div>'}).join('')||'<div class="empty">暂无用户反馈</div>'}catch(e){setSectionError('feedbackContent',e)}}
+async function loadAudit(){var id='auditContent';$(id).innerHTML='<div class="empty">正在加载操作记录…</div>';try{var d=await api('/api/admin/audit');$(id).innerHTML=(d.items||[]).map(function(x){return '<div class="list-item"><div><strong>'+esc(x.summary)+'</strong><div class="list-meta">'+esc(x.action)+' · '+esc(x.note||'无备注')+'</div></div><span class="muted">'+date(x.created_at)+'</span></div>'}).join('')||'<div class="empty">暂无管理员操作记录</div>'}catch(e){setSectionError(id,e)}}
+function openAction(kind,data){data=data||{};$('actionKind').value=kind;$('actionUserId').value=data.id||'';$('actionRequestId').value=data.request||'';$('actionEventId').value=data.event||'';$('actionDecision').value=data.decision||'';$('actionNote').value='';$('actionValue').value='';$('actionError').textContent='';$('valueField').classList.add('hidden');var title='管理操作',summary='';if(kind==='points'){title='调整师行积分';summary='账号：'+data.name+'，当前余额 '+data.balance+'；正数增加，负数扣减。';$('valueField').classList.remove('hidden');$('valueLabel').textContent='积分变化值';$('actionValue').type='number';$('actionValue').placeholder='例如 500 或 -500'}if(kind==='broadcast'){title='开通广播半年会员';summary='将为账号 '+data.name+' 开通 180 天广播会员。'}if(kind==='learning'){title='作文学习续费';summary='为账号 '+data.name+' 延长作文学习会员。';$('valueField').classList.remove('hidden');$('valueLabel').textContent='续费天数';$('actionValue').type='number';$('actionValue').value='180'}if(kind==='password'){title='重置账号密码';summary='将重置账号 '+data.name+' 的登录密码。';$('valueField').classList.remove('hidden');$('valueLabel').textContent='新密码';$('actionValue').type='password';$('actionValue').placeholder='至少 3 位'}if(kind==='referral'){title=data.decision==='approve'?'通过邀请奖励':'拒绝邀请奖励';summary='邀请事件 #'+data.event+'，处理后会写入管理员操作记录。'}$('actionTitle').textContent=title;$('actionSummary').textContent=summary;$('actionSubmit').className='btn '+((kind==='password'||(kind==='referral'&&data.decision==='reject'))?'danger':'primary');$('actionMask').classList.remove('hidden')}
+function closeAction(){$('actionMask').classList.add('hidden')}
+async function submitAction(event){event.preventDefault();var kind=$('actionKind').value,id=$('actionUserId').value,value=$('actionValue').value,note=$('actionNote').value.trim();if(!note){$('actionError').textContent='请填写操作备注';return}var path='',body={note:note};if(kind==='points'){path='/api/admin/comment-credits';body.user_id=id;body.delta=parseInt(value,10);if(!body.delta){$('actionError').textContent='请输入非 0 的积分变化值';return}}if(kind==='broadcast'){path='/api/admin/activate';body.user_id=id;body.plan='yearly'}if(kind==='learning'){path='/api/admin/learning-membership';body.user_id=id;body.days=parseInt(value,10);if(!body.days){$('actionError').textContent='请输入续费天数';return}}if(kind==='password'){path='/api/admin/reset-password';body.user_id=id;body.password=value;body.request_id=$('actionRequestId').value||null;if(String(value).length<3){$('actionError').textContent='密码至少 3 位';return}}if(kind==='referral'){path='/api/admin/referrals/'+encodeURIComponent($('actionEventId').value)+'/review';body.decision=$('actionDecision').value}try{$('actionSubmit').disabled=true;await api(path,{method:'POST',body:body});closeAction();toast('操作已完成并记录');loadSection(state.section)}catch(e){$('actionError').textContent=e.message}finally{$('actionSubmit').disabled=false}}
+document.addEventListener('click',function(event){var nav=event.target.closest('[data-section]');if(nav)navigate(nav.dataset.section);var pg=event.target.closest('[data-page-type]');if(pg&&!pg.disabled){var p=Number(pg.dataset.page);if(pg.dataset.pageType==='user')loadUsers(p);else loadOrders(p)}var detail=event.target.closest('[data-user-detail]');if(detail)openUserDetail(detail.dataset.userDetail);var action=event.target.closest('[data-action]');if(action)openAction(action.dataset.action,{id:action.dataset.id,name:action.dataset.name,balance:action.dataset.balance,request:action.dataset.request});var review=event.target.closest('[data-ref-review]');if(review)openAction('referral',{event:review.dataset.event,decision:review.dataset.refReview});if(event.target.closest('[data-close-modal]'))closeAction();if(event.target.closest('[data-close-detail]'))$('detailMask').classList.add('hidden')});
+$('loginForm').addEventListener('submit',login);$('logoutBtn').addEventListener('click',logout);$('refreshBtn').addEventListener('click',function(){loadSection(state.section)});$('conversionDays').addEventListener('change',loadConversions);$('userSearchBtn').addEventListener('click',function(){loadUsers(1)});$('userSearch').addEventListener('keydown',function(e){if(e.key==='Enter')loadUsers(1)});$('orderSearchBtn').addEventListener('click',function(){loadOrders(1)});$('actionForm').addEventListener('submit',submitAction);window.addEventListener('hashchange',function(){navigate(location.hash.slice(1)||'overview')});
+(async function bootstrap(){try{await api('/api/admin/session');showApp();navigate(location.hash.slice(1)||'overview')}catch(e){showLogin()}})();
 </script>
 </body>
 </html>

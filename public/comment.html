@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="师行 AI 评语生成助手，支持学生画像、批量生成、二次改写、历史记录和打印排版。">
+<link rel="canonical" href="https://comment.yingyuzuowen.asia/">
+<title>师行 · AI 评语生成助手</title>
+<script async src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --paper:#f4ece0;--card:#fbf6ec;--ink:#3a3026;--soft:#6f6354;--faint:#9a8a72;
+  --line:#e0d4bd;--brass:#9a6f2e;--brass-deep:#7c5722;--wine:#7d3a3a;--forest:#4a5d44;
+  --gold:#efe1c4;--input:#faf4e8;
+}
+body{
+  font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;color:var(--ink);min-height:100vh;
+  background:radial-gradient(1100px 520px at 85% -6%, #f8f1e4 0%, transparent 55%),var(--paper);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--brass-deep);text-decoration:none}
+.page{max-width:1280px;margin:0 auto;padding:26px 18px 44px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.crest{width:52px;height:52px;border-radius:50%;border:1.5px solid var(--brass);display:grid;place-items:center;color:var(--brass-deep);background:radial-gradient(circle at 30% 25%,#fbf3e2,#efe1c4);font-size:26px;font-weight:700}
+.brand-kicker{font-size:12px;color:var(--brass-deep);letter-spacing:3px;margin-bottom:4px}
+h1{font-size:28px;font-weight:600;letter-spacing:.4px}
+.subtitle{font-size:14px;color:var(--faint);line-height:1.8}
+.top-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.status-strip{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.status-pill{border:1px solid var(--line);border-radius:999px;background:#fffaf0;color:var(--soft);padding:8px 12px;font-size:13px;white-space:nowrap}
+.status-pill strong{color:var(--brass-deep);font-size:15px}
+.link-btn,.ghost-btn,.main-btn,.pay-btn{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--card);color:var(--brass-deep);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.main-btn{background:linear-gradient(180deg,#a9793a,#8a6228);border-color:#8a6228;color:#fdf6e7}
+.pay-btn{background:#e4ebe1;border-color:#cbd9c6;color:var(--forest)}
+.danger-btn{color:var(--wine);border-color:#e3cdcd;background:#fff3f1}
+.ghost-btn:disabled,.main-btn:disabled{opacity:.55;cursor:not-allowed}
+.comment-tab-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:18px 0 18px;box-shadow:0 14px 30px -26px rgba(58,48,38,.5)}
+.comment-tab-bar button{border:0;background:transparent;color:var(--soft);font-family:inherit;font-size:17px;font-weight:800;padding:18px 10px;cursor:pointer;border-right:1px solid var(--line)}
+.comment-tab-bar button:last-child{border-right:0}
+.comment-tab-bar button.active{background:linear-gradient(180deg,#a9793a,#8a6228);color:#fdf6e7}
+.view{display:none}.view.active{display:block}
+.auth-wrap{position:fixed;inset:0;z-index:1000;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(58,48,38,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.auth-box{width:100%;max-width:390px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:34px 28px;box-shadow:0 1px 0 #fffaf2 inset,0 16px 34px -24px rgba(58,48,38,.5)}
+.auth-close{display:block;margin:-20px -12px 4px auto;border:0;background:transparent;color:var(--faint);font-size:22px;cursor:pointer}
+.shixing-home-link{position:fixed;top:12px;left:14px;z-index:99999;display:inline-flex;align-items:center;gap:7px;padding:6px 14px 6px 7px;background:rgba(252,247,238,.94);color:#7c5722;font:600 13px/1 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;text-decoration:none;border:1px solid #e7dcc6;border-radius:20px;box-shadow:0 4px 14px rgba(90,70,40,.18);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.shixing-home-link span{width:21px;height:21px;border-radius:50%;border:1.2px solid #9a6f2e;display:grid;place-items:center;font-family:"Songti SC","STSong",serif;font-weight:600;font-size:12px;color:#7c5722}
+.auth-preview{margin:14px 0 18px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fffaf0;color:var(--soft);font-size:12px;line-height:1.8;text-align:left}
+.auth-box h2{text-align:center;font-size:24px;margin-bottom:6px}
+.auth-box .subtitle{text-align:center;margin-bottom:22px}
+.tabs{display:flex;border-bottom:2px solid var(--line);margin-bottom:20px}
+.tabs button{flex:1;border:0;background:transparent;padding:10px;color:var(--faint);font-family:inherit;font-size:15px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tabs button.active{color:var(--brass-deep);border-bottom-color:var(--brass);font-weight:700}
+.auth-form{display:none}.auth-form.active{display:block}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;color:var(--faint);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--input);font-size:15px;color:var(--ink);font-family:inherit;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brass);background:#fffaf0}
+.form-error{min-height:22px;color:var(--wine);font-size:13px;text-align:center;margin-top:10px}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:960px){.generator-grid{grid-template-columns:300px 1fr}.topbar{align-items:flex-start}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 1px 0 #fffaf2 inset,0 14px 30px -24px rgba(58,48,38,.5)}
+.panel h2,.panel h3{font-size:18px;color:var(--brass-deep);font-weight:600;margin-bottom:12px}
+.quota{background:linear-gradient(135deg,#fff8ed,#fbf6ec);border-color:#ecd9b6}
+.quota-number{font-family:Georgia,"Times New Roman","Songti SC",serif;font-size:44px;font-weight:800;margin:4px 0;color:var(--ink)}
+.quota-number span{font-size:16px;font-weight:500;margin-left:4px;color:var(--faint)}
+.package{border:1px solid var(--line);background:#fffaf0;border-radius:12px;padding:14px;margin-top:10px}
+.package-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.package-title{font-size:15px;font-weight:700;color:var(--ink)}
+.package-price{font-size:18px;color:var(--wine);font-weight:800}
+.mini-list{display:grid;gap:10px;margin-top:10px}
+.mini-item{border:1px solid var(--line);border-radius:11px;background:#fffaf0;padding:11px}
+.mini-title{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:4px}
+.mini-meta{font-size:12px;color:var(--faint);line-height:1.6}
+.mini-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.mini-actions button{padding:6px 9px;font-size:12px}
+.tools{display:grid;grid-template-columns:1fr;gap:12px}
+.inline{display:flex;gap:8px;align-items:center}
+.inline>*{flex:1}
+.file-box{border:1.5px dashed #d8c6a6;border-radius:12px;padding:20px;text-align:center;background:#fffaf0}
+.file-box input{display:none}
+.file-label{display:inline-flex;padding:11px 16px;border-radius:10px;background:linear-gradient(180deg,#a9793a,#8a6228);color:#fdf6e7;font-weight:700;cursor:pointer}
+.hint{font-size:12px;color:var(--faint);line-height:1.8;margin-top:8px}
+.students-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.students-list{display:grid;gap:12px}
+.student-card{background:#fffaf0;border:1px solid var(--line);border-radius:13px;padding:14px}
+.student-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.student-name{font-size:17px;font-weight:800;color:var(--ink)}
+.student-meta{font-size:12px;color:var(--faint)}
+.student-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.student-controls select,.student-controls input{min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--input);font-family:inherit;color:var(--ink)}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tag{font-size:12px;border:1px solid #ddcba9;background:var(--gold);color:var(--brass-deep);padding:4px 8px;border-radius:999px}
+.tag.empty-tag{color:var(--faint);background:#f7efe0}
+.tag-remove{margin-left:4px;color:var(--wine);cursor:pointer;font-weight:800}
+.student-note{margin-bottom:10px}
+.student-note label{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:13px;color:var(--brass-deep);font-weight:800;margin-bottom:6px}
+.student-note label span{font-size:12px;color:var(--faint);font-weight:400}
+.student-note textarea{width:100%;min-height:68px;border:1.5px solid var(--line);border-radius:10px;background:var(--input);padding:10px 12px;font-family:inherit;font-size:14px;line-height:1.7;resize:vertical;color:var(--ink);outline:none}
+.student-note textarea:focus{border-color:var(--brass);background:#fffaf0}
+.comment-box{width:100%;min-height:116px;border:1.5px solid var(--line);border-radius:10px;background:#fff;padding:12px;font-family:inherit;font-size:14px;line-height:1.8;resize:vertical;color:var(--ink)}
+.rewrite-toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:9px;border:1px solid #ead8b9;border-radius:10px;background:#f8efdf}
+.rewrite-label{font-size:12px;color:var(--brass-deep);font-weight:800;margin-right:2px}
+.rewrite-cost{font-size:12px;color:var(--faint)}
+.rewrite-toolbar button{padding:6px 9px;font-size:12px;border-radius:999px;background:#fffaf0}
+.student-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px}
+.empty{border:1.5px dashed #d8c6a6;border-radius:14px;padding:44px 18px;text-align:center;color:var(--faint);background:#fffaf0}
+.history-panel{margin-top:16px}
+.history-list{display:grid;gap:10px}
+.history-item{border:1px solid var(--line);border-radius:12px;background:#fffaf0;padding:13px}
+.history-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:7px}
+.history-name{font-size:15px;font-weight:800;color:var(--ink)}
+.history-note{font-size:12px;line-height:1.7;color:var(--brass-deep);background:#f7efe0;border:1px solid #ead8b9;border-radius:8px;padding:7px 9px;margin-bottom:7px}
+.history-comment{font-size:13px;line-height:1.8;color:var(--soft);white-space:pre-wrap;max-height:74px;overflow:hidden}
+.history-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px}
+.history-actions button{padding:6px 9px;font-size:12px}
+.profile-layout{display:grid;gap:16px}
+.profile-card{text-align:center}
+.profile-name{font-size:22px;font-weight:800;color:var(--ink);margin-top:4px}
+.profile-username{font-size:13px;color:var(--faint);margin-top:4px}
+.profile-badge{display:inline-block;margin-top:10px;border-radius:999px;padding:5px 10px;background:var(--gold);color:var(--brass-deep);font-size:12px;font-weight:800}
+.profile-stats{display:flex;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.profile-stat{flex:1;text-align:center}
+.profile-stat+.profile-stat{border-left:1px solid var(--line)}
+.profile-stat .stat-value{font-size:24px;font-weight:900;color:var(--ink)}
+.profile-stat .stat-label{font-size:12px;color:var(--faint);margin-top:3px}
+.profile-menu{display:grid;gap:8px;margin-top:12px}
+.profile-menu button{text-align:left}
+.profile-menu button.active{background:var(--gold);border-color:var(--brass);color:var(--brass-deep)}
+.profile-section{display:none}.profile-section.active{display:block}
+.profile-info{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fffaf0}
+.profile-row{display:flex;justify-content:space-between;gap:16px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.profile-row:last-child{border-bottom:0}
+.profile-row .label{color:var(--faint)}.profile-row .value{color:var(--ink);font-weight:800;text-align:right}
+.profile-form{display:grid;gap:12px}
+.recharge-grid{display:grid;gap:12px}
+.recharge-card{border:1px solid var(--line);border-radius:13px;background:#fffaf0;padding:14px}
+.recharge-card h3{margin-bottom:4px}
+.package-grid{display:grid;gap:10px}
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:10px;padding:11px 18px;font-size:14px;display:none;z-index:20;box-shadow:0 10px 28px rgba(58,48,38,.24)}
+.toast.success{background:var(--forest)}.toast.error{background:var(--wine)}
+.footer{text-align:center;color:var(--faint);font-size:12px;line-height:1.8;margin-top:24px}
+.modal-mask{position:fixed;inset:0;background:rgba(58,48,38,.42);z-index:40;display:none;align-items:center;justify-content:center;padding:18px}
+.modal{width:min(720px,100%);max-height:86vh;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 70px rgba(58,48,38,.32);overflow:hidden}
+.modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.modal-head h2{font-size:19px;color:var(--brass-deep)}
+.modal-body{padding:18px 20px;overflow:auto}
+.tag-category{margin-bottom:18px}
+.tag-category h3{font-size:13px;color:var(--brass-deep);margin-bottom:8px}
+.tag-choice-row{display:flex;gap:8px;flex-wrap:wrap}
+.tag-choice{padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:#fffaf0;color:var(--soft);font-family:inherit;cursor:pointer}
+.tag-choice.active{background:var(--gold);border-color:var(--brass);color:var(--brass-deep);font-weight:700}
+.custom-tag-row{display:flex;gap:8px;margin-bottom:18px}
+.custom-tag-row input{flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:var(--input);font-family:inherit;color:var(--ink)}
+.print-layout{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+.print-drawer-mask{position:fixed;inset:0;background:rgba(58,48,38,.36);z-index:45;display:none}
+.print-drawer-mask.open{display:block}
+.print-picker{position:fixed;top:0;bottom:0;left:0;width:min(430px,calc(100vw - 26px));z-index:50;border-radius:0 18px 18px 0;transform:translateX(-108%);transition:transform .22s ease;overflow:auto;box-shadow:18px 0 50px rgba(58,48,38,.24)}
+.print-picker.open{transform:translateX(0)}
+.print-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.print-picked-count{font-size:12px;color:var(--faint);margin-top:6px}
+.print-selected-button span{display:block;font-size:11px;font-weight:600;color:#f7e4c1;margin-top:2px}
+.print-source-list{display:grid;gap:10px;max-height:none;overflow:visible;padding-right:2px}
+.print-source-item{display:grid;grid-template-columns:auto 1fr;gap:10px;border:1px solid var(--line);border-radius:12px;background:#fffaf0;padding:11px}
+.print-source-item input{margin-top:4px}
+.print-source-title{font-weight:800;color:var(--ink);font-size:14px}
+.print-source-meta{font-size:12px;color:var(--faint);line-height:1.6}
+.print-source-comment{font-size:12px;color:var(--soft);line-height:1.7;max-height:54px;overflow:hidden;white-space:pre-wrap}
+.print-controls{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;overflow:auto;box-shadow:0 1px 0 #fffaf2 inset,0 14px 30px -24px rgba(58,48,38,.5)}
+.print-controls h2{font-size:20px;color:var(--brass-deep);margin-bottom:4px}
+.print-control{margin-top:16px}
+.print-control label{display:flex;justify-content:space-between;font-size:13px;color:var(--soft);margin-bottom:7px}
+.print-control input,.print-control select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--input);font-family:inherit;color:var(--ink)}
+.print-control input[type=range]{padding:0}
+.print-checks{display:grid;gap:9px;margin-top:16px}
+.print-checks label{display:flex;align-items:center;gap:8px;color:var(--soft);font-size:13px}
+.print-actions{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+.print-actions button{flex:1}
+.print-workspace{overflow:auto;padding:20px;display:flex;justify-content:center;background:#efe7d6;border:1px solid var(--line);border-radius:14px}
+.print-sheet{width:210mm;min-height:297mm;background:#fff;box-shadow:0 18px 42px rgba(58,48,38,.24)}
+.print-items{display:grid;gap:4mm}
+.print-item{break-inside:avoid;color:#000;background:#fff}
+.print-student-name{font-weight:800;border-bottom:1px solid rgba(0,0,0,.16);padding-bottom:2mm;margin-bottom:2mm;display:flex;justify-content:space-between}
+.print-comment{text-align:justify;white-space:pre-wrap}
+.print-footer{text-align:right;font-weight:700;margin-top:2mm}
+@media(max-width:640px){
+  .auth-wrap{align-items:flex-start;padding-top:76px}
+  .topbar{flex-direction:column;align-items:flex-start}.top-actions,.status-strip{justify-content:flex-start}
+  .comment-tab-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .comment-tab-bar button{font-size:15px}
+  .student-controls{grid-template-columns:1fr}.inline{flex-direction:column;align-items:stretch}
+  .package-row{flex-direction:column;align-items:flex-start}.pay-btn{width:100%}
+  .students-head{align-items:flex-start;flex-direction:column}.print-workspace{padding:12px}.print-sheet{width:100%;min-height:0}
+}
+@media(min-width:1040px){
+  .profile-layout{grid-template-columns:280px 1fr}
+  .recharge-grid{grid-template-columns:1fr 1fr}
+  .print-layout{grid-template-columns:300px minmax(0,1fr)}
+}
+@media print{
+  body{background:#fff!important}
+  body>*:not(#appPage){display:none!important}
+  #appPage{display:block!important;max-width:none!important;padding:0!important}
+  .topbar,.comment-tab-bar,#view-generate,#view-history,#view-profile,.print-picker,.print-drawer-mask,.print-controls,.footer{display:none!important}
+  #view-print{display:block!important}
+  .print-layout{display:block!important}
+  .print-workspace{display:block!important;padding:0!important;overflow:visible!important;background:#fff!important}
+  .print-sheet{width:auto!important;min-height:auto!important;box-shadow:none!important}
+  .print-item{break-inside:avoid;page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<a class="shixing-home-link" href="https://shixing.yingyuzuowen.asia/" title="返回师行首页"><span>师</span>师行首页</a>
+<a href="https://shixing.yingyuzuowen.asia/invite.html?center=1" title="师行邀请中心" style="position:fixed;top:56px;left:20px;z-index:99998;color:#8c6f3f;font-size:12px;text-decoration:none">🎁 邀请有礼</a>
+<div id="toast" class="toast"></div>
+
+<div id="authPage" class="auth-wrap" style="display:none" role="dialog" aria-modal="true" aria-labelledby="commentAuthTitle">
+  <div class="auth-box">
+    <button type="button" class="auth-close" onclick="closeAuth()" aria-label="关闭登录窗口">×</button>
+    <div class="brand-kicker" style="text-align:center">师行出品</div>
+    <h2 id="commentAuthTitle">AI 评语生成助手</h2>
+    <p class="subtitle">师行产品共用同一账号与积分，已有账号可直接登录。</p>
+    <div class="auth-preview" id="commentInviteContext">录入学生特点和具体事例，生成个性化评语初稿；支持批量生成、二次改写和打印排版。每生成或改写 1 条消耗 25 师行积分。</div>
+    <div class="tabs">
+      <button id="loginTab" class="active" onclick="switchAuth('login')">登录</button>
+      <button id="registerTab" onclick="switchAuth('register')">注册</button>
+    </div>
+    <div id="loginForm" class="auth-form active">
+      <div class="field"><label for="loginUser">用户名</label><input id="loginUser" autocomplete="username"></div>
+      <div class="field"><label for="loginPass">密码</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+      <button class="main-btn" style="width:100%" onclick="login()">登录</button>
+    </div>
+    <div id="registerForm" class="auth-form">
+      <div class="field"><label for="regUser">用户名</label><input id="regUser" autocomplete="off"></div>
+      <div class="field"><label for="regEmail">邮箱</label><input id="regEmail" type="email" autocomplete="email" placeholder="用于接收注册验证码"></div>
+      <div class="field"><label for="regCode">邮箱验证码</label><div style="display:flex;gap:8px"><input id="regCode" inputmode="numeric" autocomplete="one-time-code" placeholder="请输入6位验证码"><button id="sendRegisterCodeBtn" type="button" class="main-btn" style="white-space:nowrap" onclick="sendRegisterCode()">获取验证码</button></div></div>
+      <div class="field"><label for="regName">称呼</label><input id="regName" placeholder="例如：李老师"></div>
+      <div class="field"><label for="regPass">密码</label><input id="regPass" type="password" autocomplete="new-password"></div>
+      <button class="main-btn" style="width:100%" onclick="register()">注册并进入</button>
+    </div>
+    <div id="authError" class="form-error" aria-live="polite"></div>
+    <p class="hint" style="text-align:center">已有班级广播账号可直接登录。</p>
+  </div>
+</div>
+
+<div id="commentRefMask" role="dialog" aria-modal="true" aria-labelledby="commentRefTitle" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1200;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#fffdf7;border:1px solid var(--line);border-radius:14px;padding:26px;max-width:460px;width:92%;max-height:82vh;overflow-y:auto">
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:40px">🎁</div>
+      <h3 id="commentRefTitle" style="margin:6px 0">邀请同事，免费拿师行积分</h3>
+    </div>
+    <div style="background:#fffaf0;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#6b5d45;line-height:1.9">
+      <div>1️⃣ 同事注册后首次使用任一师行工具 → <strong style="color:#8c6f3f">双方各得 500 积分</strong></div>
+      <div>2️⃣ 同事首次购买积分包 → 你再得 <strong style="color:#c0392b">1500 积分</strong>；首次开通广播则得 30 天</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input type="text" id="cRefLink" readonly style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;color:#8c6f3f;background:#fffaf0">
+      <button onclick="copyCommentRefLink()" style="padding:10px 16px;border:none;border-radius:8px;background:linear-gradient(180deg,#a9793a,#8a6228);color:#fdf6e7;font-size:13px;cursor:pointer;flex-shrink:0">复制链接</button>
+    </div>
+    <div id="cRefStats" style="font-size:13px;color:#999;margin-bottom:8px"></div>
+    <div id="cRefCapNote" style="display:none;font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.7"></div>
+    <div id="cRefList"></div>
+    <button style="width:100%;margin-top:12px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#999;cursor:pointer" onclick="document.getElementById('commentRefMask').style.display='none'">关闭</button>
+  </div>
+</div>
+
+<div id="appPage" class="page" style="display:none">
+  <div class="topbar">
+    <div class="brand">
+      <div class="crest">评</div>
+      <div>
+        <div class="brand-kicker">师行出品</div>
+        <h1>AI 评语生成助手</h1>
+        <p class="subtitle">批量导入名单，按学生画像生成、编辑、导出期末评语。</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="status-strip">
+        <span class="status-pill">师行积分 <strong id="headerCommentBalance">0</strong></span>
+        <span class="status-pill">广播时长 <strong id="headerBroadcastTime">读取中</strong></span>
+      </div>
+      <a class="link-btn" href="https://notice.yingyuzuowen.asia/teacher.html" target="_blank" rel="noopener">班级广播</a>
+      <button class="link-btn" id="commentReferralBtn" style="cursor:pointer" onclick="openCommentReferral()">🎁 邀请有礼</button>
+      <button class="ghost-btn" id="commentAuthBtn" onclick="logout()">退出</button>
+    </div>
+  </div>
+
+  <div id="zuowenPromo" style="display:none;margin-bottom:14px;padding:12px 16px;background:#fdf9f0;border:1px solid #e8dcc3;border-radius:10px;font-size:13px;color:#6b5d45;line-height:1.7">
+    <span style="float:right;cursor:pointer;color:#b0a288;font-size:16px;margin-left:10px" onclick="dismissZuowenPromo()">&times;</span>
+    📝 师行新工具：<strong>AI 作文批改助手</strong>——逐段旁批 + 尾批总评，拍照识别手写作文，整班批量批改导出 Word。
+    <a href="https://zuowen.yingyuzuowen.asia" target="_blank" rel="noopener" style="color:#8c6f3f;font-weight:600">同账号直接登录，送 10 次免费批改 →</a>
+  </div>
+
+  <div class="comment-tab-bar">
+    <button class="active" data-comment-tab="generate" onclick="switchCommentTab('generate',this)">评语生成</button>
+    <button data-comment-tab="history" onclick="switchCommentTab('history',this)">历史记录</button>
+    <button data-comment-tab="print" onclick="switchCommentTab('print',this)">打印助手</button>
+    <button data-comment-tab="profile" onclick="switchCommentTab('profile',this)">个人中心</button>
+  </div>
+
+  <section id="view-generate" class="view active">
+    <div class="grid generator-grid">
+      <aside>
+        <div class="panel">
+        <h3>全局配置</h3>
+        <div class="tools">
+          <div class="field"><label>学段</label><select id="schoolStage"><option>小学</option><option>初中</option><option>高中</option></select></div>
+          <div class="field"><label>整体水平</label><select id="performance"><option>优秀 (前10%)</option><option selected>良好 (前30%)</option><option>中等 (平均水平)</option><option>需努力 (加油)</option></select></div>
+          <div class="field"><label>风格</label><select id="style"><option value="gentle">温柔鼓励型</option><option value="serious">严肃指正型</option><option value="humorous">幽默风趣型</option><option value="elegant">深沉文雅型</option><option value="passionate">激情澎湃型</option></select></div>
+          <div class="inline">
+            <div class="field"><label>最少字数</label><input id="minLen" type="number" value="120" min="60" max="500"></div>
+            <div class="field"><label>最多字数</label><input id="maxLen" type="number" value="180" min="80" max="700"></div>
+          </div>
+          <button class="ghost-btn" onclick="applyGlobalConfig()">应用到所有学生</button>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <h3>账户花名册</h3>
+        <p class="subtitle">上传过的名单会保存在账号中，之后可直接载入。</p>
+        <button class="ghost-btn" style="width:100%" onclick="saveCurrentRoster()">保存当前名单</button>
+        <div id="rosterList" class="mini-list"></div>
+      </div>
+      </aside>
+
+      <main>
+      <div class="panel">
+        <div class="students-head">
+          <div>
+            <h2>学生名单</h2>
+            <p class="subtitle">支持 Excel/CSV，需包含“姓名”列；性别、标签、具体事例/印象列可选。</p>
+          </div>
+          <div class="top-actions">
+            <button class="ghost-btn" onclick="addStudent()">添加学生</button>
+            <button class="ghost-btn" onclick="switchCommentTab('print')">打印助手</button>
+            <button class="ghost-btn" onclick="exportExcel()">导出</button>
+            <button class="ghost-btn danger-btn" onclick="clearDraft()">清空草稿</button>
+            <button class="main-btn" id="batchBtn" onclick="generateAll()">批量生成</button>
+          </div>
+        </div>
+        <div class="file-box" id="fileBox">
+          <label class="file-label">上传班级名单<input id="fileInput" type="file" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(event)"></label>
+          <p class="hint">名单、标签、具体印象和已生成评语会自动暂存在本机浏览器；可随时清空草稿。</p>
+        </div>
+        <div id="studentsList" class="students-list" style="margin-top:14px"></div>
+      </div>
+      </main>
+    </div>
+  </section>
+
+  <section id="view-history" class="view">
+    <div class="panel">
+      <div class="students-head">
+        <div>
+          <h2>生成历史</h2>
+          <p class="subtitle">单次生成和批量生成都会逐条记录，带时间戳，可复制、复用或加入打印。</p>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-btn" onclick="loadCommentHistory()">刷新历史</button>
+          <button class="main-btn" onclick="switchCommentTab('print')">去打印排版</button>
+        </div>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </div>
+  </section>
+
+  <section id="view-print" class="view">
+    <div id="printDrawerMask" class="print-drawer-mask" onclick="closePrintPicker()"></div>
+    <aside id="printPickerDrawer" class="panel print-picker" aria-hidden="true">
+      <div class="print-drawer-head">
+        <div>
+          <h2>选择评语</h2>
+          <p class="subtitle">从当前名单和历史记录中挑选要打印的评语。</p>
+          <div class="print-picked-count" id="printSelectedCountDrawer">已选 0 条</div>
+        </div>
+        <button class="ghost-btn" onclick="closePrintPicker()">关闭</button>
+      </div>
+      <div class="top-actions" style="justify-content:flex-start;margin-bottom:10px">
+        <button class="ghost-btn" onclick="selectAllPrintSources(true)">全选</button>
+        <button class="ghost-btn" onclick="selectAllPrintSources(false)">清空</button>
+      </div>
+      <div id="printSourceList" class="print-source-list"></div>
+    </aside>
+    <div class="print-layout">
+      <aside class="print-controls">
+        <div class="students-head">
+          <div>
+            <h2>打印排版助手</h2>
+            <p class="subtitle">先选择要打印的评语，再调整版式。</p>
+          </div>
+          <button class="main-btn print-selected-button" onclick="openPrintPicker()">选择评语<span id="printSelectedCount">0条已选</span></button>
+        </div>
+        <div class="print-control"><label><span>字号</span><span id="printFontSizeText">12pt</span></label><input id="printFontSize" type="range" min="9" max="24" step="0.5" value="12" oninput="updatePrintConfig('fontSize', Number(this.value))"></div>
+        <div class="print-control"><label><span>行距</span><span id="printLineHeightText">1.5</span></label><input id="printLineHeight" type="range" min="1" max="3" step="0.1" value="1.5" oninput="updatePrintConfig('lineHeight', Number(this.value))"></div>
+        <div class="print-control"><label><span>单条高度</span><span id="printBoxHeightText">60mm</span></label><input id="printBoxHeight" type="range" min="20" max="150" value="60" oninput="updatePrintConfig('boxHeight', Number(this.value))"></div>
+        <div class="print-control"><label><span>内边距</span><span id="printPaddingText">10mm</span></label><input id="printPadding" type="range" min="2" max="20" value="10" oninput="updatePrintConfig('padding', Number(this.value))"></div>
+        <div class="print-control"><label><span>页边距</span><span id="printPageMarginText">15mm</span></label><input id="printPageMargin" type="range" min="0" max="50" value="15" oninput="updatePrintConfig('pageMargin', Number(this.value))"></div>
+        <div class="print-control"><label><span>栏数</span></label><select id="printCols" onchange="updatePrintConfig('layoutCols', Number(this.value))"><option value="1">单栏</option><option value="2">双栏</option></select></div>
+        <div class="print-control"><label><span>字体</span></label><select id="printFontFamily" onchange="updatePrintConfig('fontFamily', this.value)"><option value="serif">宋体</option><option value="kai">楷体</option><option value="sans">黑体</option></select></div>
+        <div class="print-control"><label><span>落款</span></label><input id="printFooterText" placeholder="例如：班主任 王老师" oninput="updatePrintConfig('footerText', this.value)"></div>
+        <div class="print-checks">
+          <label><input id="printFixedHeight" type="checkbox" onchange="updatePrintConfig('useFixedHeight', this.checked)"> 固定高度，超出隐藏</label>
+          <label><input id="printShowBorder" type="checkbox" checked onchange="updatePrintConfig('showBorder', this.checked)"> 显示边框</label>
+          <label><input id="printShowName" type="checkbox" checked onchange="updatePrintConfig('showName', this.checked)"> 显示姓名</label>
+        </div>
+        <div class="print-actions">
+          <button class="ghost-btn" onclick="switchCommentTab('history')">回历史</button>
+          <button class="main-btn" onclick="printComments()">打印</button>
+        </div>
+      </aside>
+      <main class="print-workspace">
+        <div id="printSheet" class="print-sheet">
+          <div id="printItems" class="print-items"></div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <section id="view-profile" class="view">
+    <div class="profile-layout">
+      <aside>
+        <div class="panel profile-card">
+          <div class="crest" style="margin:0 auto">评</div>
+          <div class="profile-name" id="profileName">老师</div>
+          <div class="profile-username" id="profileUsername">@username</div>
+          <span class="profile-badge" id="profilePlanBadge">读取中</span>
+          <div class="profile-stats">
+            <div class="profile-stat"><div class="stat-value" id="profileCommentBalance">0</div><div class="stat-label">师行积分</div></div>
+            <div class="profile-stat"><div class="stat-value" id="profileNotifCount">0</div><div class="stat-label">已发通知</div></div>
+          </div>
+        </div>
+        <div class="panel profile-menu">
+          <button class="ghost-btn active" onclick="switchProfileSection('edit',this)">编辑资料</button>
+          <button class="ghost-btn" onclick="switchProfileSection('recharge',this)">账户充值</button>
+        </div>
+      </aside>
+      <main>
+        <div class="profile-section active" id="profileSec-edit">
+          <div class="panel">
+            <h2>编辑资料</h2>
+            <p class="subtitle">这里修改的是同一个师行账号，班级广播和评语生成会同步显示。</p>
+            <div class="profile-form">
+              <div class="field"><label>账号</label><input id="profileUser2" disabled></div>
+              <div class="field"><label>称呼</label><input id="editDisplayName" placeholder="例如：李老师"></div>
+              <div class="field"><label>找回密码联系方式</label><input id="editContact" placeholder="邮箱或手机号码"></div>
+              <button class="main-btn" onclick="saveProfileBasics()">保存资料</button>
+            </div>
+          </div>
+        </div>
+        <div class="profile-section" id="profileSec-recharge">
+          <div class="recharge-grid">
+            <div class="panel">
+              <h2>账户信息</h2>
+              <div class="profile-info">
+                <div class="profile-row"><span class="label">教师码</span><span class="value" id="profileTeacherCode">-</span></div>
+                <div class="profile-row"><span class="label">师行积分余额</span><span class="value" id="balanceText">0积分</span></div>
+                <div class="profile-row"><span class="label">广播账户</span><span class="value" id="profilePlan">-</span></div>
+                <div class="profile-row"><span class="label">广播到期时间</span><span class="value" id="profileExpires">-</span></div>
+                <div class="profile-row"><span class="label">注册时间</span><span class="value" id="profileCreated">-</span></div>
+              </div>
+            </div>
+            <div class="panel">
+              <h2>账户充值</h2>
+              <div class="recharge-card">
+                <h3>师行积分充值</h3>
+                <p class="subtitle" id="quotaHint">每生成或改写 1 条评语消耗 25 积分。</p>
+                <div id="packages" class="package-grid"></div>
+              </div>
+              <div class="recharge-card" style="margin-top:12px">
+                <h3>班级广播半年会员</h3>
+                <p class="subtitle" id="broadcastRechargeHint">新用户自动赠送 3 天体验，支付成功后开通 365 天。</p>
+                <button class="pay-btn" onclick="startYearlyPayment(this)">微信支付开通半年会员</button>
+              </div>
+              <div class="hint" id="paymentStatus"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <div class="footer">
+    <p>师行出品 · 为一线老师做实用的小工具</p>
+    <p>平时发通知？<a href="https://notice.yingyuzuowen.asia/teacher.html" target="_blank" rel="noopener">试试班级广播</a></p>
+  </div>
+</div>
+
+<div id="tagModal" class="modal-mask" role="dialog" aria-modal="true" aria-labelledby="tagModalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="tagModalTitle">选择学生画像标签</h2>
+      <button class="ghost-btn" onclick="closeTagModal()">完成</button>
+    </div>
+    <div class="modal-body">
+      <div class="custom-tag-row">
+        <input id="customTagInput" placeholder="输入自定义标签，例如：进步明显">
+        <button class="main-btn" onclick="addCustomTag()">添加</button>
+      </div>
+      <div id="tagModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = '';
+var token = '';
+var currentUser = null;
+var students = [];
+var balance = 0;
+var packages = [];
+var pointCost = 25;
+var paymentConfig = null;
+var rosters = [];
+var historyItems = [];
+var batchGenerating = false;
+var currentRosterId = null;
+var pendingCommentAction = null;
+var printSelection = {};
+var styleLabels = {
+  gentle: '温柔鼓励型',
+  serious: '严肃指正型',
+  humorous: '幽默风趣型',
+  elegant: '深沉文雅型',
+  passionate: '激情澎湃型'
+};
+var rewriteModes = [
+  { key: 'sincere', label: '更真诚' },
+  { key: 'concrete', label: '更具体' },
+  { key: 'shorter', label: '更短一点' },
+  { key: 'literary', label: '更有文采' },
+  { key: 'balanced', label: '温和提不足' }
+];
+var TAG_CATEGORIES = {
+  '学习态度': ['思维敏捷', '踏实刻苦', '求知欲强', '注意力易分散', '缺乏自信', '有些浮躁', '被动学习', '勤学好问', '知难而进', '作业拖沓'],
+  '课堂表现': ['积极发言', '善于倾听', '乐于分享', '爱做小动作', '常常迟到', '沉默寡言', '思维活跃', '眼神专注'],
+  '性格特质': ['乐观开朗', '沉稳内敛', '乐于助人', '正直勇敢', '略显孤僻', '易冲动', '阳光自信', '细腻敏感'],
+  '能力素养': ['书写工整', '逻辑严密', '领导力强', '才艺出众', '书写潦草', '粗心大意', '计算准确', '朗读有感情'],
+  '日常行为': ['讲究卫生', '爱护公物', '尊敬师长', '乐于劳动', '挑食', '丢三落四', '团结同学', '礼貌待人']
+};
+var activeTagStudentId = null;
+var printConfig = {
+  fontSize: 12,
+  lineHeight: 1.5,
+  layoutCols: 1,
+  boxHeight: 60,
+  useFixedHeight: false,
+  padding: 10,
+  pageMargin: 15,
+  showBorder: true,
+  showName: true,
+  fontFamily: 'serif',
+  footerText: ''
+};
+
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || '');
+  el.style.display = 'block';
+  setTimeout(function(){ el.style.display = 'none'; }, 2200);
+}
+
+function headers() {
+  return { 'Content-Type': 'application/json', 'X-Token': token };
+}
+
+function setText(id, value) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function setValue(id, value) {
+  var el = document.getElementById(id);
+  if (el) el.value = value || '';
+}
+
+function switchCommentTab(name, btn) {
+  if (!currentUser && (name === 'history' || name === 'profile')) {
+    openAuth();
+    return;
+  }
+  var tabs = document.querySelectorAll('[data-comment-tab]');
+  for (var i = 0; i < tabs.length; i++) {
+    var active = tabs[i].getAttribute('data-comment-tab') === name;
+    tabs[i].className = active ? 'active' : '';
+  }
+  if (btn) btn.className = 'active';
+  ['generate','history','print','profile'].forEach(function(key){
+    var view = document.getElementById('view-' + key);
+    if (view) view.className = 'view' + (key === name ? ' active' : '');
+  });
+  if (name !== 'print') closePrintPicker();
+  if (name === 'history') loadCommentHistory();
+  if (name === 'print') {
+    loadCommentHistory();
+    renderPrintSources();
+    syncPrintControls();
+    renderPrintPreview();
+  }
+  if (name === 'profile') loadProfile();
+}
+
+function switchProfileSection(name, btn) {
+  document.querySelectorAll('.profile-menu button').forEach(function(item){ item.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  ['edit','recharge'].forEach(function(key){
+    var el = document.getElementById('profileSec-' + key);
+    if (el) el.className = 'profile-section' + (key === name ? ' active' : '');
+  });
+}
+
+function switchAuth(tab) {
+  document.getElementById('loginTab').className = tab === 'login' ? 'active' : '';
+  document.getElementById('registerTab').className = tab === 'register' ? 'active' : '';
+  document.getElementById('loginForm').className = 'auth-form' + (tab === 'login' ? ' active' : '');
+  document.getElementById('registerForm').className = 'auth-form' + (tab === 'register' ? ' active' : '');
+  document.getElementById('authError').textContent = '';
+}
+
+function openAuth(action) {
+  pendingCommentAction = action || pendingCommentAction;
+  switchAuth('login');
+  document.getElementById('authPage').style.display = 'flex';
+}
+
+function closeAuth() {
+  document.getElementById('authPage').style.display = 'none';
+}
+
+function setAuthError(msg) {
+  document.getElementById('authError').textContent = msg || '';
+}
+
+function storageGet(storage, key) {
+  try {
+    return storage && storage.getItem(key);
+  } catch (e) {
+    return '';
+  }
+}
+
+function getDraftKey() {
+  return 'shixing_comment_draft_' + (currentUser && currentUser.id ? currentUser.id : 'guest');
+}
+
+function normalizeStudent(row, idx) {
+  var cfg = getGlobalConfig();
+  return Object.assign({}, cfg, row || {}, {
+    id: String(row && row.id || (Date.now() + idx + Math.random())),
+    name: row && row.name || '学生' + (students.length + idx + 1),
+    gender: row && row.gender || '男',
+    tags: Array.isArray(row && row.tags) ? row.tags : [],
+    concreteNote: row && (row.concreteNote || row.concrete_note || row.specificNote || row.impression || row.event) || '',
+    comment: row && row.comment || '',
+    isGenerating: false
+  });
+}
+
+function studentIdArg(id) {
+  return escAttr(JSON.stringify(String(id)));
+}
+
+function loadDraft() {
+  try {
+    var raw = localStorage.getItem(getDraftKey());
+    if (!raw) return;
+    var data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.students)) return;
+    students = data.students.map(function(row, idx){ return normalizeStudent(row, idx); });
+    currentRosterId = data.currentRosterId || null;
+  } catch (e) {
+    console.warn('comment draft load failed', e);
+  }
+}
+
+function saveDraft() {
+  try {
+    localStorage.setItem(getDraftKey(), JSON.stringify({
+      savedAt: new Date().toISOString(),
+      currentRosterId: currentRosterId,
+      students: students.map(function(s){
+        return {
+          id: s.id,
+          name: s.name,
+          gender: s.gender,
+          schoolStage: s.schoolStage,
+          performance: s.performance,
+          style: s.style,
+          minLen: s.minLen,
+          maxLen: s.maxLen,
+          tags: s.tags || [],
+          concreteNote: s.concreteNote || '',
+          comment: s.comment || ''
+        };
+      })
+    }));
+  } catch (e) {
+    console.warn('comment draft save failed', e);
+  }
+}
+
+function clearDraft() {
+  if (!confirm('确定清空当前名单和已生成评语吗？')) return;
+  students = [];
+  try { localStorage.removeItem(getDraftKey()); } catch (e) {}
+  renderStudents();
+  toast('草稿已清空', 'success');
+}
+
+function enterApp(profile) {
+  currentUser = profile || currentUser;
+  document.getElementById('authPage').style.display = 'none';
+  document.getElementById('appPage').style.display = 'block';
+  if (!pendingCommentAction) loadDraft();
+  else saveDraft();
+  var authBtn = document.getElementById('commentAuthBtn');
+  if (authBtn) authBtn.textContent = '退出';
+  loadProfile();
+  var configReady = loadCommentConfig();
+  loadPaymentConfig();
+  loadRosters();
+  loadCommentHistory();
+  handlePaymentReturn();
+  renderStudents();
+  renderPrintSources();
+  renderPrintPreview();
+  Promise.resolve(configReady).then(resumePendingCommentAction);
+}
+
+function enterGuestApp() {
+  currentUser = null;
+  document.getElementById('authPage').style.display = 'none';
+  document.getElementById('appPage').style.display = 'block';
+  loadDraft();
+  renderStudents();
+  renderPrintSources();
+  renderPrintPreview();
+  setText('headerCommentBalance', '生成时登录');
+  setText('headerBroadcastTime', '—');
+  var authBtn = document.getElementById('commentAuthBtn');
+  if (authBtn) authBtn.textContent = '登录 / 注册';
+}
+
+function resumePendingCommentAction() {
+  var action = pendingCommentAction;
+  pendingCommentAction = null;
+  if (!action) return;
+  if (action.type === 'one') generateOne(action.id);
+  if (action.type === 'rewrite') rewriteComment(action.id, action.mode);
+  if (action.type === 'all') generateAll();
+}
+
+function login() {
+  var username = document.getElementById('loginUser').value.trim();
+  var password = document.getElementById('loginPass').value;
+  if (!username || !password) return setAuthError('请输入用户名和密码');
+  fetch(API + '/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:username,password:password}) })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) return setAuthError(r.data.error || '登录失败');
+    token = r.data.token;
+    localStorage.setItem('comment_token', token);
+    localStorage.setItem('broadcast_token', token);
+    enterApp(r.data.user);
+  })
+  .catch(function(){ setAuthError('网络连接失败'); });
+}
+
+function sendRegisterCode() {
+  var email = document.getElementById('regEmail').value.trim();
+  var button = document.getElementById('sendRegisterCodeBtn');
+  if (!email) return setAuthError('请填写邮箱');
+  button.disabled = true;
+  button.textContent = '发送中...';
+  fetch(API + '/api/register/send-code', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:email}) })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){ setAuthError(r.ok ? '验证码已发送，请查看邮箱' : (r.data.error || '验证码发送失败')); })
+  .catch(function(){ setAuthError('网络连接失败'); })
+  .finally(function(){ button.disabled = false; button.textContent = '获取验证码'; });
+}
+
+function register() {
+  var username = document.getElementById('regUser').value.trim();
+  var email = document.getElementById('regEmail').value.trim();
+  var code = document.getElementById('regCode').value.trim();
+  var displayName = document.getElementById('regName').value.trim();
+  var password = document.getElementById('regPass').value;
+  if (!username || !email || !code || !password) return setAuthError('请填写用户名、邮箱、验证码和密码');
+  fetch(API + '/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:username,email:email,code:code,display_name:displayName || username,password:password}) })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) return setAuthError(r.data.error || '注册失败');
+    token = r.data.token;
+    localStorage.setItem('comment_token', token);
+    localStorage.setItem('broadcast_token', token);
+    enterApp(r.data.user);
+  })
+  .catch(function(){ setAuthError('网络连接失败'); });
+}
+
+function openCommentReferral() {
+  if (!currentUser) return openAuth();
+  document.getElementById('commentRefMask').style.display = 'flex';
+  fetch(API + '/api/referral', { headers: headers() })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (!d.ok) return;
+    document.getElementById('cRefLink').value = d.link;
+    document.getElementById('cRefStats').textContent = '已邀请 ' + d.invited_count + ' 人 · 已获得 ' + (d.earned_points || 0) + ' 师行积分 · ' + (d.earned_days || 0) + ' 天广播时长';
+    var capNote = document.getElementById('cRefCapNote');
+    capNote.textContent = '首次使用奖励每月自动发放前 ' + d.activation_monthly_limit + ' 笔；超出部分进入人工审核。';
+    capNote.style.display = 'block';
+    var list = document.getElementById('cRefList');
+    list.innerHTML = '';
+    (d.invitees || []).forEach(function(iv){
+      var div = document.createElement('div');
+      div.style.cssText = 'display:flex;justify-content:space-between;padding:6px 10px;font-size:12px;color:#6b5d45;background:#fffaf0;border:1px solid var(--line);border-radius:6px;margin-bottom:4px';
+      var s1 = document.createElement('span'); s1.textContent = iv.invitee_username;
+      var label = {approved:'✅已到账',pending:'审核中',waiting:'⏳待完成',reversed:'已撤回',rejected:'未通过'};
+      var s2 = document.createElement('span'); s2.textContent = '首次使用：' + (label[iv.activation_status] || iv.activation_status) + ' · 首次付费：' + (label[iv.purchase_status] || iv.purchase_status);
+      div.appendChild(s1); div.appendChild(s2);
+      list.appendChild(div);
+    });
+  })
+  .catch(function(){});
+}
+
+function copyCommentRefLink() {
+  var link = document.getElementById('cRefLink').value;
+  if (!link) return;
+  var text = '期末写评语神器「AI评语生成助手」，导入名单按学生特点批量生成，师行账号直接使用：' + link;
+  function done(){ toast('已复制，发给同事吧','success'); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function(){ cRefFallbackCopy(text, done); });
+  } else { cRefFallbackCopy(text, done); }
+}
+
+function cRefFallbackCopy(text, done) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { alert('复制失败，请手动复制'); }
+  document.body.removeChild(ta);
+}
+
+function logout() {
+  if (!currentUser) return openAuth();
+  fetch(API + '/api/logout', { method: 'POST', headers: headers() }).catch(function(){});
+  token = '';
+  currentUser = null;
+  localStorage.removeItem('comment_token');
+  enterGuestApp();
+}
+
+function planText(profile) {
+  if (!profile) return '读取中';
+  if (profile.plan_status && !profile.plan_status.active) return '已到期';
+  if (profile.plan === 'yearly') return '会员版';
+  if (profile.plan_status && profile.plan_status.plan === 'trial') return '免费试用';
+  return profile.plan_status && profile.plan_status.label || '免费试用';
+}
+
+function broadcastTimeText(profile) {
+  var status = profile && profile.plan_status;
+  if (!status) return '读取中';
+  if (!status.active) return '已到期';
+  if (!status.expires) return '已开通';
+  var days = Math.ceil((Date.parse(status.expires) - Date.now()) / 86400000);
+  if (days < 0) return '已到期';
+  return '剩' + days + '天';
+}
+
+function renderProfile(profile) {
+  if (!profile) return;
+  currentUser = Object.assign({}, currentUser || {}, profile);
+  setText('profileName', profile.display_name || profile.username || '老师');
+  setText('profileUsername', '@' + (profile.username || ''));
+  setValue('profileUser2', profile.username || '');
+  setValue('editDisplayName', profile.display_name || '');
+  setValue('editContact', profile.contact_value || '');
+  setText('profileTeacherCode', profile.teacher_code || '-');
+  setText('profileNotifCount', Number(profile.notif_count || 0));
+  setText('profilePlan', planText(profile));
+  setText('profileExpires', profile.plan_status && profile.plan_status.expires ? new Date(profile.plan_status.expires).toLocaleDateString('zh-CN') : '无');
+  setText('profileCreated', profile.created_at ? new Date(profile.created_at).toLocaleDateString('zh-CN') : '-');
+  setText('headerBroadcastTime', broadcastTimeText(profile));
+  var badge = document.getElementById('profilePlanBadge');
+  if (badge) {
+    badge.textContent = planText(profile);
+    badge.className = 'profile-badge';
+  }
+}
+
+function loadProfile() {
+  return fetch(API + '/api/profile', { headers: headers() })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '加载资料失败');
+    renderProfile(r.data);
+    return r.data;
+  })
+  .catch(function(e){ console.warn(e.message || e); });
+}
+
+function saveProfileBasics() {
+  var name = document.getElementById('editDisplayName').value.trim();
+  var contact = document.getElementById('editContact').value.trim();
+  if (!name) return toast('请输入称呼', 'error');
+  if (!contact) return toast('请输入联系方式', 'error');
+  fetch(API + '/api/profile', {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ display_name: name, contact: contact })
+  })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '保存失败');
+    return loadProfile();
+  })
+  .then(function(){ toast('资料已同步保存', 'success'); })
+  .catch(function(e){ toast(e.message || '保存失败', 'error'); });
+}
+
+function loadPaymentConfig() {
+  return fetch(API + '/api/payments/config', { headers: headers() })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '加载充值配置失败');
+    paymentConfig = r.data;
+    var hint = document.getElementById('broadcastRechargeHint');
+    if (hint && paymentConfig.yearly_price) {
+      hint.textContent = '班级广播半年会员 ' + paymentConfig.yearly_price + ' 元，支付成功后开通 ' + paymentConfig.yearly_days + ' 天。';
+    }
+  })
+  .catch(function(e){ console.warn(e.message || e); });
+}
+
+function startYearlyPayment(btn) {
+  if (btn) btn.disabled = true;
+  var status = document.getElementById('paymentStatus');
+  if (status) status.textContent = '正在创建班级广播会员订单...';
+  fetch(API + '/api/payments/yearly', { method:'POST', headers:headers(), body:JSON.stringify({}) })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '创建支付订单失败');
+    localStorage.setItem('comment_pay_order', r.data.out_trade_no);
+    window.location.href = r.data.pay_url;
+  })
+  .catch(function(e){
+    if (status) status.textContent = e.message;
+    toast(e.message || '创建支付订单失败', 'error');
+    if (btn) btn.disabled = false;
+  });
+}
+
+function loadCommentConfig() {
+  return fetch(API + '/api/comment/config', { headers: headers() })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '加载额度失败');
+    balance = Number(r.data.balance) || 0;
+    pointCost = Number(r.data.point_cost) || 25;
+    packages = r.data.packages || [];
+    renderQuota(r.data.enabled);
+  })
+  .catch(function(e){ toast(e.message || '加载额度失败', 'error'); });
+}
+
+function renderQuota(enabled) {
+  var balanceText = document.getElementById('balanceText');
+  if (balanceText) balanceText.textContent = balance + '积分';
+  setText('headerCommentBalance', balance + '积分');
+  setText('profileCommentBalance', balance);
+  var hint = document.getElementById('quotaHint');
+  if (hint) hint.textContent = enabled ? '每生成或改写 1 条评语消耗 ' + pointCost + ' 积分；与思想圆桌、数学课件共用余额。' : 'AI 服务暂未配置，请联系管理员。';
+  var box = document.getElementById('packages');
+  if (!box) return;
+  box.innerHTML = packages.map(function(pkg){
+    var bonus = Number(pkg.first_bonus) > 0 ? '首充赠 ' + Number(pkg.first_bonus) + '，本次到账 ' + Number(pkg.first_award) + ' 积分' : '三个产品通用';
+    return '<div class="package"><div class="package-row"><div><div class="package-title">' + esc(pkg.label) + '</div><div class="hint">' + bonus + '</div></div><div><div class="package-price">¥' + Number(pkg.amount).toFixed(1) + '</div><button class="pay-btn" onclick="purchasePackage(&quot;' + escAttr(pkg.key) + '&quot;)">购买</button></div></div></div>';
+  }).join('');
+}
+
+function loadRosters() {
+  fetch(API + '/api/comment/rosters', { headers: headers() })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '加载花名册失败');
+    rosters = r.data.rosters || [];
+    renderRosters();
+  })
+  .catch(function(e){ console.warn(e.message || e); });
+}
+
+function renderRosters() {
+  var el = document.getElementById('rosterList');
+  if (!el) return;
+  if (!rosters.length) {
+    el.innerHTML = '<div class="mini-item"><div class="mini-meta">暂无已保存花名册</div></div>';
+    return;
+  }
+  el.innerHTML = rosters.map(function(r){
+    var time = r.updated_at ? new Date(r.updated_at).toLocaleDateString('zh-CN') : '';
+    return '<div class="mini-item">' +
+      '<div class="mini-title">' + esc(r.name) + '</div>' +
+      '<div class="mini-meta">' + Number(r.student_count || 0) + ' 人' + (time ? ' · ' + time : '') + '</div>' +
+      '<div class="mini-actions"><button class="ghost-btn" onclick="loadRoster(' + r.id + ')">载入</button><button class="ghost-btn danger-btn" onclick="deleteRoster(' + r.id + ')">删除</button></div>' +
+      '</div>';
+  }).join('');
+}
+
+function rosterPayloadStudents() {
+  return students.map(function(s){
+    return {
+      id: s.id,
+      name: s.name,
+      gender: s.gender,
+      schoolStage: s.schoolStage,
+      performance: s.performance,
+      style: s.style,
+      styleLabel: styleLabels[s.style] || s.style,
+      tags: s.tags || [],
+      concreteNote: s.concreteNote || '',
+      minLen: s.minLen,
+      maxLen: s.maxLen,
+      comment: s.comment || ''
+    };
+  });
+}
+
+function defaultRosterName(source) {
+  if (source) return String(source).replace(/\.[^.]+$/, '').slice(0, 32) || '班级花名册';
+  var date = new Date().toLocaleDateString('zh-CN');
+  return '班级花名册 ' + date;
+}
+
+function saveCurrentRoster(name, source, silent) {
+  if (!currentUser) { openAuth(); return; }
+  if (!students.length) {
+    if (!silent) toast('请先导入或添加学生', 'error');
+    return Promise.resolve(null);
+  }
+  var rosterName = name || prompt('花名册名称', defaultRosterName(source));
+  if (!rosterName) return Promise.resolve(null);
+  return fetch(API + '/api/comment/rosters', {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      id: source ? null : currentRosterId,
+      name: rosterName,
+      source: source || 'manual',
+      students: rosterPayloadStudents()
+    })
+  })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '保存花名册失败');
+    currentRosterId = r.data.roster.id;
+    saveDraft();
+    loadRosters();
+    if (!silent) toast('花名册已保存', 'success');
+    return r.data.roster;
+  })
+  .catch(function(e){ if (!silent) toast(e.message || '保存失败', 'error'); return null; });
+}
+
+function loadRoster(id) {
+  fetch(API + '/api/comment/rosters/' + id, { headers: headers() })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '载入花名册失败');
+    currentRosterId = r.data.roster.id;
+    students = (r.data.roster.students || []).map(function(row, idx){ return normalizeStudent(row, idx); });
+    renderStudents();
+    toast('已载入 ' + students.length + ' 名学生', 'success');
+  })
+  .catch(function(e){ toast(e.message || '载入失败', 'error'); });
+}
+
+function deleteRoster(id) {
+  if (!confirm('确定删除这个花名册吗？')) return;
+  fetch(API + '/api/comment/rosters/' + id, { method: 'DELETE', headers: headers() })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '删除失败');
+    if (currentRosterId === id) currentRosterId = null;
+    loadRosters();
+    toast('花名册已删除', 'success');
+  })
+  .catch(function(e){ toast(e.message || '删除失败', 'error'); });
+}
+
+function loadCommentHistory() {
+  fetch(API + '/api/comment/history?limit=80', { headers: headers() })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '加载历史失败');
+    if (r.data.balance !== undefined) {
+      balance = Number(r.data.balance) || 0;
+      renderQuota(true);
+    }
+    historyItems = r.data.generations || [];
+    renderHistory();
+    renderPrintSources();
+    renderPrintPreview();
+  })
+  .catch(function(e){ console.warn(e.message || e); });
+}
+
+function renderHistory() {
+  var el = document.getElementById('historyList');
+  if (!el) return;
+  if (!historyItems.length) {
+    el.innerHTML = '<div class="empty">暂无生成历史</div>';
+    return;
+  }
+  el.innerHTML = historyItems.map(function(h){
+    var time = h.created_at ? new Date(h.created_at).toLocaleString('zh-CN') : '';
+    var tags = (h.tags || []).length ? ' · ' + esc((h.tags || []).join('、')) : '';
+    var note = h.concrete_note || h.concreteNote || '';
+    var rewriteBadge = h.rewrite_label ? '<span class="tag">二次修改：' + esc(h.rewrite_label) + '</span>' : '';
+    return '<div class="history-item">' +
+      '<div class="history-top"><div><div class="history-name">' + esc(h.student_name || '未命名学生') + '</div><div class="mini-meta">' + esc(h.school_stage || '') + ' · ' + esc(h.performance || '') + tags + '</div></div><div class="mini-meta">生成时间：' + time + '</div></div>' +
+      (rewriteBadge ? '<div class="tag-row">' + rewriteBadge + '</div>' : '') +
+      (note ? '<div class="history-note">具体印象：' + esc(note) + '</div>' : '') +
+      '<div class="history-comment">' + esc(h.comment || '') + '</div>' +
+      '<div class="history-actions"><button class="ghost-btn" onclick="copyHistory(' + h.id + ')">复制</button><button class="ghost-btn" onclick="reuseHistory(' + h.id + ')">加入当前名单</button><button class="main-btn" onclick="addHistoryToPrint(' + h.id + ')">加入打印</button></div>' +
+      '</div>';
+  }).join('');
+}
+
+function copyHistory(id) {
+  var row = historyItems.find(function(h){ return h.id === id; });
+  if (!row) return;
+  navigator.clipboard.writeText(row.comment || '').then(function(){ toast('已复制历史评语', 'success'); });
+}
+
+function reuseHistory(id) {
+  var row = historyItems.find(function(h){ return h.id === id; });
+  if (!row) return;
+  students.push(normalizeStudent({
+    name: row.student_name,
+    gender: '未知',
+    schoolStage: row.school_stage || document.getElementById('schoolStage').value,
+    performance: row.performance || document.getElementById('performance').value,
+    style: row.style || document.getElementById('style').value,
+    tags: row.tags || [],
+    concreteNote: row.concrete_note || row.concreteNote || '',
+    minLen: row.min_len || document.getElementById('minLen').value,
+    maxLen: row.max_len || document.getElementById('maxLen').value,
+    comment: row.comment || ''
+  }, students.length));
+  renderStudents();
+  toast('已加入当前名单', 'success');
+}
+
+function purchasePackage(key) {
+  document.getElementById('paymentStatus').textContent = '正在创建微信支付订单...';
+  fetch(API + '/api/comment/payments/package', { method:'POST', headers:headers(), body:JSON.stringify({package_key:key}) })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '创建支付订单失败');
+    localStorage.setItem('comment_pay_order', r.data.out_trade_no);
+    window.location.href = r.data.pay_url;
+  })
+  .catch(function(e){ document.getElementById('paymentStatus').textContent = e.message; toast(e.message, 'error'); });
+}
+
+function handlePaymentReturn() {
+  var params = new URLSearchParams(window.location.search);
+  var orderNo = params.get('pay_order') || localStorage.getItem('comment_pay_order') || '';
+  if (!orderNo) return;
+  if (params.get('pay_order')) history.replaceState(null, '', window.location.pathname);
+  pollPayment(orderNo, 0);
+}
+
+function pollPayment(orderNo, count) {
+  document.getElementById('paymentStatus').textContent = '正在确认支付结果...';
+  fetch(API + '/api/payments/' + encodeURIComponent(orderNo), { headers: headers() })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '订单查询失败');
+    if (r.data.status === 'paid') {
+      localStorage.removeItem('comment_pay_order');
+      balance = Number(r.data.point_balance) || Number(r.data.comment_balance) || balance;
+      renderQuota(true);
+      loadProfile();
+      var paidText = r.data.credits ? '支付成功，师行积分已到账。' : '支付成功，广播账户已开通。';
+      document.getElementById('paymentStatus').textContent = paidText;
+      toast(paidText, 'success');
+      return;
+    }
+    if (count < 20) return setTimeout(function(){ pollPayment(orderNo, count + 1); }, 3000);
+    document.getElementById('paymentStatus').textContent = '还未确认到账，可稍后刷新查看。';
+  })
+  .catch(function(e){ document.getElementById('paymentStatus').textContent = e.message; });
+}
+
+function getGlobalConfig() {
+  var minLen = parseInt(document.getElementById('minLen').value, 10) || 120;
+  var maxLen = parseInt(document.getElementById('maxLen').value, 10) || 180;
+  if (maxLen < minLen) maxLen = minLen;
+  return {
+    schoolStage: document.getElementById('schoolStage').value,
+    performance: document.getElementById('performance').value,
+    style: document.getElementById('style').value,
+    minLen: minLen,
+    maxLen: maxLen
+  };
+}
+
+function addStudent(row) {
+  students.push(normalizeStudent(row, 0));
+  renderStudents();
+}
+
+function applyGlobalConfig() {
+  var cfg = getGlobalConfig();
+  students = students.map(function(s){ return Object.assign({}, s, cfg); });
+  renderStudents();
+  toast('已应用到所有学生', 'success');
+}
+
+function parseCsv(text) {
+  return text.split(/\r?\n/).filter(Boolean).map(function(line){ return line.split(',').map(function(cell){ return cell.trim(); }); });
+}
+
+function parseTags(value) {
+  return String(value || '')
+    .split(/[、,，;；\s]+/)
+    .map(function(tag){ return tag.trim(); })
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function normalizeGenderValue(value) {
+  var text = String(value || '').trim().toLowerCase();
+  if (!text) return '未知';
+  if (['男', '男生', '男孩', 'm', 'male', '1'].indexOf(text) >= 0) return '男';
+  if (['女', '女生', '女孩', 'f', 'female', '2'].indexOf(text) >= 0) return '女';
+  if (text.indexOf('男') !== -1) return '男';
+  if (text.indexOf('女') !== -1) return '女';
+  return '未知';
+}
+
+function handleFileUpload(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(evt) {
+    var rows = [];
+    try {
+      if (/\.csv$/i.test(file.name)) {
+        rows = parseCsv(String(evt.target.result || ''));
+      } else {
+        if (!window.XLSX) throw new Error('Excel 解析库未加载，请改用 CSV 或稍后重试');
+        var wb = XLSX.read(evt.target.result, { type: 'array' });
+        rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+      }
+      importRows(rows, file.name);
+    } catch (err) {
+      toast(err.message || '名单解析失败', 'error');
+    }
+  };
+  if (/\.csv$/i.test(file.name)) reader.readAsText(file, 'utf-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+function importRows(rows, sourceName) {
+  if (!rows || !rows.length) return toast('名单为空', 'error');
+  var header = rows[0] || [];
+  var nameIdx = header.findIndex(function(h){ h = String(h || '').toLowerCase(); return h.indexOf('姓名') !== -1 || h.indexOf('name') !== -1; });
+  var genderIdx = header.findIndex(function(h){
+    h = String(h || '').toLowerCase();
+    return h.indexOf('性别') !== -1 || h.indexOf('gender') !== -1 || h === 'sex';
+  });
+  var tagsIdx = header.findIndex(function(h){ h = String(h || '').toLowerCase(); return h.indexOf('标签') !== -1 || h.indexOf('tag') !== -1; });
+  var noteIdx = header.findIndex(function(h){
+    h = String(h || '').toLowerCase();
+    return h.indexOf('具体') !== -1 || h.indexOf('事例') !== -1 || h.indexOf('印象') !== -1 || h.indexOf('备注') !== -1 || h.indexOf('note') !== -1 || h.indexOf('event') !== -1 || h.indexOf('impression') !== -1;
+  });
+  var commentIdx = header.findIndex(function(h){
+    h = String(h || '').toLowerCase();
+    return h.indexOf('评语') !== -1 || h.indexOf('comment') !== -1;
+  });
+  if (nameIdx < 0) return toast('未找到“姓名”列', 'error');
+  var cfg = getGlobalConfig();
+  var imported = rows.slice(1).map(function(row, idx){
+    var name = String(row[nameIdx] || '').trim();
+    if (!name) return null;
+    return Object.assign({
+      id: String(Date.now() + idx),
+      name: name,
+      gender: genderIdx >= 0 ? normalizeGenderValue(row[genderIdx]) : '未知',
+      tags: tagsIdx >= 0 ? parseTags(row[tagsIdx]) : [],
+      concreteNote: noteIdx >= 0 ? String(row[noteIdx] || '').trim() : '',
+      comment: commentIdx >= 0 ? String(row[commentIdx] || '').trim() : '',
+      isGenerating: false
+    }, cfg);
+  }).filter(Boolean);
+  students = students.concat(imported);
+  renderStudents();
+  toast('已导入 ' + imported.length + ' 名学生', 'success');
+  if (sourceName && imported.length) {
+    saveCurrentRoster(defaultRosterName(sourceName), sourceName, true).then(function(roster){
+      if (roster) toast('已导入并保存花名册', 'success');
+    });
+  }
+}
+
+function updateStudent(id, field, value) {
+  students = students.map(function(s){ return s.id === id ? Object.assign({}, s, { [field]: value }) : s; });
+  renderStudents();
+}
+
+function updateStudentDraft(id, field, value) {
+  students = students.map(function(s){ return s.id === id ? Object.assign({}, s, { [field]: value }) : s; });
+  saveDraft();
+}
+
+function removeStudent(id) {
+  students = students.filter(function(s){ return s.id !== id; });
+  renderStudents();
+}
+
+function toggleTag(id, tag) {
+  tag = String(tag || '').trim();
+  if (!tag) return;
+  students = students.map(function(s){
+    if (s.id !== id) return s;
+    var tags = Array.isArray(s.tags) ? s.tags.slice() : [];
+    var exists = tags.indexOf(tag) >= 0;
+    tags = exists ? tags.filter(function(t){ return t !== tag; }) : tags.concat(tag).slice(0, 12);
+    return Object.assign({}, s, { tags: tags });
+  });
+  renderStudents();
+  if (activeTagStudentId === id) renderTagModal();
+}
+
+function removeStudentTag(id, tag) {
+  students = students.map(function(s){
+    if (s.id !== id) return s;
+    return Object.assign({}, s, { tags: (s.tags || []).filter(function(t){ return t !== tag; }) });
+  });
+  renderStudents();
+}
+
+function openTagModal(id) {
+  activeTagStudentId = id;
+  renderTagModal();
+  document.getElementById('customTagInput').value = '';
+  document.getElementById('tagModal').style.display = 'flex';
+}
+
+function closeTagModal() {
+  activeTagStudentId = null;
+  document.getElementById('tagModal').style.display = 'none';
+  renderStudents();
+}
+
+function addCustomTag() {
+  var input = document.getElementById('customTagInput');
+  var tag = input.value.trim();
+  if (!activeTagStudentId || !tag) return;
+  toggleTag(activeTagStudentId, tag);
+  input.value = '';
+}
+
+function renderTagModal() {
+  var student = students.find(function(s){ return s.id === activeTagStudentId; });
+  var selected = student && Array.isArray(student.tags) ? student.tags : [];
+  var html = Object.keys(TAG_CATEGORIES).map(function(cat){
+    var choices = TAG_CATEGORIES[cat].map(function(tag){
+      var active = selected.indexOf(tag) >= 0;
+      return '<button class="tag-choice ' + (active ? 'active' : '') + '" onclick="toggleTag(' + studentIdArg(activeTagStudentId) + ',&quot;' + escAttr(tag) + '&quot;)">' + esc(tag) + '</button>';
+    }).join('');
+    return '<div class="tag-category"><h3>' + esc(cat) + '</h3><div class="tag-choice-row">' + choices + '</div></div>';
+  }).join('');
+  if (selected.length) {
+    html = '<div class="tag-category"><h3>已选择</h3><div class="tag-choice-row">' + selected.map(function(tag){
+      return '<button class="tag-choice active" onclick="toggleTag(' + studentIdArg(activeTagStudentId) + ',&quot;' + escAttr(tag) + '&quot;)">' + esc(tag) + '</button>';
+    }).join('') + '</div></div>' + html;
+  }
+  document.getElementById('tagModalBody').innerHTML = html;
+}
+
+function renderStudents() {
+  var list = document.getElementById('studentsList');
+  if (!students.length) {
+    list.innerHTML = '<div class="empty">请上传名单或手动添加学生</div>';
+    saveDraft();
+    return;
+  }
+  list.innerHTML = students.map(function(s){
+    var tags = Array.isArray(s.tags) ? s.tags : [];
+    var tagHtml = tags.length
+      ? tags.map(function(tag){ return '<span class="tag">' + esc(tag) + '<span class="tag-remove" onclick="removeStudentTag(' + studentIdArg(s.id) + ',&quot;' + escAttr(tag) + '&quot;)">×</span></span>'; }).join('')
+      : '<span class="tag empty-tag">还没有画像标签</span>';
+    var rewriteDisabled = s.isGenerating || s.isRewriting;
+    var rewriteHtml = s.comment ? '<div class="rewrite-toolbar"><span class="rewrite-label">二次修改</span><span class="rewrite-cost">每次 ' + pointCost + ' 积分</span>' + rewriteModes.map(function(mode){
+      var active = s.isRewriting === mode.key;
+      return '<button class="ghost-btn" ' + (rewriteDisabled ? 'disabled' : '') + ' onclick="rewriteComment(' + studentIdArg(s.id) + ',&quot;' + escAttr(mode.key) + '&quot;)">' + (active ? '改写中...' : esc(mode.label)) + '</button>';
+    }).join('') + '</div>' : '';
+    return '<div class="student-card">' +
+      '<div class="student-top"><div><div class="student-name">' + esc(s.name) + '</div><div class="student-meta">' + esc(s.schoolStage) + ' · ' + esc(s.performance) + '</div></div><button class="ghost-btn" onclick="removeStudent(' + studentIdArg(s.id) + ')">删除</button></div>' +
+      '<div class="student-controls">' +
+      '<input value="' + escAttr(s.name) + '" onchange="updateStudent(' + studentIdArg(s.id) + ',&quot;name&quot;,this.value)" placeholder="姓名">' +
+      '<select onchange="updateStudent(' + studentIdArg(s.id) + ',&quot;gender&quot;,this.value)"><option ' + sel(s.gender,'男') + '>男</option><option ' + sel(s.gender,'女') + '>女</option><option ' + sel(s.gender,'未知') + '>未知</option></select>' +
+      '<select onchange="updateStudent(' + studentIdArg(s.id) + ',&quot;performance&quot;,this.value)"><option ' + sel(s.performance,'优秀 (前10%)') + '>优秀 (前10%)</option><option ' + sel(s.performance,'良好 (前30%)') + '>良好 (前30%)</option><option ' + sel(s.performance,'中等 (平均水平)') + '>中等 (平均水平)</option><option ' + sel(s.performance,'需努力 (加油)') + '>需努力 (加油)</option></select>' +
+      '<select onchange="updateStudent(' + studentIdArg(s.id) + ',&quot;style&quot;,this.value)"><option value="gentle" ' + sel(s.style,'gentle') + '>温柔鼓励型</option><option value="serious" ' + sel(s.style,'serious') + '>严肃指正型</option><option value="humorous" ' + sel(s.style,'humorous') + '>幽默风趣型</option><option value="elegant" ' + sel(s.style,'elegant') + '>深沉文雅型</option><option value="passionate" ' + sel(s.style,'passionate') + '>激情澎湃型</option></select>' +
+      '</div>' +
+      '<div class="tag-row"><span class="tag">' + esc(styleLabels[s.style] || s.style) + '</span>' + tagHtml + '</div>' +
+      '<div class="student-note">' +
+      '<label>具体事例/印象 <span>选填，填了评语会更真</span></label>' +
+      '<textarea oninput="updateStudentDraft(' + studentIdArg(s.id) + ',&quot;concreteNote&quot;,this.value)" placeholder="例如：运动会摔了还坚持跑完；数学考砸后主动来办公室分析。">' + esc(s.concreteNote || '') + '</textarea>' +
+      '</div>' +
+      '<textarea class="comment-box" oninput="updateStudentDraft(' + studentIdArg(s.id) + ',&quot;comment&quot;,this.value)" placeholder="生成后的评语会出现在这里">' + esc(s.comment || '') + '</textarea>' +
+      rewriteHtml +
+      '<div class="student-actions"><button class="ghost-btn" onclick="openTagModal(' + studentIdArg(s.id) + ')">选择标签</button><button class="ghost-btn" onclick="copyComment(' + studentIdArg(s.id) + ')">复制</button><button class="main-btn" ' + (s.isGenerating ? 'disabled' : '') + ' onclick="generateOne(' + studentIdArg(s.id) + ')">' + (s.isGenerating ? '生成中...' : (s.comment ? '重新生成' : '生成评语')) + '</button></div>' +
+      '</div>';
+  }).join('');
+  saveDraft();
+}
+
+function generateOne(id) {
+  var s = students.find(function(row){ return row.id === id; });
+  if (!s) return;
+  if (!currentUser) { openAuth({ type: 'one', id: id }); return; }
+  if (balance < pointCost) return toast('师行积分不足，本次需要 ' + pointCost + ' 积分', 'error');
+  s.isGenerating = true;
+  renderStudents();
+  return fetch(API + '/api/comment/generate', { method:'POST', headers:headers(), body:JSON.stringify({ student: Object.assign({}, s, { styleLabel: styleLabels[s.style] || s.style }) }) })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '生成失败');
+    s.comment = r.data.comment;
+    balance = Number(r.data.balance);
+    renderQuota(true);
+    loadCommentHistory();
+    renderPrintSources();
+    renderPrintPreview();
+    toast('已生成，剩余 ' + balance + ' 积分', 'success');
+  })
+  .catch(function(e){ toast(e.message || '生成失败', 'error'); })
+  .finally(function(){ s.isGenerating = false; renderStudents(); });
+}
+
+function rewriteComment(id, mode) {
+  var s = students.find(function(row){ return row.id === id; });
+  if (!s) return;
+  if (!currentUser) { openAuth({ type: 'rewrite', id: id, mode: mode }); return; }
+  if (!s.comment || !s.comment.trim()) return toast('请先生成或填写一段评语', 'error');
+  if (balance < pointCost) return toast('师行积分不足，本次需要 ' + pointCost + ' 积分', 'error');
+  s.isRewriting = mode;
+  renderStudents();
+  return fetch(API + '/api/comment/rewrite', {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      mode: mode,
+      comment: s.comment,
+      student: Object.assign({}, s, { styleLabel: styleLabels[s.style] || s.style })
+    })
+  })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.data.error || '改写失败');
+    s.comment = r.data.comment;
+    balance = Number(r.data.balance);
+    renderQuota(true);
+    loadCommentHistory();
+    renderPrintSources();
+    renderPrintPreview();
+    toast((r.data.rewrite_label || '二次修改') + '完成，剩余 ' + balance + ' 积分', 'success');
+  })
+  .catch(function(e){ toast(e.message || '改写失败', 'error'); })
+  .finally(function(){ s.isRewriting = ''; renderStudents(); });
+}
+
+async function generateAll() {
+  if (batchGenerating) return;
+  if (!students.length) return toast('请先导入学生', 'error');
+  if (!currentUser) { openAuth({ type: 'all' }); return; }
+  batchGenerating = true;
+  document.getElementById('batchBtn').disabled = true;
+  var queue = students.filter(function(s){ return !s.comment; });
+  for (var i = 0; i < queue.length; i++) {
+    if (balance < pointCost) break;
+    await generateOne(queue[i].id);
+    await new Promise(function(resolve){ setTimeout(resolve, 650); });
+  }
+  batchGenerating = false;
+  document.getElementById('batchBtn').disabled = false;
+  if (balance < pointCost) toast('积分不足，已停止批量生成', 'error');
+  else toast('批量生成完成', 'success');
+}
+
+function copyComment(id) {
+  var s = students.find(function(row){ return row.id === id; });
+  if (!s || !s.comment) return toast('暂无评语可复制', 'error');
+  navigator.clipboard.writeText(s.comment).then(function(){ toast('已复制', 'success'); });
+}
+
+function printFontFamilyValue() {
+  if (printConfig.fontFamily === 'kai') return '"KaiTi","Kaiti SC",cursive';
+  if (printConfig.fontFamily === 'sans') return '"Microsoft YaHei","PingFang SC",sans-serif';
+  return '"SimSun","Songti SC",serif';
+}
+
+function printableSources() {
+  var current = students
+    .filter(function(s){ return s.comment && s.comment.trim().length > 5; })
+    .map(function(s){
+      return {
+        key: 'current-' + s.id,
+        source: '当前名单',
+        name: s.name,
+        meta: (s.schoolStage || '') + ' · ' + (s.performance || ''),
+        comment: s.comment,
+        created_at: ''
+      };
+    });
+  var history = historyItems
+    .filter(function(h){ return h.comment && h.comment.trim().length > 5; })
+    .map(function(h){
+      return {
+        key: 'history-' + h.id,
+        source: h.rewrite_label ? '历史记录 · ' + h.rewrite_label : '历史记录',
+        name: h.student_name || '未命名学生',
+        meta: (h.school_stage || '') + ' · ' + (h.performance || ''),
+        comment: h.comment,
+        created_at: h.created_at || ''
+      };
+    });
+  return current.concat(history);
+}
+
+function selectedPrintItems() {
+  return printableSources().filter(function(item){ return !!printSelection[item.key]; });
+}
+
+function updatePrintSelectedCount() {
+  var count = selectedPrintItems().length;
+  setText('printSelectedCount', count + '条已选');
+  setText('printSelectedCountDrawer', '已选 ' + count + ' 条');
+}
+
+function openPrintPicker() {
+  loadCommentHistory();
+  renderPrintSources();
+  var mask = document.getElementById('printDrawerMask');
+  var drawer = document.getElementById('printPickerDrawer');
+  if (mask) mask.classList.add('open');
+  if (drawer) {
+    drawer.classList.add('open');
+    drawer.setAttribute('aria-hidden', 'false');
+  }
+  updatePrintSelectedCount();
+}
+
+function closePrintPicker() {
+  var mask = document.getElementById('printDrawerMask');
+  var drawer = document.getElementById('printPickerDrawer');
+  if (mask) mask.classList.remove('open');
+  if (drawer) {
+    drawer.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function renderPrintSources() {
+  var el = document.getElementById('printSourceList');
+  if (!el) return;
+  var sources = printableSources();
+  if (!sources.length) {
+    el.innerHTML = '<div class="empty">暂无可打印评语。可以先生成评语，或到历史记录里刷新。</div>';
+    updatePrintSelectedCount();
+    return;
+  }
+  var hasSelected = sources.some(function(item){ return !!printSelection[item.key]; });
+  if (!hasSelected) {
+    sources.filter(function(item){ return item.source === '当前名单'; }).forEach(function(item){ printSelection[item.key] = true; });
+  }
+  el.innerHTML = sources.map(function(item){
+    var time = item.created_at ? ' · ' + new Date(item.created_at).toLocaleString('zh-CN') : '';
+    return '<label class="print-source-item">' +
+      '<input type="checkbox" ' + (printSelection[item.key] ? 'checked' : '') + ' onchange="togglePrintSource(&quot;' + escAttr(item.key) + '&quot;,this.checked)">' +
+      '<div><div class="print-source-title">' + esc(item.name) + ' <span class="mini-meta">[' + esc(item.source) + ']</span></div>' +
+      '<div class="print-source-meta">' + esc(item.meta || '-') + time + '</div>' +
+      '<div class="print-source-comment">' + esc(item.comment) + '</div></div>' +
+      '</label>';
+  }).join('');
+  updatePrintSelectedCount();
+}
+
+function togglePrintSource(key, checked) {
+  printSelection[key] = checked;
+  updatePrintSelectedCount();
+  renderPrintPreview();
+}
+
+function selectAllPrintSources(checked) {
+  printableSources().forEach(function(item){ printSelection[item.key] = checked; });
+  renderPrintSources();
+  renderPrintPreview();
+}
+
+function addHistoryToPrint(id) {
+  printSelection['history-' + id] = true;
+  switchCommentTab('print');
+  toast('已加入打印助手', 'success');
+}
+
+function syncPrintControls() {
+  document.getElementById('printFontSize').value = printConfig.fontSize;
+  document.getElementById('printFontSizeText').textContent = printConfig.fontSize + 'pt';
+  document.getElementById('printLineHeight').value = printConfig.lineHeight;
+  document.getElementById('printLineHeightText').textContent = printConfig.lineHeight;
+  document.getElementById('printBoxHeight').value = printConfig.boxHeight;
+  document.getElementById('printBoxHeightText').textContent = printConfig.boxHeight + 'mm';
+  document.getElementById('printPadding').value = printConfig.padding;
+  document.getElementById('printPaddingText').textContent = printConfig.padding + 'mm';
+  document.getElementById('printPageMargin').value = printConfig.pageMargin;
+  document.getElementById('printPageMarginText').textContent = printConfig.pageMargin + 'mm';
+  document.getElementById('printCols').value = printConfig.layoutCols;
+  document.getElementById('printFontFamily').value = printConfig.fontFamily;
+  document.getElementById('printFooterText').value = printConfig.footerText;
+  document.getElementById('printFixedHeight').checked = printConfig.useFixedHeight;
+  document.getElementById('printShowBorder').checked = printConfig.showBorder;
+  document.getElementById('printShowName').checked = printConfig.showName;
+}
+
+function openPrintPreview() {
+  switchCommentTab('print');
+}
+
+function closePrintPreview() {
+  switchCommentTab('generate');
+}
+
+function updatePrintConfig(field, value) {
+  printConfig[field] = value;
+  syncPrintControls();
+  renderPrintPreview();
+}
+
+function renderPrintPreview() {
+  var sheet = document.getElementById('printSheet');
+  var items = document.getElementById('printItems');
+  if (!sheet || !items) return;
+  updatePrintSelectedCount();
+  sheet.style.padding = printConfig.pageMargin + 'mm';
+  sheet.style.fontFamily = printFontFamilyValue();
+  items.style.gridTemplateColumns = 'repeat(' + printConfig.layoutCols + ', minmax(0, 1fr))';
+  var valid = selectedPrintItems();
+  if (!valid.length) {
+    items.innerHTML = '<section class="print-item" style="padding:16mm;font-size:12pt;line-height:1.8;color:#777">请点击“选择评语”，挑选要打印的评语。</section>';
+    return;
+  }
+  items.innerHTML = valid.map(function(s, idx){
+    var sizeStyle = printConfig.useFixedHeight
+      ? 'height:' + printConfig.boxHeight + 'mm;overflow:hidden;'
+      : 'min-height:' + printConfig.boxHeight + 'mm;';
+    var itemStyle = [
+      'border:' + (printConfig.showBorder ? '1px solid #000' : '1px dashed #d8d8d8'),
+      'padding:' + printConfig.padding + 'mm',
+      'font-size:' + printConfig.fontSize + 'pt',
+      'line-height:' + printConfig.lineHeight,
+      sizeStyle
+    ].join(';');
+    return '<section class="print-item" style="' + itemStyle + '">' +
+      (printConfig.showName ? '<div class="print-student-name"><span>' + esc(s.name) + '</span><span>' + (idx + 1) + '号</span></div>' : '') +
+      '<div class="print-comment">' + esc(s.comment) + '</div>' +
+      (printConfig.footerText ? '<div class="print-footer">' + esc(printConfig.footerText) + '</div>' : '') +
+      '</section>';
+  }).join('');
+}
+
+function printComments() {
+  if (!selectedPrintItems().length) return toast('请先选择要打印的评语', 'error');
+  closePrintPicker();
+  renderPrintPreview();
+  window.print();
+}
+
+function exportExcel() {
+  if (!students.length) return toast('暂无数据可导出', 'error');
+  var data = [['姓名','性别','学段','整体水平','风格','标签','具体事例/印象','评语'], ...students.map(function(s){ return [s.name, s.gender, s.schoolStage, s.performance, styleLabels[s.style] || s.style, (s.tags || []).join('、'), s.concreteNote || '', s.comment || '']; })];
+  if (window.XLSX) {
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '评语');
+    XLSX.writeFile(wb, '师行_评语.xlsx');
+    return;
+  }
+  var csv = data.map(function(row){ return row.map(function(cell){ return '"' + String(cell || '').replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = '师行_评语.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = String(s || '');
+  return d.innerHTML;
+}
+function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
+function sel(a,b) { return String(a) === String(b) ? 'selected' : ''; }
+
+function dismissZuowenPromo() {
+  document.getElementById('zuowenPromo').style.display = 'none';
+  try { localStorage.setItem('zuowen_promo_dismissed', '1'); } catch (e) {}
+}
+try {
+  if (!localStorage.getItem('zuowen_promo_dismissed')) {
+    document.getElementById('zuowenPromo').style.display = 'block';
+  }
+} catch (e) {}
+
+document.getElementById('loginPass').addEventListener('keydown', function(e){ if (e.key === 'Enter') login(); });
+document.getElementById('regPass').addEventListener('keydown', function(e){ if (e.key === 'Enter') register(); });
+document.getElementById('customTagInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') addCustomTag(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePrintPicker(); });
+
+(function(){
+  try {
+    var refParam = new URLSearchParams(window.location.search).get('ref');
+    if (refParam) {
+      location.replace('https://shixing.yingyuzuowen.asia/invite/' + encodeURIComponent(refParam.trim().toUpperCase()) + '?source=comment');
+      return;
+    }
+  } catch (e) {}
+  fetch(API + '/api/referral/context').then(function(r){ return r.json(); }).then(function(d){
+    if (!d.valid) return;
+    document.getElementById('commentInviteContext').innerHTML = '<strong>' + d.inviter_name + ' 老师邀请你体验师行</strong><br>注册得 1625 积分和广播 3 天体验；首次使用后双方各得 500 积分。';
+  }).catch(function(){});
+})();
+
+var savedToken = storageGet(localStorage, 'comment_token') || storageGet(localStorage, 'broadcast_token') || storageGet(sessionStorage, 'broadcast_token');
+token = savedToken || '';
+fetch(API + '/api/profile', { headers: headers() })
+.then(function(r){ if (r.ok) return r.json(); throw new Error('auth'); })
+.then(function(profile){ enterApp(profile); })
+.catch(function(){
+  token = '';
+  localStorage.removeItem('comment_token');
+  enterGuestApp();
+});
+</script>
+<script src="/analytics.js"></script>
+</body>
+</html>

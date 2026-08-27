@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>师行数据仪表盘</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#f2f0ea; font-family:-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif; color:#33302a; padding:16px; }
+.wrap { max-width:1100px; margin:0 auto; }
+h1 { font-size:20px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+h1 .ts { font-size:12px; color:#a39a87; font-weight:400; }
+.bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+button { padding:8px 16px; border:none; border-radius:8px; background:#8a6228; color:#fdf6e7; font-size:13px; cursor:pointer; }
+button.ghost { background:#fff; color:#8a6228; border:1px solid #d5b58f; }
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:16px; }
+.card { background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 8px rgba(60,50,30,.06); }
+.card .v { font-size:26px; font-weight:700; }
+.card .v.money { color:#9b5a2e; }
+.card .k { font-size:12px; color:#a39a87; margin-top:2px; }
+.card .sub { font-size:11px; color:#bfb6a3; margin-top:4px; }
+.panel { background:#fff; border-radius:12px; padding:16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(60,50,30,.06); }
+.panel h2 { font-size:15px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.panel h2 .tag { font-size:11px; padding:2px 10px; border-radius:10px; font-weight:400; }
+.grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+@media (max-width:760px) { .grid3 { grid-template-columns:1fr; } }
+.stat-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; border-bottom:1px dashed #eee8db; }
+.stat-row:last-child { border-bottom:none; }
+.stat-row .n { font-weight:600; }
+.chart { display:flex; align-items:flex-end; gap:2px; height:120px; padding-top:8px; }
+.chart .col { flex:1; display:flex; flex-direction:column; justify-content:flex-end; height:100%; position:relative; cursor:default; }
+.chart .b { width:100%; border-radius:2px 2px 0 0; min-height:1px; }
+.chart .col:hover::after { content:attr(data-tip); position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:#33302a; color:#fff; font-size:11px; padding:3px 8px; border-radius:5px; white-space:nowrap; z-index:5; }
+.axis { display:flex; justify-content:space-between; font-size:10px; color:#bfb6a3; margin-top:4px; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { text-align:left; color:#a39a87; font-weight:400; font-size:12px; padding:6px 8px; border-bottom:1px solid #eee8db; }
+td { padding:7px 8px; border-bottom:1px dashed #f0ebe0; }
+.pill { font-size:11px; padding:2px 8px; border-radius:8px; }
+.p-bc { background:#e3edf7; color:#2d5b8a; }
+.p-cm { background:#f3e9d8; color:#8a6228; }
+.p-es { background:#e5e9f5; color:#4a5a9a; }
+.p-xl { background:#e6efe2; color:#5b7a4a; }
+.login { max-width:340px; margin:18vh auto; background:#fff; border-radius:14px; padding:30px; box-shadow:0 6px 24px rgba(60,50,30,.1); text-align:center; }
+.login input { width:100%; padding:11px 12px; border:1.5px solid #e2d9c8; border-radius:8px; font-size:14px; margin:14px 0; outline:none; }
+.err { color:#c0392b; font-size:13px; min-height:18px; }
+.muted { color:#bfb6a3; font-size:12px; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media (max-width:760px) { .two-col { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<div id="loginBox" class="login" style="display:none">
+  <div style="font-size:36px">📊</div>
+  <h1 style="justify-content:center;margin:8px 0">师行数据仪表盘</h1>
+  <input type="password" id="pass" placeholder="管理员密码" onkeydown="if(event.key==='Enter')doLogin()">
+  <div class="err" id="loginErr"></div>
+  <button style="width:100%" onclick="doLogin()">进入</button>
+</div>
+
+<div id="app" class="wrap" style="display:none">
+  <div class="bar">
+    <h1>📊 师行数据仪表盘 <span class="ts" id="ts"></span></h1>
+    <div style="display:flex;gap:8px">
+      <button class="ghost" onclick="location.href='/admin.html'">管理操作</button>
+      <button onclick="load()">刷新</button>
+    </div>
+  </div>
+
+  <div class="cards" id="overviewCards"></div>
+
+  <div class="panel">
+    <h2>💰 近 30 天收入（元）</h2>
+    <div class="chart" id="revChart"></div>
+    <div class="axis" id="revAxis"></div>
+  </div>
+
+  <div class="panel">
+    <h2>📈 近 14 天使用量 <span class="muted">（<span style="color:#c9a468">■</span> 评语生成 / <span style="color:#7c8bc4">■</span> 作文批改 / <span style="color:#7fa86a">■</span> 作文学习）</span></h2>
+    <div class="chart" id="useChart"></div>
+    <div class="axis" id="useAxis"></div>
+  </div>
+
+  <div class="grid3" id="productPanels"></div>
+
+  <div class="panel" id="renewPanel">
+    <h2>✍️ 作文学习 · 后台续费 <span class="muted" style="font-weight:400">（搜索用户后点续费）</span></h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <input id="renewSearch" placeholder="搜索 用户名 / 称呼 / 邮箱手机号；留空显示付费会员" style="flex:1;min-width:220px;padding:9px 11px;border:1.5px solid #e2d9c8;border-radius:8px;font-size:13px;outline:none" oninput="renderRenew()">
+      <button class="ghost" onclick="loadUsers(true)">刷新用户</button>
+    </div>
+    <div id="renewMsg" class="muted" style="min-height:16px;margin-bottom:6px"></div>
+    <table id="renewTable"></table>
+  </div>
+
+  <div class="two-col" style="margin-top:16px">
+    <div class="panel" style="margin-bottom:0">
+      <h2>🧾 最近支付</h2>
+      <table id="payTable"></table>
+    </div>
+    <div class="panel" style="margin-bottom:0">
+      <h2>👤 最近注册</h2>
+      <table id="userTable"></table>
+    </div>
+  </div>
+
+  <p class="muted" style="text-align:center;margin:18px 0">师行工作台 · 仅管理员可见</p>
+</div>
+
+<script>
+var TOKEN = localStorage.getItem('admin_token') || '';
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function doLogin() {
+  TOKEN = document.getElementById('pass').value.trim();
+  if (!TOKEN) return;
+  load(true);
+}
+
+function money(n) { return '¥' + (Math.round(n * 100) / 100).toFixed(2); }
+
+var PRODUCT_PILL = { broadcast:'<span class="pill p-bc">广播</span>', comment:'<span class="pill p-cm">评语</span>', essay:'<span class="pill p-es">作文</span>', learning:'<span class="pill p-xl">学习</span>', other:'<span class="pill">其他</span>' };
+var PLAN_NAMES = { yearly:'广播半年会员', comment_100:'评语100次', comment_200:'评语200次', essay_50:'作文50次', essay_100:'作文100次', essay_week:'作文周卡', essay_month:'作文月卡', essay_term:'作文学期卡', learning_half_year:'学习学期卡', learning_year:'学习年卡' };
+
+function load(fromLogin) {
+  fetch('/api/admin/dashboard', { headers: { 'x-token': TOKEN } })
+  .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, data:d }; }); })
+  .then(function(r){
+    if (!r.ok) {
+      localStorage.removeItem('admin_token');
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('loginBox').style.display = 'block';
+      if (fromLogin) document.getElementById('loginErr').textContent = r.data.error || '密码错误';
+      return;
+    }
+    localStorage.setItem('admin_token', TOKEN);
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render(r.data);
+    loadUsers();
+  })
+  .catch(function(){ document.getElementById('loginErr').textContent = '网络连接失败'; });
+}
+
+function render(d) {
+  document.getElementById('ts').textContent = '更新于 ' + new Date(d.generated_at).toLocaleString('zh-CN');
+  var o = d.overview;
+
+  document.getElementById('overviewCards').innerHTML =
+    card(money(o.revenue_total), '总收入', '广播 ' + money(o.revenue_by_product.broadcast) + ' · 评语 ' + money(o.revenue_by_product.comment) + ' · 作文 ' + money(o.revenue_by_product.essay) + ' · 学习 ' + money(o.revenue_by_product.learning || 0), true) +
+    card(money(o.revenue_month), '本月收入', '今日 ' + money(o.revenue_today), true) +
+    card(o.paid_orders, '累计付费订单', '') +
+    card(o.total_users, '注册用户', '') +
+    card(o.today_new_users, '今日新增', '近7天 ' + o.week_new_users + ' 人');
+
+  // 收入图
+  drawChart('revChart', 'revAxis', d.revenue_daily.map(function(r){ return { v:r.amount, tip:r.date.slice(5) + ' · ' + money(r.amount) + ' · ' + r.orders + '单', color:'#9b5a2e' }; }), d.revenue_daily[0].date, d.revenue_daily[d.revenue_daily.length-1].date);
+
+  // 使用量双色图（同列双柱叠放：评语+作文）
+  var cg = d.usage_daily.comment_generations, eg = d.usage_daily.essay_gradings, lg = d.usage_daily.learning_usage || [];
+  var stacked = cg.map(function(c, i){
+    var ln = (lg[i] && lg[i].n) || 0;
+    return { parts:[{ v:c.n, color:'#c9a468' }, { v:eg[i].n, color:'#7c8bc4' }, { v:ln, color:'#7fa86a' }], tip:c.date.slice(5) + ' · 评语' + c.n + ' · 作文' + eg[i].n + ' · 学习' + ln };
+  });
+  drawStacked('useChart', 'useAxis', stacked, cg[0].date, cg[cg.length-1].date);
+
+  // 产品面板
+  var b = d.broadcast, c = d.comment, e = d.essay, l = d.learning || {};
+  document.getElementById('productPanels').innerHTML =
+    panel('📻 班级广播', 'p-bc', [
+      ['有效会员', b.active_members], ['7天内到期', b.expiring_7d],
+      ['班级总数', b.total_classes], ['累计通知', b.total_notifications],
+      ['今日通知', b.notifications_today], ['收入', money(b.revenue)],
+      ['邀请绑定 / 已奖励', b.referral.total + ' / ' + (b.referral.usage_rewarded + b.referral.purchase_rewarded)]
+    ]) +
+    panel('✏️ 期末评语', 'p-cm', [
+      ['累计生成', c.total_generations], ['今日生成', c.generations_today],
+      ['使用过的用户', c.active_users], ['已消耗次数', c.consumed_credits],
+      ['已售次数', c.purchased_credits], ['收入', money(c.revenue)],
+      ['邀请绑定 / 已奖励', c.referral.total + ' / ' + (c.referral.usage_rewarded + c.referral.purchase_rewarded)]
+    ]) +
+    panel('📝 作文批改', 'p-es', [
+      ['累计批改', e.total_gradings], ['今日批改', e.gradings_today],
+      ['使用过的用户', e.active_users], ['已消耗次数', e.consumed_credits],
+      ['微信购买次数', e.purchased_credits], ['卡密兑换次数', e.card_credits],
+      ['卡密 未用/已用', e.unused_cards + ' / ' + e.used_cards],
+      ['会员卡生效中', e.active_plan_users], ['收入', money(e.revenue)],
+      ['邀请绑定 / 已奖励', e.referral.total + ' / ' + (e.referral.usage_rewarded + e.referral.purchase_rewarded)]
+    ]) +
+    panel('✍️ 作文学习', 'p-xl', [
+      ['累计使用', l.total_usage || 0], ['今日使用', l.usage_today || 0],
+      ['使用过的用户', l.active_users || 0], ['今日打卡', l.checkin_today || 0],
+      ['金句收藏', l.saved_total || 0], ['付费会员生效中', l.active_members || 0],
+      ['收入', money(l.revenue || 0)]
+    ]);
+
+  // 最近支付
+  var pt = '<tr><th>时间</th><th>用户</th><th>套餐</th><th style="text-align:right">金额</th></tr>';
+  if (!d.recent_payments.length) pt += '<tr><td colspan="4" class="muted">还没有支付记录</td></tr>';
+  d.recent_payments.forEach(function(p){
+    pt += '<tr><td>' + esc(String(p.paid_at||'').slice(5,16).replace('T',' ')) + '</td><td>' + esc(p.username) + '</td><td>' + PRODUCT_PILL[p.product] + ' ' + esc(PLAN_NAMES[p.plan] || p.plan) + '</td><td style="text-align:right;font-weight:600">' + money(parseFloat(p.amount)||0) + '</td></tr>';
+  });
+  document.getElementById('payTable').innerHTML = pt;
+
+  // 最近注册
+  var ut = '<tr><th>时间</th><th>用户名</th><th>称呼</th></tr>';
+  d.recent_users.forEach(function(u){
+    ut += '<tr><td>' + esc(String(u.created_at||'').slice(5,16).replace('T',' ')) + '</td><td>' + esc(u.username) + '</td><td>' + esc(u.display_name||'') + '</td></tr>';
+  });
+  document.getElementById('userTable').innerHTML = ut;
+}
+
+// ---- 作文学习后台续费 ----
+var ALL_USERS = [];
+
+function loadUsers(force) {
+  if (ALL_USERS.length && !force) { renderRenew(); return; }
+  fetch('/api/admin/users', { headers: { 'x-token': TOKEN } })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(list){ ALL_USERS = Array.isArray(list) ? list : []; renderRenew(); })
+    .catch(function(){});
+}
+
+function learnStatus(m) {
+  if (!m) return { txt:'—', cls:'muted' };
+  if (m.source === 'membership') return { txt:'会员有效至 ' + String(m.expiresAt||'').slice(0,10), cls:'' };
+  if (m.source === 'trial') return { txt:'体验至 ' + String(m.expiresAt||'').slice(0,10), cls:'muted' };
+  return { txt:'已过期', cls:'muted' };
+}
+
+function renderRenew() {
+  var q = (document.getElementById('renewSearch').value || '').trim().toLowerCase();
+  var list = ALL_USERS.filter(function(u){
+    if (q) return (String(u.username||'') + String(u.display_name||'') + String(u.contact_value||'')).toLowerCase().indexOf(q) >= 0;
+    return u.learning_membership && u.learning_membership.source === 'membership';
+  });
+  list.sort(function(a,b){ return String((b.learning_membership||{}).expiresAt||'').localeCompare(String((a.learning_membership||{}).expiresAt||'')); });
+  list = list.slice(0, 40);
+  var h = '<tr><th>用户名</th><th>称呼</th><th>联系方式</th><th>学习会员</th><th style="text-align:right">续费</th></tr>';
+  if (!list.length) h += '<tr><td colspan="5" class="muted">' + (q ? '没找到匹配用户' : '暂无付费会员，输入关键词可搜索任意用户') + '</td></tr>';
+  list.forEach(function(u){
+    var s = learnStatus(u.learning_membership);
+    h += '<tr><td>' + esc(u.username) + '</td><td>' + esc(u.display_name||'') + '</td><td class="muted">' + esc(u.contact_value||'') + '</td>'
+      + '<td class="' + s.cls + '">' + esc(s.txt) + '</td>'
+      + '<td style="text-align:right;white-space:nowrap">'
+      + '<button class="ghost" style="padding:4px 9px" onclick="renewUser(\'' + u.id + '\',180,\'' + esc(u.username) + '\')">+180天</button> '
+      + '<button class="ghost" style="padding:4px 9px" onclick="renewUser(\'' + u.id + '\',365,\'' + esc(u.username) + '\')">+365天</button> '
+      + '<button style="padding:4px 9px" onclick="renewCustom(\'' + u.id + '\',\'' + esc(u.username) + '\')">自定义</button>'
+      + '</td></tr>';
+  });
+  document.getElementById('renewTable').innerHTML = h;
+}
+
+function renewCustom(userId, username) {
+  var v = prompt('给「' + username + '」续费多少天？(1-3650)', '180');
+  if (v == null) return;
+  var days = parseInt(v, 10);
+  if (!days || days < 1 || days > 3650) { alert('请输入 1-3650 的整数'); return; }
+  renewUser(userId, days, username, true);
+}
+
+function renewUser(userId, days, username, skipConfirm) {
+  if (!skipConfirm && !confirm('确认给「' + username + '」续费 ' + days + ' 天？')) return;
+  document.getElementById('renewMsg').textContent = '续费中…';
+  fetch('/api/admin/learning-membership', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-token': TOKEN },
+    body: JSON.stringify({ user_id: userId, days: days, note: '仪表盘续费' })
+  })
+  .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, d:d }; }); })
+  .then(function(r){
+    if (!r.ok) { document.getElementById('renewMsg').textContent = '续费失败：' + (r.d.error || ''); return; }
+    document.getElementById('renewMsg').textContent = '✅ 已给「' + username + '」续费 ' + days + ' 天，有效至 ' + String(r.d.expires_at||'').slice(0,10);
+    loadUsers(true);
+  })
+  .catch(function(){ document.getElementById('renewMsg').textContent = '网络错误，请重试'; });
+}
+
+function card(v, k, sub, isMoney) {
+  return '<div class="card"><div class="v' + (isMoney ? ' money' : '') + '">' + v + '</div><div class="k">' + k + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+}
+
+function panel(title, tagClass, rows) {
+  var h = '<div class="panel" style="margin-bottom:0"><h2>' + title + '</h2>';
+  rows.forEach(function(r){ h += '<div class="stat-row"><span>' + r[0] + '</span><span class="n">' + r[1] + '</span></div>'; });
+  return h + '</div>';
+}
+
+function drawChart(chartId, axisId, items, startDate, endDate) {
+  var max = Math.max.apply(null, items.map(function(i){ return i.v; }).concat([1]));
+  var h = '';
+  items.forEach(function(i){
+    var pct = Math.round(i.v / max * 100);
+    h += '<div class="col" data-tip="' + esc(i.tip) + '"><div class="b" style="height:' + pct + '%;background:' + i.color + (i.v === 0 ? ';opacity:.15' : '') + '"></div></div>';
+  });
+  document.getElementById(chartId).innerHTML = h;
+  document.getElementById(axisId).innerHTML = '<span>' + startDate.slice(5) + '</span><span>' + endDate.slice(5) + '</span>';
+}
+
+function drawStacked(chartId, axisId, items, startDate, endDate) {
+  var max = Math.max.apply(null, items.map(function(i){ return i.parts.reduce(function(s,p){ return s + p.v; }, 0); }).concat([1]));
+  var h = '';
+  items.forEach(function(i){
+    var total = i.parts.reduce(function(s,p){ return s + p.v; }, 0);
+    var inner = '';
+    i.parts.forEach(function(p){
+      var pct = Math.round(p.v / max * 100);
+      if (p.v > 0) inner += '<div class="b" style="height:' + pct + '%;background:' + p.color + ';border-radius:0"></div>';
+    });
+    if (!inner) inner = '<div class="b" style="height:1px;background:#ddd;opacity:.3"></div>';
+    h += '<div class="col" data-tip="' + esc(i.tip) + '">' + inner + '</div>';
+  });
+  document.getElementById(chartId).innerHTML = h;
+  document.getElementById(axisId).innerHTML = '<span>' + startDate.slice(5) + '</span><span>' + endDate.slice(5) + '</span>';
+}
+
+if (TOKEN) load(); else document.getElementById('loginBox').style.display = 'block';
+</script>
+</body>
+</html>

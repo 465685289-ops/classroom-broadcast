@@ -1,0 +1,584 @@
+/*
+ * 师行 · 老师端视觉刷新
+ * 保留原操作结构，统一为克制、清晰的暖色编辑台。
+ */
+:root {
+  --ui-canvas: #eee9df;
+  --ui-paper: #f8f5ee;
+  --ui-paper-bright: #fdfbf7;
+  --ui-ink: #24211c;
+  --ui-ink-soft: #696257;
+  --ui-ink-faint: #9b9284;
+  --ui-line: rgba(48, 42, 34, .13);
+  --ui-amber: #b77e30;
+  --ui-amber-bright: #d8a754;
+  --ui-dark: #181714;
+  --ui-green: #65825f;
+  --ui-red: #ab5548;
+  --ui-shadow: 0 18px 50px rgba(56, 45, 30, .075);
+}
+
+body {
+  background:
+    radial-gradient(900px 420px at 92% -10%, rgba(183, 126, 48, .1), transparent 64%),
+    linear-gradient(180deg, #f2eee6, var(--ui-canvas));
+  color: var(--ui-ink);
+  font-family: "Songti SC", "STZhongsong", "Noto Serif CJK SC", "Microsoft YaHei", serif !important;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button,
+a,
+.profile-menu-item {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ui-amber-bright);
+  outline-offset: 3px;
+}
+
+#authPage.active {
+  min-height: 100vh;
+  background:
+    radial-gradient(700px 500px at 18% 76%, rgba(183, 126, 48, .12), transparent 68%),
+    radial-gradient(620px 360px at 88% 0%, rgba(255, 255, 255, .05), transparent 70%),
+    linear-gradient(135deg, #11110f, #1b1915);
+}
+
+.auth-wrap::before {
+  content: "SHIXING  ·  TEACHER DESK";
+  position: fixed;
+  top: 28px;
+  left: 32px;
+  color: rgba(248, 245, 238, .35);
+  font: 700 10px/1 "Avenir Next", "PingFang SC", sans-serif;
+  letter-spacing: 3.5px;
+}
+
+.auth-box {
+  max-width: 410px;
+  padding: 42px 34px 36px;
+  border: 1px solid rgba(255, 255, 255, .54) !important;
+  border-radius: 24px;
+  background: var(--ui-paper) !important;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, .38) !important;
+}
+
+.brand-kicker {
+  color: var(--ui-amber);
+  font: 700 10px/1 "PingFang SC", sans-serif;
+  letter-spacing: 4px;
+}
+
+.auth-box h1 {
+  color: var(--ui-ink);
+  font-size: 27px;
+  letter-spacing: 2px;
+}
+
+.auth-box .subtitle {
+  color: var(--ui-ink-faint);
+}
+
+.auth-tabs {
+  gap: 24px;
+  border-bottom: 1px solid var(--ui-line);
+}
+
+.auth-tabs button {
+  padding: 11px 0;
+  color: var(--ui-ink-faint);
+}
+
+.auth-tabs button.active {
+  border-bottom-color: var(--ui-amber);
+  color: var(--ui-ink);
+}
+
+.form-group label {
+  color: var(--ui-ink-soft);
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+}
+
+.form-group input,
+.form-row input,
+.form-row select,
+.form-row textarea,
+.edit-name-row input,
+.add-class input,
+.modal-box input,
+.feedback-area {
+  border: 1px solid var(--ui-line) !important;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .62) !important;
+  color: var(--ui-ink);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .7);
+}
+
+.form-group input:focus,
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus,
+.edit-name-row input:focus,
+.add-class input:focus,
+.modal-box input:focus,
+.feedback-area:focus {
+  border-color: var(--ui-amber) !important;
+  background: var(--ui-paper-bright) !important;
+  box-shadow: 0 0 0 4px rgba(183, 126, 48, .09);
+}
+
+.auth-btn,
+.add-class button,
+.edit-name-row button,
+.modal-actions .primary {
+  border: 0;
+  border-radius: 10px;
+  background: var(--ui-dark);
+  color: #faf6ec;
+  box-shadow: 0 10px 22px rgba(24, 23, 20, .16);
+}
+
+.auth-btn:hover,
+.add-class button:hover,
+.edit-name-row button:hover,
+.modal-actions .primary:hover {
+  background: #28251f;
+}
+
+.auth-sibling-card {
+  max-width: 410px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .045);
+  box-shadow: none;
+  backdrop-filter: blur(16px);
+}
+
+.auth-sibling-card strong {
+  color: rgba(248, 245, 238, .82);
+}
+
+.auth-sibling-card p {
+  color: rgba(248, 245, 238, .44);
+}
+
+.auth-sibling-card a {
+  border-color: rgba(183, 126, 48, .45);
+  background: rgba(183, 126, 48, .08);
+  color: #e8b766;
+}
+
+#appPage.active {
+  min-height: 100vh;
+}
+
+.app {
+  padding-top: 18px;
+}
+
+.header {
+  min-height: 62px;
+  padding: 7px 12px 7px 10px;
+  border: 1px solid var(--ui-line);
+  border-radius: 16px;
+  background: rgba(248, 245, 238, .78);
+  box-shadow: 0 10px 34px rgba(56, 45, 30, .055);
+  backdrop-filter: blur(18px);
+}
+
+.header h1 {
+  color: var(--ui-ink);
+  font-size: 22px;
+  letter-spacing: 1px;
+}
+
+.avatar-circle {
+  border: 2px solid var(--ui-paper-bright);
+  background: #e5ded1;
+  box-shadow: 0 4px 13px rgba(56, 45, 30, .12);
+}
+
+.header-icon-btn {
+  border: 1px solid var(--ui-line);
+  background: rgba(255, 255, 255, .66);
+  color: var(--ui-ink-soft);
+  box-shadow: none;
+}
+
+.header-icon-btn.active {
+  border-color: var(--ui-dark);
+  background: var(--ui-dark);
+  color: #fff;
+}
+
+.comment-header-link {
+  border-color: var(--ui-line);
+  background: rgba(255, 255, 255, .55);
+  color: var(--ui-ink-soft);
+}
+
+.header .logout {
+  color: var(--ui-ink-faint);
+}
+
+.tab-bar {
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--ui-line);
+  border-radius: 14px;
+  background: rgba(248, 245, 238, .78);
+  box-shadow: 0 10px 34px rgba(56, 45, 30, .05);
+}
+
+.tab-bar button {
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ui-ink-soft);
+}
+
+.tab-bar button.active {
+  background: var(--ui-dark);
+  color: #f8f3e8;
+  box-shadow: 0 7px 18px rgba(24, 23, 20, .14);
+}
+
+.sub-tab-bar {
+  border: 1px solid rgba(48, 42, 34, .08);
+  background: rgba(220, 212, 199, .42);
+}
+
+.sub-tab-bar button {
+  color: var(--ui-ink-soft);
+}
+
+.sub-tab-bar button.active {
+  background: var(--ui-paper-bright);
+  color: var(--ui-ink);
+  box-shadow: 0 5px 14px rgba(56, 45, 30, .07);
+}
+
+.card,
+.profile-sidebar-card,
+.profile-menu,
+.modal-box,
+.pay-steps,
+.sibling-tool-card {
+  border: 1px solid var(--ui-line) !important;
+  border-radius: 18px;
+  background: rgba(248, 245, 238, .9) !important;
+  box-shadow: var(--ui-shadow) !important;
+}
+
+.card h3 {
+  color: var(--ui-ink);
+  font-size: 17px;
+  letter-spacing: .5px;
+}
+
+.form-row label {
+  color: var(--ui-ink-soft);
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+}
+
+.templates button {
+  border: 1px solid var(--ui-line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .56);
+  color: var(--ui-ink-soft);
+}
+
+.templates button:hover {
+  border-color: rgba(183, 126, 48, .55);
+  background: rgba(183, 126, 48, .08);
+  color: #81591f;
+}
+
+.preview {
+  border: 1px solid rgba(183, 126, 48, .15);
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(183, 126, 48, .07), transparent 46%),
+    #f1ebdf;
+}
+
+.preview .label {
+  color: var(--ui-amber);
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.btn-send {
+  border: 0;
+  border-radius: 11px;
+  background: var(--ui-dark);
+  color: #fbf6eb;
+  box-shadow: 0 10px 24px rgba(24, 23, 20, .15);
+}
+
+.btn-send:hover {
+  background: #29261f;
+}
+
+.btn-send:disabled {
+  background: #bbb4a8;
+  box-shadow: none;
+}
+
+.btn-clear {
+  border-color: var(--ui-line);
+  background: transparent;
+  color: var(--ui-ink-faint);
+}
+
+.profile-menu-item {
+  border-left: 0;
+  color: var(--ui-ink-soft);
+}
+
+.profile-menu-item:hover {
+  background: rgba(183, 126, 48, .08);
+}
+
+.profile-menu-item.active {
+  border-left: 0;
+  background: var(--ui-dark);
+  color: #faf6ec;
+}
+
+.profile-stat .stat-value,
+.profile-row .value {
+  color: var(--ui-ink);
+}
+
+.profile-stats,
+.profile-row,
+.class-item,
+.history-item,
+.message-item,
+.bulletin-list-item,
+.feature-item {
+  border-color: rgba(48, 42, 34, .09);
+}
+
+.time-bank {
+  background:
+    radial-gradient(500px 240px at 100% 0%, rgba(183, 126, 48, .12), transparent 70%),
+    var(--ui-paper) !important;
+}
+
+.time-main {
+  color: var(--ui-dark);
+  font-family: "Avenir Next Condensed", "DIN Alternate", sans-serif;
+  font-weight: 600;
+}
+
+.time-mini {
+  border-color: var(--ui-line);
+  background: rgba(255, 255, 255, .48);
+}
+
+.letter-card {
+  background:
+    radial-gradient(520px 260px at 100% 0%, rgba(183, 126, 48, .14), transparent 70%),
+    var(--ui-dark) !important;
+  color: #f7f1e5 !important;
+}
+
+.letter-card h3 {
+  color: #fffaf0;
+}
+
+.letter-card p {
+  color: rgba(247, 241, 229, .67);
+}
+
+.letter-card .sign {
+  color: #d3a65c;
+}
+
+.feature-icon {
+  border: 1px solid rgba(183, 126, 48, .12);
+  background: rgba(183, 126, 48, .09);
+}
+
+.feature-status {
+  color: var(--ui-green);
+}
+
+.subscribe-btn {
+  border-color: rgba(183, 126, 48, .22);
+  background: rgba(183, 126, 48, .09);
+  color: #82591e;
+}
+
+.feedback-btn {
+  background: var(--ui-dark);
+}
+
+/* 积分管理与老师端主界面共用同一套质感 */
+#tab-points {
+  --ctp-ink: var(--ui-ink);
+  --ctp-muted: var(--ui-ink-faint);
+  --ctp-line: var(--ui-line);
+  --ctp-paper: var(--ui-paper);
+  --ctp-wash: #ece6da;
+  --ctp-brass: var(--ui-amber);
+}
+
+.ctp-hero {
+  border: 1px solid var(--ui-line);
+  border-radius: 18px;
+  background:
+    radial-gradient(500px 220px at 100% 0%, rgba(183, 126, 48, .12), transparent 68%),
+    var(--ui-dark);
+  box-shadow: 0 16px 40px rgba(24, 23, 20, .13);
+}
+
+.ctp-kicker {
+  color: #d9aa5b;
+}
+
+.ctp-hero h2 {
+  color: #fbf7ed;
+}
+
+.ctp-hero p,
+.ctp-class-picker label {
+  color: rgba(251, 247, 237, .48);
+}
+
+.ctp-class-picker select {
+  border-color: rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .07);
+  color: #f9f4e9;
+}
+
+.ctp-class-picker select option {
+  background: var(--ui-dark);
+}
+
+.ctp-card,
+.ctp-enable-panel,
+.ctp-overview-bar {
+  border-color: var(--ui-line);
+  background: rgba(248, 245, 238, .9);
+  box-shadow: var(--ui-shadow);
+}
+
+.ctp-primary,
+.ctp-inline-form button,
+.ctp-ledger-tools button {
+  background: var(--ui-dark);
+  color: #fff9ed;
+}
+
+.ctp-student-chip,
+.ctp-score-rule,
+.ctp-row-actions button,
+.ctp-ledger-row button,
+.ctp-card-head button {
+  border-color: var(--ui-line);
+  background: rgba(255, 255, 255, .56);
+}
+
+.ctp-student-chip.selected {
+  border-color: var(--ui-dark);
+  background: var(--ui-dark);
+  color: #fff9ed;
+  box-shadow: 0 0 0 3px rgba(183, 126, 48, .18);
+}
+
+.ctp-student-chip.selected small {
+  color: #e0b364;
+}
+
+.ctp-tabs button.active {
+  border-color: var(--ui-dark);
+  background: var(--ui-dark);
+}
+
+body > a[title="师行邀请中心"] {
+  border-color: var(--ui-line) !important;
+  border-radius: 10px !important;
+  background: rgba(248, 245, 238, .92) !important;
+  color: var(--ui-ink-soft) !important;
+  box-shadow: 0 10px 28px rgba(56, 45, 30, .11) !important;
+  backdrop-filter: blur(14px);
+}
+
+@media (min-width: 768px) {
+  .app {
+    max-width: 1180px;
+    padding: 20px 34px 82px;
+  }
+
+  .card {
+    padding: 27px;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-wrap::before {
+    top: 18px;
+    left: 20px;
+  }
+
+  .auth-box {
+    padding: 34px 24px 30px;
+  }
+
+  .app {
+    padding: 10px 12px 94px;
+  }
+
+  .header {
+    min-height: 56px;
+    border-radius: 13px;
+  }
+
+  .header .right {
+    gap: 7px;
+  }
+
+  .comment-header-link {
+    display: none;
+  }
+
+  .tab-bar {
+    border-radius: 12px;
+  }
+
+  .card,
+  .profile-sidebar-card,
+  .profile-menu,
+  .modal-box,
+  .sibling-tool-card {
+    border-radius: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="师行数学教师工作台：拍题生成互动课件、管理课件与知识点，并在课堂中直接演示。">
+<link rel="canonical" href="https://notice.yingyuzuowen.asia/edulab/pro.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>师行数学教师工作台</title>
+<link rel="stylesheet" href="lib/katex/katex.min.css">
+<link rel="stylesheet" href="lib/cropper/cropper.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="teacher-workbench.css?v=20260713">
+<script src="lib/katex/katex.min.js" defer></script>
+<script src="lib/katex/contrib/auto-render.min.js" defer></script>
+<script src="lib/cropper/cropper.min.js" defer></script>
+<script src="teacher-workbench.js?v=20260713" defer></script>
+<style>@media(max-width:600px){.header{padding-top:54px}}</style>
+</head>
+<body>
+<aside class="math-platform-nav" aria-label="师行数学教师平台导航">
+  <a class="math-brand" href="#dashboard" data-go="dashboard">
+    <span class="math-brand-mark"><i class="fa-solid fa-square-root-variable" aria-hidden="true"></i></span>
+    <span>师行数学<small>TEACHER STUDIO</small></span>
+  </a>
+  <div class="rail-section-label">教师平台</div>
+  <nav class="math-nav-list">
+    <button class="math-nav-item active" type="button" data-route="dashboard"><i class="fa-solid fa-grip" aria-hidden="true"></i><span>工作台</span></button>
+    <button class="math-nav-item" type="button" data-route="generator"><i class="fa-solid fa-camera-retro" aria-hidden="true"></i><span>拍题生成</span></button>
+    <a class="math-nav-item" href="lab.html"><i class="fa-solid fa-flask" aria-hidden="true"></i><span>互动实验室</span></a>
+    <button class="math-nav-item" type="button" data-route="library"><i class="fa-regular fa-folder-open" aria-hidden="true"></i><span>我的课件</span></button>
+    <button class="math-nav-item" type="button" data-route="knowledge"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i><span>题库与知识点</span></button>
+    <button class="math-nav-item" type="button" data-route="account"><i class="fa-regular fa-user" aria-hidden="true"></i><span>数据与账户</span></button>
+  </nav>
+  <div class="rail-bottom">
+    <a class="math-nav-item compact" href="https://shixing.yingyuzuowen.asia/invite.html?center=1"><i class="fa-solid fa-gift" aria-hidden="true"></i><span>邀请有礼</span></a>
+    <a class="math-nav-item compact" href="https://shixing.yingyuzuowen.asia/"><i class="fa-solid fa-house" aria-hidden="true"></i><span>师行首页</span></a>
+    <div class="rail-user">
+      <span class="rail-avatar" id="sideAvatar">师</span>
+      <span><b id="sideUser">教师访客</b><small id="sidePoints">登录后同步积分</small></span>
+    </div>
+  </div>
+</aside>
+
+<nav class="mobile-math-nav" aria-label="手机端数学平台导航">
+  <button class="active" type="button" data-route="dashboard"><i class="fa-solid fa-grip" aria-hidden="true"></i><span>工作台</span></button>
+  <button type="button" data-route="generator"><i class="fa-solid fa-camera-retro" aria-hidden="true"></i><span>拍题</span></button>
+  <a href="lab.html"><i class="fa-solid fa-flask" aria-hidden="true"></i><span>实验</span></a>
+  <button type="button" data-route="library"><i class="fa-regular fa-folder-open" aria-hidden="true"></i><span>课件</span></button>
+  <button type="button" data-route="account"><i class="fa-regular fa-user" aria-hidden="true"></i><span>我的</span></button>
+</nav>
+
+<main class="platform-main">
+  <header class="platform-topbar">
+    <div class="topbar-title"><span class="mobile-brand-mark"><i class="fa-solid fa-square-root-variable" aria-hidden="true"></i></span><span><strong id="viewTitle">教师工作台</strong><small id="viewSubtitle">把一道题变成能直接上课的互动课件</small></span></div>
+    <div class="topbar-actions">
+      <button class="topbar-point" type="button" data-go="account"><i class="fa-solid fa-coins" aria-hidden="true"></i><span>师行积分</span><b id="topBalance">—</b></button>
+      <button class="ghost-button" type="button" id="topAuthButton"><i class="fa-regular fa-user" aria-hidden="true"></i><span id="topAuthText">登录 / 注册</span></button>
+    </div>
+  </header>
+
+  <div class="header sr-only" aria-hidden="true">数学教师工作台</div>
+
+  <section class="app-view active" data-view="dashboard" aria-labelledby="dashboardHeading">
+    <div class="dashboard-hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> AI 互动课件工作流</span>
+        <h1 id="dashboardHeading">从一道题开始，<br>把讲解真正做出来。</h1>
+        <p>拍照或粘贴题目，先核对识别结果，再由 AI 深度解答、独立验算并生成可直接演示的互动课件。</p>
+        <div class="hero-actions">
+          <button class="primary-button" type="button" data-go="generator"><i class="fa-solid fa-camera" aria-hidden="true"></i>上传题目生成课件</button>
+          <button class="secondary-button" type="button" data-paste-problem><i class="fa-regular fa-keyboard" aria-hidden="true"></i>直接粘贴题目</button>
+        </div>
+        <div class="hero-promise"><span><i class="fa-solid fa-check" aria-hidden="true"></i>生成时才登录</span><span><i class="fa-solid fa-check" aria-hidden="true"></i>成功后扣 75 积分</span><span><i class="fa-solid fa-check" aria-hidden="true"></i>同题缓存不重复扣费</span></div>
+      </div>
+      <div class="hero-workflow" aria-label="课件生成流程">
+        <div class="workflow-head"><span>本次课件流程</span><b>4 个阶段</b></div>
+        <div class="workflow-problem">
+          <span class="problem-kicker">题目输入</span>
+          <strong>图片、截图或题目文字</strong>
+          <div class="math-line">y = ax² + bx + c</div>
+        </div>
+        <ol class="workflow-steps">
+          <li><span>01</span><div><b>识别题目</b><small>裁剪后先核对文字</small></div></li>
+          <li><span>02</span><div><b>深度解答</b><small>完整处理每个小问</small></div></li>
+          <li><span>03</span><div><b>独立验算</b><small>复核边界和结论</small></div></li>
+          <li><span>04</span><div><b>制作课件</b><small>生成可交互页面</small></div></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="metric-grid" aria-label="真实使用数据">
+      <article class="metric-card"><span class="metric-icon gold"><i class="fa-solid fa-coins" aria-hidden="true"></i></span><div><small>可用积分</small><strong id="metricBalance">—</strong><span>师行产品通用</span></div></article>
+      <article class="metric-card"><span class="metric-icon blue"><i class="fa-regular fa-folder-open" aria-hidden="true"></i></span><div><small>我的课件</small><strong id="metricTotal">—</strong><span>真实生成记录</span></div></article>
+      <article class="metric-card"><span class="metric-icon coral"><i class="fa-solid fa-star" aria-hidden="true"></i></span><div><small>已收藏</small><strong id="metricFavorites">—</strong><span>常用课堂内容</span></div></article>
+      <article class="metric-card"><span class="metric-icon green"><i class="fa-regular fa-calendar" aria-hidden="true"></i></span><div><small>本月生成</small><strong id="metricMonth">—</strong><span>按生成时间统计</span></div></article>
+    </div>
+
+    <div class="dashboard-grid">
+      <section class="panel recent-panel">
+        <div class="panel-heading"><div><span class="section-kicker">COURSEWARE</span><h2>最近课件</h2></div><button class="text-button" type="button" data-go="library">查看全部 <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button></div>
+        <div id="recentCourseware" class="recent-courseware"></div>
+      </section>
+      <aside class="dashboard-side">
+        <section class="panel start-guide">
+          <span class="guide-number">01</span><div><small>第一次使用</small><h2>三步完成一份课件</h2></div>
+          <ol><li><span>1</span>上传并裁剪一道题</li><li><span>2</span>核对识别文字与课堂偏好</li><li><span>3</span>生成后全屏演示或分享</li></ol>
+          <button class="secondary-button full" type="button" data-go="generator">开始制作</button>
+        </section>
+        <a class="tool-banner" href="lab.html"><span class="tool-icon"><i class="fa-solid fa-flask" aria-hidden="true"></i></span><span><small>互动工具</small><strong>函数实验室</strong><em>调参数、看图像、做探究</em></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+      </aside>
+    </div>
+  </section>
+
+  <section class="app-view" data-view="generator" aria-labelledby="generatorHeading">
+    <div class="view-heading"><div><span class="section-kicker">CREATE COURSEWARE</span><h1 id="generatorHeading">拍题生成互动课件</h1><p>图片和文字任选一种；图片会先识别成文字，确认无误后再生成。</p></div><span class="cost-badge"><i class="fa-solid fa-coins" aria-hidden="true"></i> 75 积分 / 新课件</span></div>
+    <div class="generator-workspace">
+      <section class="panel generator-input" id="appCard">
+        <div class="input-mode-head"><div><span class="step-badge">1</span><div><h2>提供题目</h2><p>拍照、选图、粘贴截图或直接输入文字</p></div></div><span class="account-inline" id="acctInfo"></span></div>
+        <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="上传或拍摄数学题目">
+          <span class="upload-icon"><i class="fa-solid fa-camera-retro" aria-hidden="true"></i></span>
+          <strong>点击拍照或选择题目图片</strong>
+          <span>电脑也可以 Ctrl / ⌘ + V 粘贴截图</span>
+          <em>支持 JPG、PNG，建议只保留一道题</em>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <div class="crop-wrap" id="cropWrap">
+          <div class="crop-box"><img id="cropImg" alt="待裁剪的数学题目"></div>
+          <div class="crop-actions"><p>拖动方框，只框住要生成课件的那道题。</p><button class="text-button" type="button" id="reselect"><i class="fa-solid fa-rotate" aria-hidden="true"></i>重新选择</button></div>
+        </div>
+        <div class="or-divider"><span>或者直接粘贴题目文字</span></div>
+        <label class="field-label" for="problemText">题目文字 <small id="ocrReviewHint">可留空，上传图片后由系统识别</small></label>
+        <textarea id="problemText" rows="6" placeholder="例如：已知二次函数 y=x²-2x-3，求它与坐标轴的交点，并说明图像的开口方向。"></textarea>
+        <div class="ocr-review hidden" id="ocrReview"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span><b>题目已识别，请先核对</b><small>可以直接修改上方文字；确认无误后再次点击生成。</small></span></div>
+
+        <div class="input-section-divider"></div>
+        <div class="input-mode-head compact-head"><div><span class="step-badge">2</span><div><h2>课堂偏好</h2><p>这些要求会真正发送给课件生成模型</p></div></div></div>
+        <div class="preference-grid">
+          <label><span>适用年级</span><select id="gradeSelect"><option>七年级</option><option selected>八年级</option><option>九年级</option><option>高中</option><option>通用</option></select></label>
+          <label><span>讲解方式</span><select id="detailSelect"><option selected>精讲</option><option>探究</option><option>复习</option></select></label>
+        </div>
+        <div class="option-row">
+          <label class="switch-option"><input id="dynamicOption" type="checkbox" checked><span><b>优先生成动态演示</b><small>参数、动点或图形可拖动时优先实现</small></span></label>
+          <label class="switch-option"><input id="questionsOption" type="checkbox" checked><span><b>加入课堂提问</b><small>包含引导问题和一道迁移练习</small></span></label>
+        </div>
+        <button class="primary-button generate-button" id="btnGen" type="button"><i class="fa-solid fa-clapperboard" aria-hidden="true"></i><span id="generateButtonText">生成课件（消耗 75 积分）</span></button>
+        <div class="form-note"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>上传、裁剪和填写偏好不需要登录；点击生成后才要求登录并扣费。</div>
+        <div class="error" id="errorMsg" role="alert"></div>
+      </section>
+
+      <section class="panel generator-result" aria-live="polite">
+        <div class="result-empty" id="resultEmpty">
+          <div class="lesson-schematic" aria-hidden="true"><span class="schematic-axis x"></span><span class="schematic-axis y"></span><span class="curve one"></span><span class="curve two"></span><i class="fa-solid fa-circle-play"></i></div>
+          <span class="section-kicker">LIVE PREVIEW</span><h2>生成后在这里直接预览</h2>
+          <p>不用下载软件。课件会包含题目、动态图像、分步讲解、课堂提问和练习，可全屏授课，也可以复制链接分享。</p>
+          <div class="result-capabilities"><span><i class="fa-solid fa-expand" aria-hidden="true"></i>全屏演示</span><span><i class="fa-solid fa-link" aria-hidden="true"></i>链接分享</span><span><i class="fa-solid fa-pen" aria-hidden="true"></i>课件管理</span></div>
+        </div>
+        <div class="loading-state" id="loading">
+          <div class="loading-head"><span class="spinner"></span><div><strong id="loadingText">正在准备生成</strong><small id="genProgress">通常需要 1—3 分钟，请不要关闭页面</small></div></div>
+          <ol class="generation-stages">
+            <li id="stageOcr"><span>1</span><div><b>识别题目</b><small>提取图片中的数学内容</small></div><i class="fa-solid fa-check" aria-hidden="true"></i></li>
+            <li id="stageSolve"><span>2</span><div><b>深度解答</b><small>完整处理每个小问</small></div><i class="fa-solid fa-check" aria-hidden="true"></i></li>
+            <li id="stageVerify"><span>3</span><div><b>独立验算</b><small>核对计算、边界与结论</small></div><i class="fa-solid fa-check" aria-hidden="true"></i></li>
+            <li id="stageBuild"><span>4</span><div><b>制作课件</b><small>生成互动图像与讲解步骤</small></div><i class="fa-solid fa-check" aria-hidden="true"></i></li>
+          </ol>
+        </div>
+        <div class="result-content" id="resultContent">
+          <div class="result-toolbar" id="linkCard">
+            <div><span class="success-dot"></span><span><small>课件已生成</small><strong id="resultTitle">互动数学课件</strong></span></div>
+            <div class="toolbar-actions"><a class="icon-button" id="previewOpen" href="#" target="_blank" rel="noopener" title="全屏打开"><i class="fa-solid fa-expand" aria-hidden="true"></i></a><button class="icon-button" type="button" id="copyResultLink" title="复制链接"><i class="fa-solid fa-link" aria-hidden="true"></i></button><button class="icon-button" type="button" id="editResultMeta" title="编辑课件信息"><i class="fa-solid fa-pen" aria-hidden="true"></i></button></div>
+            <a id="linkUrl" href="#" target="_blank" rel="noopener" class="sr-only">新窗口打开课件</a>
+          </div>
+          <p class="cached-note" id="cachedNote">这是之前生成过的同一道题，已直接调出，未重复消耗积分。</p>
+          <div class="preview-card" id="previewCard"><iframe class="courseware-frame" id="coursewareFrame" title="生成的数学交互课件" loading="eager"></iframe></div>
+          <div class="result-footer"><button class="secondary-button" type="button" id="showSolutionButton"><i class="fa-regular fa-file-lines" aria-hidden="true"></i>查看已验算解答</button><button class="secondary-button" type="button" id="regenerateButton"><i class="fa-solid fa-rotate" aria-hidden="true"></i>重新生成（再次消耗 75 积分）</button></div>
+          <div class="solution-card hidden" id="solutionCard"><div class="solution-head"><h3>已验算解答</h3><button class="text-button" id="hideSolutionButton" type="button">收起</button></div><div class="solution" id="solutionContent"></div></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="app-view" data-view="library" aria-labelledby="libraryHeading">
+    <div class="view-heading"><div><span class="section-kicker">MY COURSEWARE</span><h1 id="libraryHeading">我的课件</h1><p>按题型和知识点整理，常用课件可以收藏，所有操作都保存到你的账户。</p></div><button class="primary-button" type="button" data-go="generator"><i class="fa-solid fa-plus" aria-hidden="true"></i>新建课件</button></div>
+    <section class="panel library-panel">
+      <div class="library-toolbar">
+        <label class="search-box"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span class="sr-only">搜索课件</span><input id="librarySearch" type="search" placeholder="搜索题目、名称或知识点"></label>
+        <label><span class="sr-only">按题型筛选</span><select id="libraryType"><option value="">全部题型</option></select></label>
+        <label class="favorite-filter"><input id="favoriteOnly" type="checkbox">只看收藏</label>
+      </div>
+      <div id="libraryList" class="library-list"></div>
+    </section>
+  </section>
+
+  <section class="app-view" data-view="knowledge" aria-labelledby="knowledgeHeading">
+    <div class="view-heading"><div><span class="section-kicker">QUESTION BANK</span><h1 id="knowledgeHeading">题库与知识点</h1><p>你的生成记录会自动形成题库；添加标签后，可按知识点快速回到对应课件。</p></div><button class="secondary-button" type="button" data-go="library"><i class="fa-solid fa-tags" aria-hidden="true"></i>整理课件标签</button></div>
+    <div class="knowledge-layout">
+      <section class="panel"><div class="panel-heading"><div><span class="section-kicker">YOUR TOPICS</span><h2>我的知识点</h2></div></div><div id="knowledgeOverview" class="knowledge-overview"></div></section>
+      <section class="panel formula-panel"><div class="panel-heading"><div><span class="section-kicker">FORMULA HANDBOOK</span><h2>常用公式速查</h2></div></div>
+        <div class="formula-grid">
+          <article><span>二次函数</span><strong>y = ax² + bx + c</strong><small>对称轴 x = −b / 2a</small></article>
+          <article><span>勾股定理</span><strong>a² + b² = c²</strong><small>直角三角形边长关系</small></article>
+          <article><span>圆的面积</span><strong>S = πr²</strong><small>周长 C = 2πr</small></article>
+          <article><span>三角函数</span><strong>sin²α + cos²α = 1</strong><small>基础恒等关系</small></article>
+          <article><span>等差数列</span><strong>aₙ = a₁ + (n−1)d</strong><small>Sₙ = n(a₁+aₙ)/2</small></article>
+          <article><span>圆锥曲线</span><strong>x²/a² + y²/b² = 1</strong><small>椭圆标准方程</small></article>
+        </div>
+      </section>
+    </div>
+    <section class="panel teaching-tip-panel"><span class="tip-icon"><i class="fa-regular fa-lightbulb" aria-hidden="true"></i></span><div><h2>课堂使用建议</h2><p>先让学生独立判断，再打开动态图验证；最后隐藏答案，用迁移练习检查是否真正理解。</p></div><a href="lab.html" class="text-button">打开互动实验室 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></section>
+  </section>
+
+  <section class="app-view" data-view="account" aria-labelledby="accountHeading">
+    <div class="view-heading"><div><span class="section-kicker">ACCOUNT & DATA</span><h1 id="accountHeading">数据与账户</h1><p>查看真实使用量、师行积分和充值套餐。</p></div></div>
+    <div class="account-grid">
+      <section class="panel profile-panel"><div class="profile-avatar" id="accountAvatar">师</div><div><span>当前账号</span><h2 id="accountName">尚未登录</h2><p>师行系列产品共用同一账号和积分。</p></div><div id="accountActions"></div></section>
+      <section class="panel account-stats"><h2>真实使用数据</h2><div><span><small>课件总数</small><b id="accountTotal">—</b></span><span><small>收藏课件</small><b id="accountFavorites">—</b></span><span><small>本月生成</small><b id="accountMonth">—</b></span></div></section>
+      <section class="panel recharge-panel"><div class="panel-heading"><div><span class="section-kicker">SHIXING POINTS</span><h2>充值师行积分</h2></div><span class="point-balance">当前 <b id="accountBalance">—</b></span></div><div id="pkgList" class="package-list"><div class="inline-empty">登录后查看充值套餐。首充赠积分，全平台通用。</div></div><div class="error" id="rechargeError" role="alert"></div><p class="panel-note">首充赠：9.9 元套餐到账 10000 积分，19.9 元套餐到账 22000 积分；实际以支付页面显示为准。</p></section>
+      <a class="panel invite-panel" href="https://shixing.yingyuzuowen.asia/invite.html?center=1"><span class="invite-icon"><i class="fa-solid fa-gift" aria-hidden="true"></i></span><div><span class="section-kicker">INVITE</span><h2>邀请好友，全平台共享奖励</h2><p>一条师行邀请链接，五个平台使用同一邀请关系。</p></div><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+    </div>
+  </section>
+</main>
+
+<div class="auth-overlay hidden" id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="mathAuthTitle">
+  <div class="modal-card auth-card">
+    <div class="modal-head"><div><span class="section-kicker">SHIXING ACCOUNT</span><h2 id="mathAuthTitle">登录师行</h2></div><button class="icon-button" type="button" id="closeAuthButton" aria-label="关闭登录窗口"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
+    <div class="auth-tabs"><button class="active" id="loginTab" type="button">登录</button><button id="registerTab" type="button">注册</button></div>
+    <p class="invite-context" id="mathInviteContext"></p>
+    <div id="loginForm"><div class="field"><label class="sr-only" for="loginUser">用户名</label><input id="loginUser" placeholder="用户名" autocomplete="username"></div><div class="field"><label class="sr-only" for="loginPass">密码</label><input id="loginPass" type="password" placeholder="密码" autocomplete="current-password"></div><button class="primary-button full" id="btnLogin" type="button">登录并继续</button></div>
+    <div id="registerForm" class="hidden"><div class="field"><label class="sr-only" for="regUser">用户名</label><input id="regUser" placeholder="用户名（2—20 个字符）" autocomplete="username"></div><div class="field"><label class="sr-only" for="regEmail">邮箱</label><input id="regEmail" type="email" placeholder="邮箱（接收验证码）" autocomplete="email"></div><div class="code-field"><div class="field"><label class="sr-only" for="regCode">邮箱验证码</label><input id="regCode" inputmode="numeric" autocomplete="one-time-code" placeholder="6 位邮箱验证码"></div><button class="secondary-button" id="sendCodeBtn" type="button">获取验证码</button></div><div class="field"><label class="sr-only" for="regPass">密码</label><input id="regPass" type="password" placeholder="密码（至少 4 位）" autocomplete="new-password"></div><button class="primary-button full" id="btnRegister" type="button">注册并继续生成</button></div>
+    <div class="error" id="authError" role="alert"></div>
+    <p class="modal-note">师行产品共用同一账号与积分；上传和填写不需要登录，生成课件时才登录。</p>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="metaOverlay" role="dialog" aria-modal="true" aria-labelledby="metaTitle">
+  <div class="modal-card meta-card"><div class="modal-head"><div><span class="section-kicker">COURSEWARE INFO</span><h2 id="metaTitle">整理课件</h2></div><button class="icon-button" type="button" id="closeMetaButton" aria-label="关闭课件编辑窗口"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div><label class="field"><span>课件名称</span><input id="metaName" maxlength="80" placeholder="给课件起一个容易找到的名称"></label><label class="field"><span>知识点标签</span><input id="metaTags" maxlength="220" placeholder="例如：二次函数、最值、参数范围"></label><p class="modal-note">多个知识点用逗号分隔，最多保存 8 个。</p><button class="primary-button full" id="saveMetaButton" type="button">保存课件信息</button><div class="error" id="metaError" role="alert"></div></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/analytics.js"></script>
+</body>
+</html>

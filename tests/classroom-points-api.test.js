@@ -220,3 +220,36 @@ test('reversal is auditable and an expired class screen cannot add points', asyn
   });
   assert.equal(expiredWrite.status, 403);
 });
+
+test('only the class owner can begin a new score period', async () => {
+  const denied = await request('/api/classes/' + CLASS_ID + '/score-periods', {
+    method: 'POST', token: MEMBER_TOKEN, body: { name: '2026年秋季学期' }
+  });
+  assert.equal(denied.status, 403);
+
+  const created = await request('/api/classes/' + CLASS_ID + '/score-periods', {
+    method: 'POST', body: { name: '2026年秋季学期' }
+  });
+  assert.equal(created.status, 200);
+  assert.equal(created.body.current_period.name, '2026年秋季学期');
+  assert.equal(created.body.periods.filter(item => item.status === 'current').length, 1);
+  const previous = created.body.periods.find(item => item.status === 'ended');
+  assert.ok(previous);
+
+  const historicalLedger = await request('/api/classes/' + CLASS_ID + '/points/ledger?scope=term&period_id=' + previous.id);
+  assert.equal(historicalLedger.status, 200);
+  assert.equal(historicalLedger.body.current_period.id, previous.id);
+  assert.equal(historicalLedger.body.items.length, 3);
+
+  const newLeaderboard = await request('/api/classes/' + CLASS_ID + '/points/leaderboard?scope=term&period_id=' + created.body.current_period.id);
+  assert.equal(newLeaderboard.status, 200);
+  assert.equal(newLeaderboard.body.items[0].score, 0);
+});
+
+test('deleting a managed class archives its history and removes it from active classes', async () => {
+  const removed = await request('/api/classes/' + CLASS_ID, { method: 'DELETE' });
+  assert.equal(removed.status, 200);
+  assert.equal(removed.body.archived, true);
+  const classes = await request('/api/classes');
+  assert.equal(classes.body.some(item => item.id === CLASS_ID), false);
+});

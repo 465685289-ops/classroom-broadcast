@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>作文学习助手</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+  <script src="/vendor/vue.global.prod.min.js"></script>
+  <script src="/vendor/confetti.browser.min.js" async></script>
+  <style>
+    :root{--paper:#fbf7ee;--canvas:#f3eadc;--panel:#fffaf1;--ink:#3b3025;--muted:#887967;--faint:#b7a890;--gold:#a87531;--olive:#677251;--olive-soft:#eef0e5;--line:#e6d9c3;--line-deep:#d6c39f;--terracotta:#a85f45;--danger:#a6463e;--shadow:0 14px 34px rgba(73,55,32,.08)}
+    *{box-sizing:border-box}html{background:var(--canvas)}body{margin:0;color:var(--ink);font:15px/1.55 "PingFang SC","Microsoft YaHei",sans-serif;background:var(--canvas)}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.56}
+    .topbar{height:76px;padding:0 28px;display:flex;align-items:center;gap:22px;background:rgba(255,250,241,.94);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}.brand{display:flex;align-items:center;gap:12px;min-width:max-content}.brand-mark{width:38px;height:38px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:18px}.brand-name{font:600 25px/1 "Songti SC","STSong","SimSun",serif;letter-spacing:.08em}.brand-note{color:var(--muted);font:14px/1 "Songti SC","STSong","SimSun",serif;letter-spacing:.13em;border-left:1px solid var(--line);padding-left:22px}.top-actions{margin-left:auto;display:flex;align-items:center;gap:18px}.text-action{border:0;background:transparent;padding:8px 0;color:var(--muted);font-size:14px}.text-action:hover{color:var(--gold)}.login-btn,.primary-btn{border:1px solid var(--gold);background:var(--panel);color:var(--gold);border-radius:7px;padding:9px 18px;font-weight:700}.login-btn:hover,.primary-btn:hover{background:#fff2d9}.member-name{color:var(--muted);font-size:14px}.logout{padding:4px 0!important;font-weight:400}
+    .app-shell{max-width:1600px;margin:0 auto;display:grid;grid-template-columns:215px minmax(0,1fr) 280px;gap:16px;padding:20px 24px 28px}.sidebar,.paper,.rail-card{background:rgba(255,250,241,.82);border:1px solid var(--line);box-shadow:var(--shadow)}.sidebar{min-height:calc(100vh - 124px);padding:14px 10px;position:sticky;top:96px;align-self:start}.nav-label{font-size:11px;letter-spacing:.16em;color:var(--faint);padding:8px 13px 10px}.tool-nav{border:0;background:transparent;color:var(--ink);width:100%;display:flex;align-items:center;gap:13px;text-align:left;padding:13px;border-left:3px solid transparent;border-radius:3px;font:500 16px/1 "Songti SC","STSong","SimSun",serif}.tool-nav i{width:22px;text-align:center;color:#8c815f;font-size:17px}.tool-nav:hover{background:#f8f0e0}.tool-nav.active{background:#f4ecd9;border-left-color:var(--olive);color:#4d573b}.tool-nav.active i{color:var(--olive)}.sidebar-foot{margin:36px 10px 0;border-top:1px solid var(--line);padding-top:15px;color:var(--muted);font:13px/1.9 "Songti SC","STSong","SimSun",serif}
+    .workspace{min-width:0}.paper{min-height:calc(100vh - 124px);padding:20px;background:var(--paper)}.editor-head{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line)}.editor-kicker{color:var(--muted);font-size:14px}.editor-head .save{margin-left:auto;color:var(--muted);font-size:13px}.mini-action{border:0;background:transparent;color:var(--muted);padding:5px;font-size:13px}.mini-action:hover{color:var(--gold)}.prompt-card{margin:20px 0;background:#fffaf2;border:1px solid var(--line);padding:20px 22px}.prompt-title{display:flex;align-items:center;gap:11px;font:600 28px/1.25 "Songti SC","STSong","SimSun",serif}.prompt-tag{color:var(--olive);background:var(--olive-soft);border:1px solid #d8ddc6;padding:4px 8px;border-radius:3px;font:600 13px/1 "PingFang SC","Microsoft YaHei",sans-serif}.prompt-copy{color:#6f6254;margin:14px 0 0;line-height:1.85}.prompt-copy b{font-weight:600;color:var(--ink)}.hint{float:right;color:var(--muted);font-size:13px}.editor-tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--line);overflow:auto}.editor-tab{min-width:96px;padding:14px 8px 13px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:13px;white-space:nowrap}.editor-tab i{margin-right:6px}.editor-tab:hover{color:var(--olive)}.editor-tab.active{color:var(--olive);font-weight:700;border-bottom-color:var(--olive)}.toolbar{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 14px;border-bottom:1px solid var(--line);color:#716756}.toolbar span{font-size:13px}.toolbar .count{margin-left:auto}.writing-area{position:relative;min-height:480px;padding:30px 48px 32px 62px;background-color:#fffdf8;background-image:linear-gradient(to bottom,transparent 34px,#eadfcf 35px);background-size:100% 35px}.writing-area::before{content:"";position:absolute;left:20px;top:20px;bottom:20px;width:12px;background:radial-gradient(circle,#e9decd 5px,transparent 6px) center top/12px 42px repeat-y}.writing-area textarea{width:100%;min-height:410px;resize:vertical;border:0;outline:0;background:transparent;color:var(--ink);font:18px/35px "Songti SC","STSong","SimSun",serif;letter-spacing:.03em}.writing-area textarea::placeholder{color:#c2b5a5}.editor-footer{margin-top:18px;padding:13px 0 0;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}.privacy{margin:17px 0 0;color:var(--muted);font-size:12px}
+    .right-rail{display:flex;flex-direction:column;gap:16px;position:sticky;top:96px;align-self:start}.rail-card{padding:18px;background:rgba(255,250,241,.9)}.rail-title{font:600 20px/1.2 "Songti SC","STSong","SimSun",serif;margin:0 0 14px;color:#4d4033}.tip-copy{margin:0;color:#6f6254;line-height:2}.tip-rule{display:block;width:24px;height:1px;background:var(--gold);margin-top:16px}.progress-wrap{display:flex;align-items:center;gap:18px}.ring{width:94px;height:94px;border:9px solid #e8e0d1;border-top-color:var(--olive);border-radius:50%;display:grid;place-items:center;flex:0 0 auto}.ring strong{display:block;font:600 24px/1 "Songti SC","STSong","SimSun",serif;text-align:center}.ring span{display:block;font-size:11px;color:var(--muted);margin-top:3px}.progress-info{font-size:13px;line-height:1.9;color:var(--muted)}.progress-info b{font-size:18px;color:var(--ink);font-family:"Songti SC","STSong","SimSun",serif}.feature-row{display:flex;gap:11px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}.feature-row:first-of-type{border-top:0;padding-top:0}.feature-icon{width:38px;height:38px;border:1px solid var(--line-deep);border-radius:10px;background:linear-gradient(145deg,#fff9ec,#f5ead5);display:grid;place-items:center;color:var(--olive);flex:0 0 auto;position:relative;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(255,250,241,.75),0 6px 16px rgba(73,55,32,.05)}.feature-icon:before{content:"";position:absolute;inset:6px;border:1px solid rgba(168,117,49,.2);border-radius:7px}.feature-icon i{position:relative;font-size:17px;color:var(--olive)}.feature-row:nth-of-type(2n) .feature-icon i{color:var(--gold)}.feature-row:nth-of-type(3n) .feature-icon i{color:#8f6b52}.feature-row b{display:block;font:600 15px/1.3 "Songti SC","STSong","SimSun",serif}.feature-text{display:block;color:var(--muted);font-size:12px;line-height:1.6;margin-top:2px}.more-link{border:0;background:transparent;padding:8px 0 0;color:var(--gold);font-weight:700}
+    .result-card{margin-top:18px;background:#fffaf2;border:1px solid var(--line);padding:22px}.result-card h2{margin:0 0 13px;font:600 22px/1.25 "Songti SC","STSong","SimSun",serif}.result{white-space:pre-wrap;line-height:1.9;color:#4f4438}
+    .rcard{border:1px solid var(--line);border-radius:9px;padding:16px 18px;margin-top:14px;background:#fffdf8}.rcard:first-child{margin-top:4px}.rcard-tag{display:inline-block;font-size:11px;color:var(--olive);background:var(--olive-soft);border:1px solid #d8ddc6;border-radius:4px;padding:3px 10px;margin-bottom:10px}.rcard-title{font:600 20px/1.4 "Songti SC","STSong","SimSun",serif;color:var(--ink);margin-bottom:8px}.rcard-body{white-space:pre-wrap;line-height:1.95;color:#4f4438}.rcard-foot{margin-top:11px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}.status-line{margin-top:14px;padding:11px 13px;border-left:3px solid var(--gold);background:#fbf2e3;color:#6d5742;font-size:13px}
+    .dialog-backdrop{position:fixed;inset:0;background:rgba(48,39,29,.34);display:grid;place-items:center;padding:20px;z-index:30}.dialog{width:min(460px,100%);max-height:calc(100vh - 40px);overflow:auto;background:var(--panel);border:1px solid var(--line-deep);box-shadow:0 24px 70px rgba(49,36,20,.23);padding:28px}.dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.dialog h2{margin:0;font:600 27px/1.25 "Songti SC","STSong","SimSun",serif}.dialog .subtle{margin:8px 0 22px;color:var(--muted);font-size:13px}.close{border:0;background:transparent;color:var(--muted);padding:3px;font-size:18px}.auth-switch{display:flex;border-bottom:1px solid var(--line);margin-bottom:20px}.auth-switch button{flex:1;border:0;border-bottom:2px solid transparent;background:transparent;padding:11px;color:var(--muted)}.auth-switch button.active{border-bottom-color:var(--olive);color:var(--olive);font-weight:700}.field-label{display:block;color:#665a4e;font-size:13px;margin:13px 0 5px}.field{width:100%;border:1px solid var(--line-deep);border-radius:6px;padding:11px 12px;background:#fffdf8;outline-color:var(--gold)}.form-error{min-height:22px;margin:10px 0;color:var(--danger);font-size:13px}.dialog-primary{width:100%;border:0;border-radius:6px;background:var(--olive);color:#fff;padding:12px;font-weight:700}.dialog-note{color:var(--muted);font-size:12px;line-height:1.75;margin:14px 0 0}.plans{display:grid;gap:12px}.plan{border:1px solid var(--line);padding:18px;background:#fffdf8}.plan h3{margin:0;font:600 20px/1.25 "Songti SC","STSong","SimSun",serif}.plan p{margin:8px 0;color:var(--muted);font-size:13px}.plan .price{color:var(--terracotta);font:600 26px/1 "Songti SC","STSong","SimSun",serif}.plan button{margin-top:4px;width:100%;border:1px solid var(--gold);background:#fff6e7;color:#825c26;padding:10px;border-radius:5px;font-weight:700}
+    @media(max-width:1120px){.app-shell{grid-template-columns:185px minmax(0,1fr) 250px}.editor-tabs{grid-template-columns:repeat(4,minmax(120px,1fr))}}@media(max-width:980px){.app-shell{grid-template-columns:185px minmax(0,1fr)}.right-rail{display:none}}@media(max-width:760px){.topbar{height:auto;min-height:62px;padding:11px 16px}.brand-note,.guide-link{display:none}.brand-name{font-size:21px}.top-actions{gap:10px}.app-shell{display:block;padding:12px}.sidebar{position:static;min-height:0;margin-bottom:12px;padding:7px;display:flex;gap:3px;overflow:auto}.nav-label,.sidebar-foot{display:none}.tool-nav{min-width:117px;padding:9px;font-size:14px}.tool-nav i{font-size:14px}.paper{min-height:0;padding:14px}.editor-head{padding-bottom:12px}.save{display:none}.prompt-card{margin:14px 0;padding:16px}.prompt-title{font-size:23px}.hint{display:none}.editor-tabs{grid-template-columns:repeat(7,minmax(104px,1fr))}.toolbar{overflow:auto}.writing-area{padding:22px 16px 22px 38px;min-height:390px}.writing-area textarea{font-size:16px;min-height:330px}.writing-area::before{left:12px}.privacy{line-height:1.65}.dialog{padding:22px}.member-name{display:none}}
+    .writing-area{background-image:none}.writing-area::before{display:none}
+    .result-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.result-head h2{margin:0}.result-actions{display:flex;gap:2px}.icon-btn{border:0;background:transparent;color:var(--muted);font-size:13px;padding:5px 9px;border-radius:5px}.icon-btn:hover{color:var(--gold);background:#f8f0e0}.icon-btn.saved{color:var(--danger)}
+    .dialog.wide{width:min(720px,100%)}
+    .pc-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:2px 0 18px}.pc-tab{flex:1;border:0;background:transparent;border-bottom:2px solid transparent;padding:11px 6px;color:var(--muted);font:500 15px/1 "Songti SC","STSong","SimSun",serif}.pc-tab.active{color:var(--olive);border-bottom-color:var(--olive);font-weight:700}
+    .growth-card{background:#fffaf2;border:1px solid var(--line);padding:18px;margin-bottom:16px}.growth-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}.growth-level{font:600 23px/1 "Songti SC","STSong","SimSun",serif;color:var(--gold)}.growth-level i{margin-right:7px;color:#d9a441}.growth-exp{font-size:12px;color:var(--muted)}
+    .exp-bar{height:9px;background:#ece2cf;border-radius:6px;overflow:hidden;border:1px solid var(--line)}.exp-fill{height:100%;background:linear-gradient(90deg,#c79a4e,#a87531);transition:width .6s ease}
+    .checkin-btn{margin-top:15px;width:100%;border:1px solid var(--olive);background:var(--olive);color:#fff;border-radius:7px;padding:12px;font-weight:700}.checkin-btn:hover{background:#5b6647}.checkin-btn:disabled{background:#ece9dd;color:#9a9483;border-color:var(--line);opacity:1;cursor:default}
+    .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:4px}.stat-cell{background:#fffdf8;border:1px solid var(--line);border-radius:7px;padding:13px 4px;text-align:center}.stat-cell b{display:block;font:600 23px/1 "Songti SC","STSong","SimSun",serif;color:var(--ink)}.stat-cell span{display:block;font-size:11px;color:var(--muted);margin-top:6px}
+    .pc-section-title{font:600 16px/1 "Songti SC","STSong","SimSun",serif;color:#4d4033;margin:20px 0 12px}
+    .ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.ach-cell{border:1px solid var(--line);border-radius:8px;padding:15px 8px;text-align:center;background:#fffdf8}.ach-cell.locked{opacity:.5;filter:grayscale(.55)}.ach-cell .ico{font-size:23px;color:var(--gold)}.ach-cell.locked .ico{color:var(--faint)}.ach-cell b{display:block;font:600 13px/1.2 "Songti SC","STSong","SimSun",serif;margin:9px 0 3px;color:var(--ink)}.ach-cell em{display:block;font-size:10px;color:var(--muted);line-height:1.45;font-style:normal}
+    .mem-line{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fbf2e3;border-left:3px solid var(--gold);padding:11px 14px;margin-bottom:4px;font-size:13px;color:#6d5742}.mem-line button{border:1px solid var(--gold);background:#fff6e7;color:#825c26;border-radius:5px;padding:7px 15px;font-weight:700;white-space:nowrap}
+    .chip-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}.chip{border:1px solid var(--line);background:#fffdf8;color:var(--muted);border-radius:20px;padding:6px 14px;font-size:12px}.chip.active{border-color:var(--olive);background:var(--olive-soft);color:#4d573b;font-weight:700}
+    .list-scroll{max-height:54vh;overflow:auto;margin:0 -4px;padding:0 4px}
+    .saved-item,.hist-item{border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px;background:#fffdf8}.item-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}.type-chip{font-size:11px;color:var(--olive);background:var(--olive-soft);border:1px solid #d8ddc6;border-radius:4px;padding:2px 9px}.item-date{font-size:11px;color:var(--faint);margin-left:auto}.item-title{font:600 15px/1.45 "Songti SC","STSong","SimSun",serif;color:var(--ink);margin-bottom:5px}.item-body{white-space:pre-wrap;color:#5f5446;font-size:13px;line-height:1.85;max-height:130px;overflow:auto}.item-actions{display:flex;gap:6px;margin-top:10px}.item-actions .icon-btn{border:1px solid var(--line);border-radius:5px}
+    .empty{text-align:center;color:var(--faint);padding:46px 0;font-size:13px}.empty i{display:block;font-size:30px;margin-bottom:12px;color:#dcceb4}
+    @media(max-width:760px){.dialog.wide{width:100%}.stat-grid{grid-template-columns:repeat(2,1fr)}.ach-grid{grid-template-columns:repeat(2,1fr)}.center-link span{display:none}}
+    .tool-head2{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:20px}.th-icon{width:44px;height:44px;border:1px solid var(--line-deep);border-radius:11px;background:#f9f2e5;display:grid;place-items:center;color:var(--olive);font-size:20px;flex:0 0 auto}.th-name{font:600 23px/1.2 "Songti SC","STSong","SimSun",serif;color:#4d4033}.th-sub{color:var(--muted);font-size:13px;margin-top:4px}
+    .guide-banner{background:#fbf2e3;border-left:3px solid var(--gold);padding:11px 14px;color:#6d5742;font-size:13px;line-height:1.75;margin:0 0 18px;border-radius:0 4px 4px 0}.guide-banner i{margin-right:6px;color:var(--gold)}
+    .fld{display:block;color:#665a4e;font-size:13px;margin:16px 0 7px;font-weight:600}.fld-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fld-row .fld{margin-top:0}.req-field{min-height:76px;resize:vertical;line-height:1.7}
+    select.field{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23887967' stroke-width='1.6'/></svg>");background-repeat:no-repeat;background-position:right 13px center;cursor:pointer;padding-right:34px}
+    .field.area{min-height:240px;resize:vertical;line-height:1.85;font-family:"Songti SC","STSong","SimSun",serif;font-size:16px}
+    .chips-label{display:block;color:#665a4e;font-size:13px;margin:16px 0 9px;font-weight:600}
+    .seg{display:inline-flex;border:1px solid var(--line-deep);border-radius:8px;overflow:hidden;margin-bottom:16px}.seg-btn{border:0;background:#fffdf8;color:var(--muted);padding:9px 20px;font:500 14px/1 "Songti SC","STSong","SimSun",serif}.seg-btn.active{background:var(--olive);color:#fff}
+    .gen-row{display:flex;align-items:center;gap:14px;margin-top:22px;flex-wrap:wrap}.ghost-btn{border:1px solid var(--line-deep);background:#fffdf8;color:#6f6254;border-radius:7px;padding:9px 18px;font-weight:600}.ghost-btn:hover{border-color:var(--gold);color:var(--gold)}
+    .wb-toolbar{display:flex;align-items:center;gap:12px;color:#716756;font-size:13px;margin-bottom:10px}.wb-toolbar .count{margin-left:auto}
+    .hot-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}.hot-chips .lbl{font-size:12px;color:var(--faint)}
+    .rg-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px}.rg-lv{font:600 18px/1 "Songti SC","STSong","SimSun",serif;color:var(--gold)}.rg-lv i{margin-right:6px;color:#d9a441}.rg-exp{font-size:11px;color:var(--muted)}
+    .rg-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.rg-stats .stat-cell{padding:9px 4px}.rg-stats .stat-cell b{font-size:19px}
+    .rail-divider{height:1px;background:var(--line);margin:16px 0 12px}.rg-label{font:600 13px/1 "Songti SC","STSong","SimSun",serif;color:#4d4033;margin-bottom:4px}
+    .task{display:flex;align-items:center;gap:9px;padding:8px 0;font-size:13px;color:#5f5446;cursor:pointer}.task:hover .task-name{color:var(--gold)}.task.static{cursor:default}.task.static:hover .task-name{color:#5f5446}.task-box{width:18px;height:18px;border:1.5px solid var(--line-deep);border-radius:5px;display:grid;place-items:center;flex:0 0 auto;color:#fff;font-size:10px}.task.done .task-box,.task-box.on{background:var(--olive);border-color:var(--olive)}.task.done .task-name{color:var(--faint)}.task-name{flex:1}.task-exp{font-size:11px;color:var(--faint)}
+    .grade-row{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12px;color:var(--muted)}.grade-sel{border:1px solid var(--line-deep);border-radius:6px;background:#fffdf8;padding:5px 9px;color:var(--ink);font:inherit;cursor:pointer}
+    .pc-tasks{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pc-tasks .task{border:1px solid var(--line);border-radius:7px;padding:10px 12px;background:#fffdf8;cursor:default}@media(max-width:760px){.pc-tasks{grid-template-columns:1fr}}
+    .mobile-nav-note{display:none}.summer-plan-card{margin:0 0 20px;border:1px solid var(--line-deep);background:linear-gradient(135deg,#fff9ed 0%,#f5ecdc 100%);box-shadow:0 10px 28px rgba(73,55,32,.06);padding:20px 22px}.summer-main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:22px;align-items:center}.summer-eyebrow{color:var(--gold);font-size:12px;font-weight:700;letter-spacing:.12em;margin-bottom:5px}.summer-plan-card h2{margin:0;font:600 25px/1.25 "Songti SC","STSong","SimSun",serif;color:#43372c}.summer-plan-card p{margin:8px 0 0;color:#756755;font-size:13px}.summer-task{display:flex;align-items:flex-start;gap:11px;margin-top:12px}.summer-day{flex:0 0 auto;min-width:55px;border:1px solid var(--line-deep);background:#fffaf1;border-radius:7px;padding:6px 8px;color:var(--olive);font-size:12px;font-weight:700;text-align:center}.summer-task b{display:block;font:600 17px/1.35 "Songti SC","STSong","SimSun",serif}.summer-task span{display:block;color:var(--muted);font-size:12px;margin-top:3px}.summer-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.summer-start{border:0;border-radius:7px;background:var(--olive);color:#fff;padding:11px 18px;font-weight:700;white-space:nowrap}.summer-start:hover{background:#596345}.summer-adjust{border:0;background:transparent;color:var(--gold);padding:8px;font-size:12px}.summer-progress{margin-top:17px;display:flex;align-items:center;gap:12px}.summer-progress-track{height:7px;flex:1;background:#e9deca;border-radius:8px;overflow:hidden}.summer-progress-fill{height:100%;background:linear-gradient(90deg,var(--olive),#9c9f72);border-radius:8px}.summer-progress-label{font-size:11px;color:var(--muted);white-space:nowrap}.summer-route{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:15px}.summer-phase{position:relative;border-top:2px solid var(--line-deep);padding-top:8px;color:var(--faint);font-size:11px}.summer-phase b{display:block;color:inherit;font-size:12px;margin-bottom:2px}.summer-phase.active{border-color:var(--olive);color:var(--olive)}.summer-phase.done{border-color:#b9b69d;color:#6d7458}.plan-duration{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 18px}.plan-choice{border:1px solid var(--line-deep);background:#fffdf8;color:var(--muted);border-radius:8px;padding:14px;text-align:left}.plan-choice b{display:block;color:var(--ink);font:600 17px/1.2 "Songti SC","STSong","SimSun",serif}.plan-choice span{display:block;font-size:11px;margin-top:4px}.plan-choice.active{border-color:var(--olive);background:var(--olive-soft);color:#596345}.weekly-report{border:1px solid var(--line);background:#fffaf2;padding:18px}.weekly-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:14px}.weekly-head h3{margin:0;font:600 22px/1.25 "Songti SC","STSong","SimSun",serif}.weekly-head p{margin:5px 0 0;color:var(--muted);font-size:12px}.weekly-badge{color:var(--olive);background:var(--olive-soft);border:1px solid #d8ddc6;border-radius:20px;padding:5px 11px;font-size:11px;white-space:nowrap}.weekly-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.weekly-stat{border:1px solid var(--line);background:#fffdf8;border-radius:7px;padding:12px;text-align:center}.weekly-stat b{display:block;font:600 22px/1 "Songti SC","STSong","SimSun",serif}.weekly-stat span{display:block;margin-top:5px;color:var(--muted);font-size:11px}.weekly-copy{white-space:pre-wrap;color:#5f5446;line-height:1.85;font-size:13px}.weekly-actions{display:flex;gap:9px;margin-top:15px}.weekly-actions button{flex:1}.pc-tabs{overflow-x:auto}.pc-tab{min-width:96px}.nav-fade{display:none}
+    @media(max-width:760px){.top-actions .text-action{min-width:30px;min-height:36px}.sidebar{scroll-snap-type:x proximity;scrollbar-width:thin}.tool-nav{scroll-snap-align:center;flex:0 0 112px}.mobile-nav-note{display:flex;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-size:11px;margin:-4px 0 9px}.summer-plan-card{padding:16px;margin-bottom:16px}.summer-main{grid-template-columns:1fr;gap:14px}.summer-plan-card h2{font-size:21px}.summer-actions{justify-content:flex-start}.summer-start{width:100%}.summer-adjust{margin:auto}.summer-route{gap:5px}.summer-phase{font-size:9px}.summer-phase b{font-size:10px}.summer-task{gap:8px}.summer-day{min-width:48px}.weekly-head{display:block}.weekly-badge{display:inline-block;margin-top:9px}.weekly-stats{grid-template-columns:repeat(3,1fr)}.weekly-stat{padding:10px 4px}.plan-duration{grid-template-columns:1fr}.pc-tabs{justify-content:flex-start}.pc-tab{flex:0 0 104px}}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark"><i class="fa-solid fa-feather-pointed"></i></span><span class="brand-name">作文学习助手</span><span class="brand-note">写好每一篇，让成长看得见</span></div>
+      <div class="top-actions">
+        <button class="text-action guide-link" @click="scrollToTips" aria-label="查看使用指南" title="使用指南"><i class="fa-regular fa-map"></i> 使用指南</button>
+        <template v-if="user"><button class="text-action center-link" @click="openCenter('saved')" aria-label="打开金句本" title="金句本"><i class="fa-regular fa-bookmark"></i><span> 金句本</span></button><button class="text-action center-link" @click="openCenter('overview')" aria-label="打开个人中心" title="个人中心"><i class="fa-regular fa-circle-user"></i><span> 个人中心</span></button><span class="member-name">{{user.display_name||user.username}}</span><button class="text-action logout" @click="logout">退出</button></template>
+        <button v-else class="login-btn" @click="openAuth">登录</button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="学习工具">
+        <div class="nav-label">学习工作台</div>
+        <button v-for="item in tools" :key="item.key" class="tool-nav" :class="{active:tool===item.key}" :aria-current="tool===item.key?'page':undefined" :aria-label="'打开'+item.label" @click="chooseTool(item.key)"><i :class="item.icon"></i><span>{{item.label}}</span></button>
+        <p class="sidebar-foot">把想到的先写下来。<br>好作文，是改出来的。</p>
+      </aside>
+      <div class="mobile-nav-note"><i class="fa-solid fa-arrow-left-long"></i> 左右滑动，查看全部 8 个学习工具 <i class="fa-solid fa-arrow-right-long"></i></div>
+
+      <section class="workspace">
+        <div class="paper">
+          <section class="summer-plan-card" aria-labelledby="summer-plan-title">
+            <div class="summer-main">
+              <div>
+                <div class="summer-eyebrow">暑假写作计划 · {{summerPlan.active?grade:'每天 10 分钟'}}</div>
+                <template v-if="summerPlan.active">
+                  <h2 id="summer-plan-title">今天只做一件事</h2>
+                  <div class="summer-task"><span class="summer-day">第 {{planDay}} 天</span><div><b>{{todaySummerTask.title}}</b><span>{{todaySummerTask.desc}}</span></div></div>
+                </template>
+                <template v-else>
+                  <h2 id="summer-plan-title">这个暑假，把作文真正练起来</h2>
+                  <p>从审题、搭结构到完成整篇并修改，每天沿着一条清晰路线前进。</p>
+                </template>
+              </div>
+              <div class="summer-actions">
+                <button v-if="summerPlan.active" class="summer-start" @click="startTodayTask"><i class="fa-solid fa-play"></i> {{todayTaskDone?'再练一次':'开始今日任务'}}</button>
+                <button v-else class="summer-start" @click="openSummerPlan"><i class="fa-solid fa-route"></i> 开启训练计划</button>
+                <button v-if="summerPlan.active" class="summer-adjust" @click="openSummerPlan">调整计划</button>
+              </div>
+            </div>
+            <div v-if="summerPlan.active" class="summer-progress"><div class="summer-progress-track"><div class="summer-progress-fill" :style="{width:planProgress+'%'}"></div></div><span class="summer-progress-label">已完成 {{planCompletedCount}} / {{summerPlan.duration}} 天</span></div>
+            <div class="summer-route" aria-label="暑假写作训练路线"><div v-for="(phase,i) in trainingPhases" :key="phase.title" class="summer-phase" :class="{active:summerPhaseIndex===i,done:summerPhaseIndex>i}"><b>{{i+1}}. {{phase.title}}</b>{{phase.desc}}</div></div>
+          </section>
+          <div class="tool-head2"><span class="th-icon"><i :class="activeTool.icon"></i></span><div><div class="th-name">{{activeTool.label}}</div><div class="th-sub">{{activeTool.intro}}</div></div></div>
+
+          <!-- 写作工作台 -->
+          <div v-if="tool==='workbench'">
+            <label class="fld">作文题目 / 写作要求</label>
+            <textarea class="field req-field" v-model="forms.workbench.requirement" placeholder="例如：请以“那一刻，我长大了”为题，写一篇不少于600字的记叙文；要求有细节描写和真情实感。"></textarea>
+            <div class="wb-toolbar"><span><i class="fa-solid fa-pen-nib"></i> 在下面方格里写你的作文，写完点“获取学习建议”</span><span class="count">字数统计：{{wordCount}}</span></div>
+            <div class="writing-area"><textarea v-model="forms.workbench.text" placeholder="在这里输入你的作文……" aria-label="作文输入区"></textarea></div>
+            <div class="gen-row"><button class="primary-btn" @click="run('workbench')" :disabled="busy"><i class="fa-solid fa-wand-magic-sparkles"></i> {{busy?'正在认真阅读…':'获取学习建议'}}</button><button class="text-action" @click="startOcr" :disabled="busy"><i class="fa-solid fa-camera"></i> 拍照识别作文</button><input ref="ocrFile" type="file" accept="image/*" hidden @change="ocr"></div>
+          </div>
+
+          <!-- 名师思路 -->
+          <div v-else-if="tool==='guide'">
+            <p class="guide-banner"><i class="fa-regular fa-lightbulb"></i> 输入作文题目，选好文体和结构，老师帮你理清审题立意、规划结构、示范开头。</p>
+            <label class="fld">作文题目</label>
+            <input class="field" v-model="forms.guide.topic" placeholder="例如：那一刻，我长大了">
+            <div class="fld-row">
+              <div><label class="fld">文体</label><select class="field" v-model="forms.guide.genre"><option v-for="g in ['记叙文','议论文','抒情散文','读后感']" :key="g">{{g}}</option></select></div>
+              <div><label class="fld">结构偏好</label><select class="field" v-model="forms.guide.structure"><option v-for="s in ['五段三分式','小标题式','层进式','抑扬结合']" :key="s">{{s}}</option></select></div>
+            </div>
+            <div class="gen-row"><button class="primary-btn" @click="run('guide')" :disabled="busy"><i class="fa-solid fa-compass"></i> {{busy?'正在梳理思路…':'获取写作思路'}}</button></div>
+          </div>
+
+          <!-- 作文诊断 -->
+          <div v-else-if="tool==='review'">
+            <p class="guide-banner"><i class="fa-regular fa-lightbulb"></i> 把作文粘贴进来（或拍照识别），老师会指出优点、问题和改进方向；也可以请老师润色升格。</p>
+            <textarea class="field area" v-model="forms.review.essay" placeholder="在这里粘贴作文全文……"></textarea>
+            <div class="gen-row"><button class="primary-btn" @click="run('review','critique')" :disabled="busy"><i class="fa-solid fa-clipboard-check"></i> {{busy?'正在逐句阅读…':'综合诊断'}}</button><button class="ghost-btn" @click="run('review','polish')" :disabled="busy"><i class="fa-solid fa-wand-magic-sparkles"></i> 润色升格</button><button class="text-action" @click="startOcr" :disabled="busy"><i class="fa-solid fa-camera"></i> 拍照识别</button><input ref="ocrFile" type="file" accept="image/*" hidden @change="ocr"></div>
+          </div>
+
+          <!-- 万能素材 -->
+          <div v-else-if="tool==='material'">
+            <div class="seg"><button class="seg-btn" :class="{active:forms.material.mode==='person'}" @click="forms.material.mode='person'">写人物</button><button class="seg-btn" :class="{active:forms.material.mode==='topic'}" @click="forms.material.mode='topic'">写主题</button></div>
+            <template v-if="forms.material.mode==='person'">
+              <p class="guide-banner"><i class="fa-regular fa-lightbulb"></i> 选一个人物 + 一个主题，老师给你一段可直接引用的高分人物素材。</p>
+              <span class="chips-label">① 锁定人物</span>
+              <div class="chip-row"><button v-for="p in presetPeople" :key="p" class="chip" :class="{active:forms.material.person===p && !forms.material.customPerson}" @click="forms.material.person=p;forms.material.customPerson=''">{{p}}</button></div>
+              <input class="field" v-model="forms.material.customPerson" placeholder="或输入自定义人物…">
+              <span class="chips-label">② 匹配主题</span>
+              <div class="chip-row"><button v-for="t in presetThemes" :key="t" class="chip" :class="{active:forms.material.theme===t && !forms.material.customTheme}" @click="forms.material.theme=t;forms.material.customTheme=''">{{t}}</button></div>
+              <input class="field" v-model="forms.material.customTheme" placeholder="或输入自定义主题…">
+            </template>
+            <template v-else>
+              <p class="guide-banner"><i class="fa-regular fa-lightbulb"></i> 输入一个中心词，选好素材类型，老师一次给你三则不同角度的素材。</p>
+              <label class="fld">核心主题</label>
+              <input class="field" v-model="forms.material.topic" placeholder="例如：坚持、家国情怀、创新…">
+              <label class="fld">素材类型</label>
+              <select class="field" v-model="forms.material.genre"><option v-for="g in ['记叙文素材（故事类）','议论文素材（论据类）','名人名言（哲理类）','万能开头段']" :key="g">{{g}}</option></select>
+            </template>
+            <div class="gen-row"><button class="primary-btn" @click="run('material')" :disabled="busy"><i class="fa-solid fa-box-open"></i> {{busy?'正在翻找素材…':'生成专属素材'}}</button></div>
+          </div>
+
+          <!-- 结构提纲 -->
+          <div v-else-if="tool==='outline'">
+            <p class="guide-banner"><i class="fa-regular fa-lightbulb"></i> 输入作文题目，老师给你三种不同立意的清晰提纲，挑最合适的填入你的故事。</p>
+            <label class="fld">作文题目</label>
+            <input class="field" v-model="forms.outline.topic" placeholder="输入作文题目…" @keyup.enter="run('outline')">
+            <div class="hot-chips"><span class="lbl">🔥 高频考题：</span><button v-for="h in hotTopics" :key="h" class="chip" @click="forms.outline.topic=h;run('outline')">{{h}}</button></div>
+            <div class="gen-row"><button class="primary-btn" @click="run('outline')" :disabled="busy"><i class="fa-solid fa-table-cells-large"></i> {{busy?'正在搭建框架…':'生成提纲'}}</button></div>
+          </div>
+
+          <!-- 凤头豹尾 -->
+          <div v-else-if="tool==='opening'">
+            <p class="guide-banner"><i class="fa-regular fa-lightbulb"></i> 输入话题、选一种风格，老师生成一组首尾呼应的开头和结尾。</p>
+            <div class="fld-row">
+              <div><label class="fld">作文话题</label><input class="field" v-model="forms.opening.topic" placeholder="例如：成长" @keyup.enter="run('opening')"></div>
+              <div><label class="fld">风格</label><select class="field" v-model="forms.opening.style"><option v-for="s in ['排比式','引用式','情景式','哲理式']" :key="s">{{s}}</option></select></div>
+            </div>
+            <div class="gen-row"><button class="primary-btn" @click="run('opening')" :disabled="busy"><i class="fa-regular fa-feather"></i> {{busy?'正在斟酌…':'生成开头结尾'}}</button></div>
+          </div>
+
+          <!-- 标题升格 -->
+          <div v-else-if="tool==='title'">
+            <p class="guide-banner"><i class="fa-regular fa-lightbulb"></i> 输入一个普通题目，老师用修辞手法升格成几个让阅卷老师眼前一亮的好标题。</p>
+            <label class="fld">普通题目</label>
+            <input class="field" v-model="forms.title.topic" placeholder="例如：我的母亲" @keyup.enter="run('title')">
+            <div class="gen-row"><button class="primary-btn" @click="run('title')" :disabled="busy"><i class="fa-solid fa-flask"></i> {{busy?'正在调配修辞…':'升格标题'}}</button></div>
+          </div>
+
+          <!-- 微写作 -->
+          <div v-else-if="tool==='practice'">
+            <div class="seg"><button class="seg-btn" :class="{active:forms.practice.mode==='修辞仿写'}" @click="forms.practice.mode='修辞仿写'">修辞仿写</button><button class="seg-btn" :class="{active:forms.practice.mode==='五感描写'}" @click="forms.practice.mode='五感描写'">五感描写</button></div>
+            <p class="guide-banner"><i class="fa-regular fa-lightbulb"></i> 输入一个场景或主题，老师出一道小练习并给出示范和评价标准，碎片时间也能练笔。</p>
+            <label class="fld">想练习的主题 / 场景</label>
+            <input class="field" v-model="forms.practice.topic" placeholder="例如：放学路上的夕阳" @keyup.enter="run('practice')">
+            <div class="gen-row"><button class="primary-btn" @click="run('practice')" :disabled="busy"><i class="fa-regular fa-lightbulb"></i> {{busy?'正在出题…':'出题并示范'}}</button></div>
+          </div>
+
+          <section v-if="activeResult" class="result-card"><div class="result-head"><h2>{{resultTitle}}</h2><div class="result-actions"><button class="icon-btn" :class="{saved:isResultSaved}" @click="saveResult"><i :class="isResultSaved?'fa-solid fa-heart':'fa-regular fa-heart'"></i> {{isResultSaved?'已收藏':'收藏'}}</button><button class="icon-btn" @click="copy(activeResult)"><i class="fa-regular fa-copy"></i> 复制</button></div></div>
+            <div v-if="activeItems"><div v-for="(it,i) in activeItems" :key="i" class="rcard"><span class="rcard-tag">{{it.tag}}</span><div v-if="it.title" class="rcard-title">{{it.title}}</div><div class="rcard-body">{{it.body}}</div><div v-if="it.foot" class="rcard-foot">用法：{{it.foot}}</div></div></div>
+            <div v-else class="result">{{activeResult}}</div></section>
+          <p v-if="message" class="status-line">{{message}}</p>
+          <p class="privacy">请勿输入姓名、学校、联系方式等个人信息。提交的文字和图片仅用于生成学习建议。</p>
+        </div>
+      </section>
+
+      <aside class="right-rail" id="tips">
+        <section id="usage-guide" class="rail-card"><h2 class="rail-title">{{activeGuide.title}}</h2><p class="tip-copy">{{activeGuide.intro}}</p><div v-for="(step,i) in activeGuide.steps" :key="step" class="feature-row"><span class="feature-icon"><i :class="guideStepIcon(i)"></i></span><span class="feature-text">{{step}}</span></div><span class="tip-rule"></span></section>
+        <section v-if="user&&growth" class="rail-card">
+          <div class="rg-top"><span class="rg-lv"><i class="fa-solid fa-crown"></i>Lv.{{growth.level}} {{growth.title}}</span><span class="rg-exp">{{growth.currentExp}}/{{growth.levelSpan}} 经验</span></div>
+          <div class="exp-bar"><div class="exp-fill" :style="{width:Math.min(100,growth.currentExp/growth.levelSpan*100)+'%'}"></div></div>
+          <button class="checkin-btn" :disabled="growth.checkedInToday||checkinBusy" @click="checkin"><i class="fa-solid fa-calendar-check"></i> {{growth.checkedInToday?'今日已打卡':(checkinBusy?'打卡中…':'每日打卡 +50 经验')}}</button>
+          <div class="rg-stats"><div class="stat-cell"><b>{{growth.stats.generations}}</b><span>累计生成</span></div><div class="stat-cell"><b>{{growth.stats.saves}}</b><span>金句收藏</span></div><div class="stat-cell"><b>{{growth.stats.checkinDays}}</b><span>打卡天数</span></div><div class="stat-cell"><b>{{growth.stats.streak}}</b><span>连续打卡</span></div></div>
+          <div class="grade-row">我的年级<select class="grade-sel" v-model="grade" @change="saveGrade"><option v-for="g in grades" :key="g">{{g}}</option></select></div>
+          <div class="rail-divider"></div>
+          <div class="rg-label">今日任务</div>
+          <div v-for="t in growth.dailyTasks" :key="t.id" class="task" :class="{done:t.done}" @click="taskClick(t)"><span class="task-box"><i v-if="t.done" class="fa-solid fa-check"></i></span><span class="task-name">{{t.name}}</span><span class="task-exp">{{t.done?'已完成':'+'+t.exp}}</span></div>
+          <div class="rg-label" style="margin-top:14px">每周挑战</div>
+          <div v-for="t in growth.weeklyTasks" :key="t.id" class="task static"><span class="task-box" :class="{on:t.done}"><i v-if="t.done" class="fa-solid fa-check"></i></span><span class="task-name">{{t.name}}</span><span class="task-exp">{{t.progress}}/{{t.target}}</span></div>
+          <button class="more-link" @click="openCenter('overview')">成就 · 金句本 · 记录 <i class="fa-solid fa-arrow-right"></i></button>
+        </section>
+        <section v-else class="rail-card"><h2 class="rail-title">成长体系</h2><p class="tip-copy">登录后即可<b>每日打卡攒经验</b>、升级解锁成就，把每天的进步都记下来。</p><button class="more-link" @click="openAuth">登录开启 <i class="fa-solid fa-arrow-right"></i></button></section>
+        <section v-if="tool==='workbench'" class="rail-card"><h2 class="rail-title">写作进度</h2><div class="progress-wrap"><div class="ring"><div><strong>{{progress}}%</strong><span>完成度</span></div></div><div class="progress-info">字数目标<br><b>{{wordGoal}}+</b><br>当前字数<br><b>{{wordCount}}</b></div></div><label class="fld">自定义字数目标</label><input class="field" v-model="customWordGoal" inputmode="numeric" placeholder="不填则初中600，高中800" @change="saveWordGoal"></section>
+        <section class="rail-card"><h2 class="rail-title">写作小贴士</h2><p class="tip-copy">动笔前，先理清思路；<br>写作中，注重细节描写；<br>完成后，学会修改润色。<br>好文章是改出来的！</p><span class="tip-rule"></span></section>
+      </aside>
+    </main>
+
+    <div v-if="authOpen" class="dialog-backdrop" @click.self="authOpen=false">
+      <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+        <div class="dialog-head"><div><h2 id="auth-title">{{tab==='login'?'登录后继续写作':'注册后开始体验'}}</h2><p class="subtle">新用户可免费体验 7 天全部学习功能。</p></div><button class="close" @click="authOpen=false" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="auth-switch"><button :class="{active:tab==='login'}" @click="tab='login'">登录</button><button :class="{active:tab==='register'}" @click="tab='register'">注册</button></div>
+        <label class="field-label">用户名</label><input class="field" v-model="username" autocomplete="username" placeholder="输入用户名">
+        <label class="field-label">密码</label><input class="field" v-model="password" type="password" autocomplete="current-password" placeholder="输入密码">
+        <template v-if="tab==='register'"><label class="field-label">邮箱</label><input class="field" v-model="registerEmail" type="email" autocomplete="email" placeholder="用于接收注册验证码"><label class="field-label">邮箱验证码</label><div style="display:flex;gap:8px"><input class="field" v-model="registerCode" inputmode="numeric" autocomplete="one-time-code" placeholder="请输入6位验证码"><button type="button" class="dialog-primary" style="width:auto;white-space:nowrap" @click="sendRegisterCode" :disabled="busy">获取验证码</button></div></template>
+        <p class="form-error">{{error}}</p><button class="dialog-primary" @click="auth" :disabled="busy">{{busy?'处理中…':tab==='login'?'登录并继续':'注册并体验 7 天'}}</button><p class="dialog-note">登录后，你刚才输入的内容会保留在当前页面。</p>
+      </section>
+    </div>
+
+    <div v-if="centerOpen" class="dialog-backdrop" @click.self="centerOpen=false">
+      <section class="dialog wide" role="dialog" aria-modal="true" aria-labelledby="center-title">
+        <div class="dialog-head"><div><h2 id="center-title">个人中心</h2><p class="subtle">记录你的每一次成长。</p></div><button class="close" @click="centerOpen=false" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="pc-tabs"><button class="pc-tab" :class="{active:centerTab==='overview'}" @click="centerTab='overview'">成长概览</button><button class="pc-tab" :class="{active:centerTab==='report'}" @click="centerTab='report'">本周报告</button><button class="pc-tab" :class="{active:centerTab==='saved'}" @click="centerTab='saved'">金句本</button><button class="pc-tab" :class="{active:centerTab==='history'}" @click="centerTab='history'">生成记录</button></div>
+
+        <div v-if="centerTab==='overview' && growth">
+          <div class="growth-card">
+            <div class="growth-top"><span class="growth-level"><i class="fa-solid fa-crown"></i>Lv.{{growth.level}} {{growth.title}}</span><span class="growth-exp">{{growth.currentExp}} / {{growth.levelSpan}} 经验</span></div>
+            <div class="exp-bar"><div class="exp-fill" :style="{width:Math.min(100,growth.currentExp/growth.levelSpan*100)+'%'}"></div></div>
+            <button class="checkin-btn" :disabled="growth.checkedInToday||checkinBusy" @click="checkin"><i class="fa-solid fa-calendar-check"></i> {{growth.checkedInToday?'今日已打卡':(checkinBusy?'打卡中…':'每日打卡 +50 经验')}}</button>
+          </div>
+          <div class="mem-line"><span><i class="fa-regular fa-circle-check"></i> {{membership.active?(growth.title?'会员有效至 '+expiryText:'有效至 '+expiryText):'体验期已结束'}}</span><button @click="openRenewal">{{membership.active?'续费':'立即续费'}}</button></div>
+          <div class="pc-section-title">学习数据</div>
+          <div class="stat-grid"><div class="stat-cell"><b>{{growth.stats.generations}}</b><span>累计生成</span></div><div class="stat-cell"><b>{{growth.stats.saves}}</b><span>金句收藏</span></div><div class="stat-cell"><b>{{growth.stats.checkinDays}}</b><span>打卡天数</span></div><div class="stat-cell"><b>{{growth.stats.streak}}</b><span>连续打卡</span></div></div>
+          <div class="pc-section-title">今日任务</div>
+          <div class="pc-tasks"><div v-for="t in growth.dailyTasks" :key="t.id" class="task" :class="{done:t.done}"><span class="task-box"><i v-if="t.done" class="fa-solid fa-check"></i></span><span class="task-name">{{t.name}}</span><span class="task-exp">{{t.done?'已完成':'+'+t.exp}}</span></div></div>
+          <div class="pc-section-title">每周挑战</div>
+          <div class="pc-tasks"><div v-for="t in growth.weeklyTasks" :key="t.id" class="task"><span class="task-box" :class="{on:t.done}"><i v-if="t.done" class="fa-solid fa-check"></i></span><span class="task-name">{{t.name}}</span><span class="task-exp">{{t.progress}}/{{t.target}}</span></div></div>
+          <div class="pc-section-title">成就勋章</div>
+          <div class="ach-grid"><div v-for="a in growth.achievements" :key="a.id" class="ach-cell" :class="{locked:!a.unlocked}"><i class="ico" :class="a.icon"></i><b>{{a.name}}</b><em>{{a.desc}}</em></div></div>
+        </div>
+
+        <div v-if="centerTab==='saved'">
+          <div class="chip-row"><button v-for="f in savedFilters" :key="f.value" class="chip" :class="{active:savedFilter===f.value}" @click="savedFilter=f.value">{{f.label}}</button></div>
+          <div class="list-scroll">
+            <div v-if="!filteredSaved.length" class="empty"><i class="fa-regular fa-bookmark"></i>还没有收藏。点生成结果右上角的 ♡ 即可收进金句本。</div>
+            <div v-for="it in filteredSaved" :key="it.id" class="saved-item">
+              <div class="item-head"><span class="type-chip">{{typeLabel(it.type)}}</span><span class="item-date">{{fmtDate(it.created_at)}}</span><button class="icon-btn" @click="copy(it.content)"><i class="fa-regular fa-copy"></i></button><button class="icon-btn" @click="removeSaved(it.id)"><i class="fa-regular fa-trash-can"></i></button></div>
+              <div v-if="it.title" class="item-title">{{it.title}}</div>
+              <div class="item-body">{{it.content}}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="centerTab==='report'">
+          <section class="weekly-report">
+            <div class="weekly-head"><div><h3>本周成长报告</h3><p>{{weekRangeText}} · 数据来自最近 7 天的真实学习记录</p></div><span class="weekly-badge">{{grade}} · {{growth?growth.title:'写作练习中'}}</span></div>
+            <div class="weekly-stats"><div class="weekly-stat"><b>{{weekHistory.length}}</b><span>完成练习</span></div><div class="weekly-stat"><b>{{weekActiveDays}}</b><span>坚持天数</span></div><div class="weekly-stat"><b>{{weekToolCount}}</b><span>训练能力</span></div></div>
+            <div class="weekly-copy">{{weeklyReportText}}</div>
+            <div class="weekly-actions"><button class="primary-btn" @click="copy(weeklyReportText)"><i class="fa-regular fa-copy"></i> 复制本周报告</button><button class="ghost-btn" @click="startTodayTask"><i class="fa-solid fa-arrow-right"></i> 继续今日训练</button></div>
+          </section>
+        </div>
+
+        <div v-if="centerTab==='history'">
+          <div class="list-scroll">
+            <div v-if="!history.length" class="empty"><i class="fa-regular fa-clock"></i>还没有生成记录。去工作台获取一次学习建议吧。</div>
+            <div v-for="it in history" :key="it.id" class="hist-item">
+              <div class="item-head"><span class="type-chip">{{typeLabel(it.tool_key)}}</span><span class="item-date">{{fmtDate(it.created_at)}}</span></div>
+              <div v-if="it.title" class="item-title">{{it.title}}</div>
+              <div class="item-body">{{it.result}}</div>
+              <div class="item-actions"><button class="icon-btn" @click="useHistory(it)"><i class="fa-solid fa-arrow-right-to-bracket"></i> 载入工作台</button><button class="icon-btn" @click="saveItem(it.result,it.tool_key,it.title)"><i class="fa-regular fa-heart"></i> 收藏</button><button class="icon-btn" @click="copy(it.result)"><i class="fa-regular fa-copy"></i> 复制</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div v-if="renewalOpen" class="dialog-backdrop" @click.self="renewalOpen=false">
+      <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="renewal-title"><div class="dialog-head"><div><h2 id="renewal-title">续费会员</h2><p class="subtle">{{membership.active?'有效至 '+expiryText:'体验期已结束，续费后可继续使用。'}}</p></div><button class="close" @click="renewalOpen=false" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button></div><div class="plans"><article v-for="p in displayPackages" :key="p.key" class="plan"><h3>{{p.label}}</h3><p>{{p.days}} 天学习会员</p><div class="price">¥{{p.amount}}</div><button @click="pay(p.key)">选择{{p.label}}</button></article></div></section>
+    </div>
+
+    <div v-if="summerPlanOpen" class="dialog-backdrop" @click.self="summerPlanOpen=false">
+      <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="summer-dialog-title">
+        <div class="dialog-head"><div><h2 id="summer-dialog-title">开启暑假写作计划</h2><p class="subtle">选好年级和周期，系统每天只安排一项最值得练的任务。</p></div><button class="close" @click="summerPlanOpen=false" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button></div>
+        <label class="field-label">我的年级</label><select class="field" v-model="summerDraft.grade"><option v-for="g in grades" :key="g">{{g}}</option></select>
+        <label class="field-label">训练周期</label><div class="plan-duration"><button v-for="d in [21,30]" :key="d" class="plan-choice" :class="{active:summerDraft.duration===d}" @click="summerDraft.duration=d"><b>{{d}} 天计划</b><span>{{d===21?'适合先建立写作习惯':'完成更完整的写作闭环'}}</span></button></div>
+        <button class="dialog-primary" @click="saveSummerPlan"><i class="fa-solid fa-route"></i> {{summerPlan.active?'保存调整':'从今天开始'}}</button>
+        <p class="dialog-note">计划保存在当前设备；登录后，实际完成的练习会自动计入进度和每周报告。</p>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const {createApp,ref,reactive,computed,onMounted,nextTick}=Vue;
+    createApp({setup(){
+          const user=ref(null),membership=ref({active:false,expiresAt:null}),packages=ref([]),tool=ref('workbench'),message=ref(''),error=ref(''),busy=ref(false),tab=ref('login'),username=ref(''),password=ref(''),registerEmail=ref(''),registerCode=ref(''),authOpen=ref(false),renewalOpen=ref(false),summerPlanOpen=ref(false),pendingAction=ref(''),pendingPackage=ref(''),pendingRun=ref(null),ocrFile=ref(null),centerOpen=ref(false),centerTab=ref('overview'),growth=ref(null),savedItems=ref([]),savedFilter=ref('all'),history=ref([]),checkinBusy=ref(false),customWordGoal=ref(localStorage.getItem('xz_word_goal')||'');
+      const forms=reactive({workbench:{text:'',requirement:''},guide:{topic:'',genre:'记叙文',structure:'五段三分式'},review:{essay:''},material:{mode:'person',person:'苏轼',customPerson:'',theme:'逆境',customTheme:'',topic:'',genre:'记叙文素材（故事类）'},outline:{topic:''},opening:{topic:'',style:'排比式'},title:{topic:''},practice:{mode:'修辞仿写',topic:''}});
+      const results=reactive({}),resultItems=reactive({}),lastApiTool=reactive({});
+      const presetPeople=['苏轼','鲁迅','张桂梅','樊锦诗','邓稼先','袁隆平'],presetThemes=['逆境','爱国','勤奋','创新','诚信'],hotTopics=['这也是一种幸福','身后的目光','那一刻，我长大了'];
+      const grades=['初一','初二','初三','高一','高二','高三'],grade=ref(localStorage.getItem('xz_grade')||'初二');
+      function localDateKey(value){const d=value?new Date(value):new Date();if(Number.isNaN(d.getTime()))return'';const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day}
+      function loadSummerPlan(){try{const p=JSON.parse(localStorage.getItem('xz_summer_plan')||'null');if(p&&p.active&&[21,30].includes(Number(p.duration))&&p.startDate)return{active:true,duration:Number(p.duration),startDate:p.startDate}}catch(e){}return{active:false,duration:30,startDate:''}}
+      const summerPlan=reactive(loadSummerPlan()),summerDraft=reactive({grade:grade.value,duration:summerPlan.duration||30});
+      const trainingPhases=[{title:'审题立意',desc:'先想清楚写什么'},{title:'搭建结构',desc:'让内容有路线'},{title:'完成一篇',desc:'把细节写具体'},{title:'诊断返修',desc:'根据建议再改'}];
+      const summerSchedule=[
+        {tool:'guide',title:'选定一个真想写的题目',desc:'抓住题眼，确定一个最有真情实感的中心。',seed:'这个暑假，我想写下的一件事'},
+        {tool:'material',title:'积累一则生活素材',desc:'围绕“成长”找到一个能写出细节的真实片段。',seed:'成长'},
+        {tool:'outline',title:'搭一份清晰提纲',desc:'用五段式安排开头、经过、转折和结尾。',seed:'那一刻，我长大了'},
+        {tool:'opening',title:'打磨一个有画面的开头',desc:'从声音、光线或动作切入，不急着讲道理。',seed:'夏日傍晚'},
+        {tool:'practice',title:'写一段五感描写',desc:'用视觉、听觉和触觉写出夏天的一个瞬间。',seed:'夏日午后的雷雨'},
+        {tool:'workbench',title:'完成第一篇暑假作文',desc:'先写完，再修改；今天不追求一次写到完美。',seed:'请写一篇暑假生活作文，写出一件真实小事和自己的感受。'},
+        {tool:'review',title:'诊断并修改第一篇作文',desc:'重点修改一个空泛段落，补足动作和心理。',seed:''},
+        {tool:'title',title:'让普通题目更贴近中心',desc:'比较三个标题方向，选择贴题而不空泛的一个。',seed:'难忘的一天'},
+        {tool:'material',title:'积累一则人物素材',desc:'学习用具体行动表现人物，而不是只贴标签。',seed:'坚持'},
+        {tool:'outline',title:'练一次详略安排',desc:'把最能表现中心的情节写详，其余内容写略。',seed:'藏在细节里的爱'},
+        {tool:'practice',title:'写一段动作描写',desc:'把一个连续动作拆开，加入神态和环境反应。',seed:'运动会最后一圈'},
+        {tool:'opening',title:'练一次首尾呼应',desc:'让结尾回到开头的意象，形成自然回声。',seed:'窗外的那棵树'},
+        {tool:'workbench',title:'完成第二篇完整作文',desc:'这次重点做到中心集中、详略得当。',seed:'请以“原来，我也可以”为题写一篇记叙文。'},
+        {tool:'review',title:'给第二篇作文做一次复盘',desc:'找出最精彩的一处和最需要重写的一处。',seed:''},
+        {tool:'guide',title:'挑战一道材料作文',desc:'先提炼关键词，再用一句话写清中心。',seed:'请以“选择”为主题，自拟题目'},
+        {tool:'material',title:'为中心补充两个角度',desc:'一个来自生活，一个来自阅读或人物故事。',seed:'选择'},
+        {tool:'outline',title:'把中心拆成段落任务',desc:'每一段只承担一个任务，避免想到哪里写到哪里。',seed:'选择之后'},
+        {tool:'practice',title:'练一次心理变化描写',desc:'写出犹豫、决定和行动之间的细微变化。',seed:'站在选择面前'},
+        {tool:'workbench',title:'完成第三篇完整作文',desc:'写清“变化发生前、发生时、发生后”。',seed:'请以“这一次，我做出了选择”为题写一篇记叙文。'},
+        {tool:'review',title:'根据诊断完成一次返修',desc:'不要只看建议，真正重写一个关键段落。',seed:''},
+        {tool:'practice',title:'压缩一次表达',desc:'用更准确的词，把一段话写得更短、更有力。',seed:'一次迟到后的解释'},
+        {tool:'title',title:'整理本月最好的三个标题',desc:'比较它们为什么贴题、具体、有余味。',seed:'成长'},
+        {tool:'material',title:'整理自己的专属素材库',desc:'从真实经历中选出三个以后还能继续写的片段。',seed:'我的暑假生活'},
+        {tool:'opening',title:'重写一个旧作文的开头',desc:'删掉套话，从最有画面的瞬间进入。',seed:'那一刻'},
+        {tool:'workbench',title:'完成一篇限时作文',desc:'先列三分钟提纲，再连续完成全文。',seed:'请以“留在记忆里的声音”为题完成一篇作文。'},
+        {tool:'review',title:'做一次完整作文体检',desc:'检查中心、结构、细节、语言和首尾照应。',seed:''},
+        {tool:'practice',title:'写一段最满意的细节',desc:'调动五感，让读者能看见、听见、感受到。',seed:'暑假里最难忘的十分钟'},
+        {tool:'guide',title:'回顾最适合自己的写法',desc:'总结你最擅长的题材、结构和开头方式。',seed:'我最擅长写的作文'},
+        {tool:'workbench',title:'完成暑假收官作文',desc:'把这个暑假真正发生的变化写下来。',seed:'请以“这个暑假，我不一样了”为题写一篇作文。'},
+        {tool:'review',title:'完成最后一次诊断与定稿',desc:'保存修改前后版本，看见自己一个月的进步。',seed:''}
+      ];
+      function saveGrade(){localStorage.setItem('xz_grade',grade.value)}
+      function saveWordGoal(){const n=String(customWordGoal.value||'').replace(/\D/g,'').slice(0,4);customWordGoal.value=n;if(n)localStorage.setItem('xz_word_goal',n);else localStorage.removeItem('xz_word_goal')}
+      const typeMap={guide:'写作思路',workbench:'写作建议',review:'作文诊断',polish:'润色升格',material:'素材积累',outline:'结构提纲',opening:'开头结尾',practice:'微写作',title:'好标题'};
+      const savedFilters=[{value:'all',label:'全部'},{value:'workbench',label:'建议'},{value:'guide',label:'思路'},{value:'review',label:'诊断'},{value:'material',label:'素材'},{value:'outline',label:'提纲'},{value:'opening',label:'首尾'},{value:'title',label:'标题'},{value:'practice',label:'微写作'}];
+      const RESULT_TITLES={workbench:'学习建议',guide:'写作思路方案',review:'诊断 / 升格',material:'专属素材',outline:'结构提纲',opening:'开头与结尾',title:'升格标题',practice:'练习与示范'};
+      const typeLabel=(t)=>typeMap[t]||'学习建议';
+      const fmtDate=(s)=>{try{return new Date(s).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})+' '+new Date(s).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}catch(e){return''}};
+      const tools=[
+        {key:'workbench',label:'写作工作台',icon:'fa-solid fa-pen-nib',intro:'在格子里写作文，写完一键获取老师的学习建议。'},
+        {key:'guide',label:'名师思路',icon:'fa-solid fa-compass',intro:'输入题目，理清审题立意、结构和开头。'},
+        {key:'review',label:'作文诊断',icon:'fa-solid fa-clipboard-check',intro:'粘贴作文，获得优点、问题与润色升格。'},
+        {key:'material',label:'万能素材',icon:'fa-solid fa-box-open',intro:'按人物或主题，生成能直接用的素材。'},
+        {key:'outline',label:'结构提纲',icon:'fa-solid fa-table-cells-large',intro:'输入题目，搭出三种清晰的写作提纲。'},
+        {key:'opening',label:'凤头豹尾',icon:'fa-regular fa-feather',intro:'输入话题选风格，生成呼应的开头和结尾。'},
+        {key:'title',label:'标题升格',icon:'fa-solid fa-flask',intro:'输入普通题目，升格成高分好标题。'},
+        {key:'practice',label:'微写作',icon:'fa-regular fa-lightbulb',intro:'修辞仿写 / 五感描写，碎片时间练笔。'}
+      ];
+      const toolGuides={
+        workbench:{title:'写作工作台使用指南',intro:'适合已经开始写作文，想让老师结合题目要求给出修改方向。',icons:['fa-solid fa-file-pen','fa-solid fa-keyboard','fa-solid fa-comments'],steps:['先填写作文题目或写作要求，尤其是文体、字数和老师强调的重点。','在方格里输入正文，或用拍照识别把手写稿转成文字。','点击获取学习建议，重点看观察、建议和练习三块，再回到正文里修改。']},
+        guide:{title:'名师思路使用指南',intro:'适合动笔前审题、定立意、搭结构。',icons:['fa-solid fa-pen-ruler','fa-solid fa-bullseye','fa-solid fa-route'],steps:['输入作文题目，选择文体和结构偏好。','先看推荐立意，不要同时贪多写很多中心。','把结构规划当作写作路线图，再回到工作台完成正文。']},
+        review:{title:'作文诊断使用指南',intro:'适合已经写完一篇作文，需要找问题和升格。',icons:['fa-solid fa-align-left','fa-solid fa-stethoscope','fa-solid fa-wand-magic-sparkles'],steps:['粘贴作文全文，尽量保留原来的段落。','先点开始诊断，看亮点、问题与修改建议。','如果想看完整升级版本，再点润色升格。']},
+        material:{title:'万能素材使用指南',intro:'适合缺少例子、金句或人物素材时使用。',icons:['fa-solid fa-user-pen','fa-solid fa-seedling','fa-solid fa-filter'],steps:['人物素材适合议论文和主题作文，先选人物再选主题。','主题素材适合快速积累多个角度，输入关键词即可。','生成后不要整段硬套，先判断是否贴合你的中心。']},
+        outline:{title:'结构提纲使用指南',intro:'适合有题目但不知道怎么展开时使用。',icons:['fa-solid fa-scroll','fa-solid fa-sitemap','fa-solid fa-layer-group'],steps:['输入完整作文题目，材料作文也可以把材料要求一起写进去。','先确定立意，再看每段写什么。','把提纲中的段落任务填进自己的真实经历或素材。']},
+        opening:{title:'凤头豹尾使用指南',intro:'适合专门打磨作文开头和结尾。',icons:['fa-solid fa-feather-pointed','fa-solid fa-quote-left','fa-solid fa-link'],steps:['输入作文话题或中心，不需要输入全文。','选择你想要的开头风格，例如排比式或设问式。','优先保留意象和呼应方式，再改成自己的语言。']},
+        title:{title:'标题升格使用指南',intro:'适合把普通标题改得更有吸引力。',icons:['fa-solid fa-tag','fa-solid fa-gem','fa-solid fa-compass-drafting'],steps:['输入原题、主题词或你已经想到的普通标题。','比较诗意型、新颖型、巧思型三个方向。','考试作文标题要贴题，别为了新奇偏离中心。']},
+        practice:{title:'微写作使用指南',intro:'适合用几分钟练一个具体写作能力。',icons:['fa-solid fa-stopwatch','fa-solid fa-camera-retro','fa-solid fa-list-check'],steps:['选择修辞仿写或五感描写。','输入一个具体场景，不要只写抽象主题。','看示范后自己仿写一小段，再和评价标准对照。']}
+      };
+      const activeTool=computed(()=>tools.find(item=>item.key===tool.value)||tools[0]);
+      const activeGuide=computed(()=>toolGuides[tool.value]||toolGuides.workbench);
+      function guideStepIcon(index){return activeGuide.value.icons?.[index]||'fa-solid fa-feather-pointed'}
+      function planToolMatches(expected,actual){return expected===actual||(expected==='review'&&actual==='polish')}
+      const planDay=computed(()=>{if(!summerPlan.active||!summerPlan.startDate)return 1;const start=new Date(summerPlan.startDate+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);const n=Math.floor((today-start)/86400000)+1;return Math.min(summerPlan.duration,Math.max(1,n))});
+      const todaySummerTask=computed(()=>summerSchedule[Math.min(summerSchedule.length,planDay.value)-1]||summerSchedule[0]);
+      const summerPhaseIndex=computed(()=>Math.min(3,Math.floor((planDay.value-1)*4/Math.max(1,summerPlan.duration))));
+      const planCompletedCount=computed(()=>{if(!summerPlan.active||!summerPlan.startDate)return 0;const start=new Date(summerPlan.startDate+'T00:00:00');let count=0;for(let i=0;i<summerPlan.duration;i+=1){const date=new Date(start);date.setDate(start.getDate()+i);const key=localDateKey(date),expected=summerSchedule[i]?.tool;if(expected&&history.value.some(it=>localDateKey(it.created_at)===key&&planToolMatches(expected,it.tool_key)))count+=1}return count});
+      const planProgress=computed(()=>Math.min(100,Math.round(planCompletedCount.value/Math.max(1,summerPlan.duration)*100)));
+      const todayTaskDone=computed(()=>history.value.some(it=>localDateKey(it.created_at)===localDateKey()&&planToolMatches(todaySummerTask.value.tool,it.tool_key)));
+      const weekHistory=computed(()=>{const floor=new Date();floor.setHours(0,0,0,0);floor.setDate(floor.getDate()-6);return history.value.filter(it=>{const d=new Date(it.created_at);return !Number.isNaN(d.getTime())&&d>=floor})});
+      const weekActiveDays=computed(()=>new Set(weekHistory.value.map(it=>localDateKey(it.created_at))).size);
+      const weekToolCount=computed(()=>new Set(weekHistory.value.map(it=>it.tool_key==='polish'?'review':it.tool_key)).size);
+      const weekRangeText=computed(()=>{const start=new Date();start.setDate(start.getDate()-6);return start.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'})+'—'+new Date().toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'})});
+      const weeklyReportText=computed(()=>{if(!weekHistory.value.length)return'本周还没有完成写作训练。\n建议从“名师思路”或“微写作”开始，今天先完成一个 10 分钟的小任务。';const counts={};weekHistory.value.forEach(it=>{const key=it.tool_key==='polish'?'review':it.tool_key;counts[key]=(counts[key]||0)+1});const focus=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([key,n])=>typeLabel(key)+' '+n+' 次').join('、');const groups=[{name:'审题与构思',keys:['guide','material','outline','title','opening'],tip:'下周增加一次审题、立意或提纲练习，让动笔前的思路更清楚。'},{name:'完整表达',keys:['workbench','practice'],tip:'下周完成一篇完整作文，重点把一个关键场景写具体。'},{name:'诊断返修',keys:['review'],tip:'下周把一篇旧作文重新诊断并真正修改一次，形成返修闭环。'}];const missing=groups.find(g=>!g.keys.some(k=>counts[k]))||groups.sort((a,b)=>a.keys.reduce((s,k)=>s+(counts[k]||0),0)-b.keys.reduce((s,k)=>s+(counts[k]||0),0))[0];return'本周完成 '+weekHistory.value.length+' 次写作训练，坚持 '+weekActiveDays.value+' 天，覆盖 '+weekToolCount.value+' 项能力。\n本周重点：'+focus+'。\n值得肯定：已经把写作拆成了可以每天完成的小任务。\n下周建议：'+missing.tip});
+      const wordCount=computed(()=>forms.workbench.text.replace(/\s/g,'').length);
+      const wordGoal=computed(()=>{const custom=parseInt(customWordGoal.value,10);if(Number.isFinite(custom)&&custom>0)return custom;return /^高/.test(grade.value)?800:600});
+      const progress=computed(()=>Math.min(100,Math.round(wordCount.value/wordGoal.value*100)));
+      const fallbackPackages=[{key:'learning_half_year',label:'学期卡（半年）',days:180,amount:'9.90'},{key:'learning_year',label:'年卡',days:365,amount:'17.80'}];
+      const displayPackages=computed(()=>packages.value.length?packages.value:fallbackPackages);
+      const expiryText=computed(()=>membership.value.expiresAt?new Date(membership.value.expiresAt).toLocaleDateString('zh-CN'):'' );
+      const activeResult=computed(()=>results[tool.value]||'');
+      const activeItems=computed(()=>resultItems[tool.value]||null);
+      const resultTitle=computed(()=>RESULT_TITLES[tool.value]||'学习建议');
+      const isResultSaved=computed(()=>!!activeResult.value&&savedItems.value.some(i=>i.content===activeResult.value));
+      const filteredSaved=computed(()=>savedFilter.value==='all'?savedItems.value:savedItems.value.filter(i=>i.type===savedFilter.value));
+      async function api(path,opt={}){const r=await fetch(path,{...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'请求失败');return d}
+      async function load(){try{const p=await api('/api/profile');user.value=p;const c=await api('/api/learning/config');membership.value=c.membership;packages.value=c.packages;growth.value=c.growth;await loadHistory()}catch(e){user.value=null;membership.value={active:false,expiresAt:null};packages.value=[];growth.value=null}}
+      function chooseTool(key){tool.value=key;message.value='';nextTick(()=>document.querySelector('.tool-nav.active')?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}))}
+      function openSummerPlan(){summerDraft.grade=grade.value;summerDraft.duration=summerPlan.duration||30;summerPlanOpen.value=true}
+      function saveSummerPlan(){grade.value=summerDraft.grade;saveGrade();summerPlan.active=true;summerPlan.duration=summerDraft.duration;summerPlan.startDate=summerPlan.startDate||localDateKey();localStorage.setItem('xz_summer_plan',JSON.stringify({active:true,duration:summerPlan.duration,startDate:summerPlan.startDate}));summerPlanOpen.value=false;startTodayTask()}
+      function startTodayTask(){if(!summerPlan.active){openSummerPlan();return}const task=todaySummerTask.value,seed=task.seed||'';centerOpen.value=false;if(task.tool==='guide'&&!forms.guide.topic)forms.guide.topic=seed;if(task.tool==='material'){forms.material.mode='topic';if(!forms.material.topic)forms.material.topic=seed}if(task.tool==='outline'&&!forms.outline.topic)forms.outline.topic=seed;if(task.tool==='opening'&&!forms.opening.topic)forms.opening.topic=seed;if(task.tool==='title'&&!forms.title.topic)forms.title.topic=seed;if(task.tool==='practice'&&!forms.practice.topic)forms.practice.topic=seed;if(task.tool==='workbench'&&!forms.workbench.requirement)forms.workbench.requirement=seed;if(task.tool==='review'&&!forms.review.essay&&forms.workbench.text)forms.review.essay=forms.workbench.text;chooseTool(task.tool);message.value=task.tool==='review'&&!forms.review.essay?'请粘贴最近完成的一篇作文，今天只做诊断和返修。':'今日任务已经为你准备好，填写或检查内容后再点击生成。';nextTick(()=>window.scrollTo({top:0,behavior:'smooth'}))}
+      function openAuth(){error.value='';authOpen.value=true}
+      function requireAuth(action){if(user.value)return true;pendingAction.value=action;openAuth();return false}
+          async function sendRegisterCode(){if(!registerEmail.value.trim()){error.value='请填写邮箱';return}busy.value=true;error.value='';try{const d=await api('/api/register/send-code',{method:'POST',body:JSON.stringify({email:registerEmail.value.trim()})});error.value=d.message||'验证码已发送，请查看邮箱'}catch(e){error.value=e.message}finally{busy.value=false}}
+          async function auth(){if(tab.value==='register'&&(!registerEmail.value.trim()||!registerCode.value.trim())){error.value='请填写邮箱和验证码';return}busy.value=true;error.value='';try{const body={username:username.value.trim(),password:password.value};if(tab.value==='register'){body.email=registerEmail.value.trim();body.code=registerCode.value.trim();body.display_name=username.value.trim()}await api('/api/'+tab.value,{method:'POST',body:JSON.stringify(body)});await load();authOpen.value=false;const action=pendingAction.value;pendingAction.value='';if(pendingRun.value){const pr=pendingRun.value;pendingRun.value=null;run(pr.toolKey,pr.mode)}else if(action==='ocr')nextTick(()=>ocrFile.value&&ocrFile.value.click());else if(action==='pay')pay(pendingPackage.value)}catch(e){error.value=e.message}finally{busy.value=false}}
+      async function logout(){await api('/api/logout',{method:'POST'}).catch(()=>{});user.value=null;membership.value={active:false,expiresAt:null};packages.value=[];growth.value=null;savedItems.value=[];history.value=[];Object.keys(results).forEach(k=>delete results[k]);Object.keys(resultItems).forEach(k=>delete resultItems[k]);renewalOpen.value=false;centerOpen.value=false;message.value='已退出登录。你仍可继续查看和填写工作台。'}
+      function openRenewal(){if(!requireAuth(''))return;renewalOpen.value=true}
+      function run(toolKey,mode){
+        const f=forms[toolKey];let apiTool=toolKey,input='';
+        if(toolKey==='workbench'){const text=(f.text||'').trim(),requirement=(f.requirement||'').trim();if(!text){message.value='先在方格里写一点作文，再获取建议。';return}input=(requirement?'作文题目和写作要求：'+requirement+'\n\n':'')+'作文正文：'+text}
+        else if(toolKey==='guide'){if(!f.topic.trim()){message.value='先填写作文题目。';return}input='题目：'+f.topic+'\n文体：'+f.genre+'\n结构偏好：'+f.structure}
+        else if(toolKey==='review'){apiTool=(mode==='polish')?'polish':'review';input=(f.essay||'').trim();if(!input){message.value='先粘贴作文全文。';return}}
+        else if(toolKey==='material'){if(f.mode==='person'){const p=(f.customPerson||f.person).trim(),t=(f.customTheme||f.theme).trim();if(!p||!t){message.value='先选好人物和主题。';return}input='人物：'+p+'\n主题：'+t}else{if(!f.topic.trim()){message.value='先输入主题。';return}input='主题：'+f.topic+'\n素材类型：'+f.genre}}
+        else if(toolKey==='outline'){if(!f.topic.trim()){message.value='先输入作文题目。';return}input=f.topic}
+        else if(toolKey==='opening'){if(!f.topic.trim()){message.value='先输入作文话题。';return}input='话题：'+f.topic+'\n风格：'+f.style}
+        else if(toolKey==='title'){if(!f.topic.trim()){message.value='先输入普通题目。';return}input=f.topic}
+        else if(toolKey==='practice'){if(!f.topic.trim()){message.value='先输入想练习的主题或场景。';return}input='训练模式：'+f.mode+'\n主题或场景：'+f.topic}
+        message.value='';
+        if(!user.value)pendingRun.value={toolKey,mode};
+        if(!requireAuth('generate'))return;
+        if(!membership.value.active){openRenewal();return}
+        doGenerate(apiTool,input,toolKey)
+      }
+      async function doGenerate(apiTool,input,toolKey){busy.value=true;results[toolKey]='';resultItems[toolKey]=null;try{const d=await api('/api/learning/generate',{method:'POST',body:JSON.stringify({tool:apiTool,input,grade:grade.value})});results[toolKey]=d.result;resultItems[toolKey]=d.items||null;lastApiTool[toolKey]=apiTool;if(d.growth)growth.value=d.growth;await loadHistory()}catch(e){message.value=e.message}finally{busy.value=false}}
+      function taskClick(t){if(t.link==='checkin')return checkin();if(t.link)chooseTool(t.link)}
+      function openCenter(t){if(!requireAuth(''))return;centerTab.value=t||'overview';centerOpen.value=true;loadSaved();loadHistory()}
+      async function loadSaved(){try{savedItems.value=(await api('/api/learning/saved')).items}catch(e){}}
+      async function loadHistory(){try{history.value=(await api('/api/learning/history')).items}catch(e){}}
+      async function checkin(){if(checkinBusy.value)return;checkinBusy.value=true;try{const d=await api('/api/learning/checkin',{method:'POST'});growth.value=d.growth;message.value=d.checkedIn?'打卡成功，已 +50 经验！':'今天已经打过卡啦。';celebrate()}catch(e){message.value=e.message}finally{checkinBusy.value=false}}
+      async function saveItem(content,type,title){if(!content)return;try{const d=await api('/api/learning/saved',{method:'POST',body:JSON.stringify({content,type:type||'note',title:title||''})});if(d.item&&!savedItems.value.some(i=>i.id===d.item.id))savedItems.value.unshift(d.item);if(d.growth)growth.value=d.growth}catch(e){message.value=e.message}}
+      function saveResult(){const c=activeResult.value;if(!c)return;if(isResultSaved.value){const it=savedItems.value.find(i=>i.content===c);if(it)return removeSaved(it.id);}const f=forms[tool.value];const title=(f&&(f.topic||f.customPerson||f.person))||activeTool.value.label;saveItem(c,lastApiTool[tool.value]||tool.value,title)}
+      async function removeSaved(id){try{const d=await api('/api/learning/saved/'+id,{method:'DELETE'});savedItems.value=savedItems.value.filter(i=>i.id!==id);if(d.growth)growth.value=d.growth}catch(e){message.value=e.message}}
+      function useHistory(it){const map={workbench:'workbench',guide:'guide',review:'review',polish:'review',material:'material',outline:'outline',opening:'opening',title:'title',practice:'practice'};const tk=map[it.tool_key]||'workbench';tool.value=tk;results[tk]=it.result;resultItems[tk]=null;lastApiTool[tk]=it.tool_key;centerOpen.value=false;message.value='已载入这条记录的结果。'}
+      async function copy(text){try{await navigator.clipboard.writeText(text);message.value='已复制到剪贴板。'}catch(e){message.value='复制失败，请手动选择文字。'}}
+      function celebrate(){if(typeof confetti==='function')confetti({particleCount:90,spread:70,origin:{y:.65},colors:['#a87531','#677251','#a85f45','#d9a441']})}
+      function startOcr(){if(!requireAuth('ocr'))return;if(!membership.value.active){openRenewal();return}ocrFile.value&&ocrFile.value.click()}
+      function ocr(event){const file=event.target.files[0];event.target.value='';if(!file)return;const reader=new FileReader();reader.onload=async()=>{busy.value=true;message.value='';try{const text=(await api('/api/learning/ocr',{method:'POST',body:JSON.stringify({image:reader.result})})).text;if(tool.value==='review')forms.review.essay=text;else forms.workbench.text=text;message.value='识别完成，请检查文字后再提交。'}catch(e){message.value=e.message}finally{busy.value=false}};reader.readAsDataURL(file)}
+      async function pay(key){if(!requireAuth('pay')){pendingPackage.value=key;return}pendingPackage.value='';try{const d=await api('/api/learning/payments/package',{method:'POST',body:JSON.stringify({package_key:key})});location.href=d.pay_url}catch(e){message.value=e.message;renewalOpen.value=false}}
+      function scrollToTips(){document.getElementById('usage-guide')?.scrollIntoView({behavior:'smooth',block:'start'})}
+      onMounted(load);
+          return{user,membership,packages,tool,forms,results,activeResult,activeItems,resultTitle,message,error,busy,tab,username,password,registerEmail,registerCode,authOpen,renewalOpen,summerPlanOpen,ocrFile,tools,activeTool,activeGuide,guideStepIcon,wordCount,wordGoal,customWordGoal,progress,displayPackages,expiryText,presetPeople,presetThemes,hotTopics,grades,grade,saveGrade,saveWordGoal,taskClick,chooseTool,openAuth,sendRegisterCode,auth,logout,run,startOcr,ocr,pay,openRenewal,scrollToTips,centerOpen,centerTab,growth,savedItems,savedFilter,savedFilters,history,checkinBusy,isResultSaved,filteredSaved,typeLabel,fmtDate,openCenter,checkin,saveResult,saveItem,removeSaved,useHistory,copy,summerPlan,summerDraft,trainingPhases,todaySummerTask,planDay,summerPhaseIndex,planCompletedCount,planProgress,todayTaskDone,openSummerPlan,saveSummerPlan,startTodayTask,weekHistory,weekActiveDays,weekToolCount,weekRangeText,weeklyReportText};
+    }}).mount('#app');
+  </script>
+<script src="/analytics.js"></script>
+</body>
+</html>

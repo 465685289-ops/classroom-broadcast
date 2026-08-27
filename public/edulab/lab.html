@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="师行互动数学实验室，帮助老师绘制函数、调节参数并生成课堂讲解课件。">
+<link rel="canonical" href="https://notice.yingyuzuowen.asia/edulab/lab.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>互动数学实验室 · 师行数学</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+<style>
+:root{
+  --paper:#f3eee6;--surface:#fffdf8;--surface-2:#faf6ef;--ink:#292218;--muted:#7b705f;
+  --rail:#252219;--rail-soft:#353127;--gold:#a57427;--gold-bright:#d39b33;--line:#ded5c7;
+  --blue:#3978d4;--navy:#143f6c;--coral:#e45c4f;--shadow:0 14px 34px rgba(54,43,27,.08);
+  --sans:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --serif:'Songti SC','STSong','SimSun',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:var(--sans)}
+button,input{font:inherit}
+button,a{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(211,155,51,.34);outline-offset:2px}
+.math-platform-nav{position:fixed;inset:0 auto 0 0;width:184px;background:linear-gradient(180deg,#29261e,#1f1d17);color:#f8f2e6;padding:24px 12px 18px;display:flex;flex-direction:column;z-index:50;border-right:1px solid rgba(255,255,255,.07)}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:700;font-size:20px;padding:4px 8px 28px}
+.brand-mark{width:38px;height:38px;border-radius:11px;background:#e2aa3d;color:#282218;display:grid;place-items:center;font-size:19px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+.brand small{display:block;color:#bdb4a3;font-size:8px;letter-spacing:2px;font-weight:600;margin-top:2px}
+.nav-links{display:grid;gap:8px}
+.nav-item{min-height:52px;padding:0 14px;border-radius:10px;color:#ddd4c5;text-decoration:none;display:flex;align-items:center;gap:13px;font-size:15px;border:0;background:transparent;text-align:left;cursor:pointer}
+.nav-item i{width:20px;text-align:center;font-size:17px}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:linear-gradient(135deg,#8d6626,#a77a30);color:#fff;box-shadow:0 8px 18px rgba(0,0,0,.16)}
+.nav-bottom{margin-top:auto;border-top:1px solid rgba(255,255,255,.11);padding-top:16px}
+.identity{display:flex;align-items:center;gap:10px;padding:10px 8px;color:#eee6da;font-size:13px}
+.avatar{width:34px;height:34px;border-radius:50%;background:#f1dfb7;color:#6e4a16;display:grid;place-items:center;font-family:var(--serif);font-weight:700}
+.identity small{display:block;color:#a99f90;margin-top:3px}
+.mobile-bar{display:none}
+.app{min-height:100dvh;margin-left:184px;padding:24px 26px 18px}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:0 auto 18px;max-width:1540px}
+.page-head h1{font:700 clamp(30px,3vw,46px)/1.08 var(--serif);margin:0;letter-spacing:1px}
+.page-head p{margin:9px 0 0;color:var(--muted);font-size:16px}
+.head-actions{display:flex;gap:10px;padding-top:4px;flex-wrap:wrap;justify-content:flex-end}
+.soft-btn,.tool-btn,.template-btn,.secondary-btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;cursor:pointer}
+.soft-btn{min-height:40px;padding:0 14px;display:inline-flex;align-items:center;gap:8px}
+.soft-btn:hover,.tool-btn:hover,.template-btn:hover,.secondary-btn:hover{border-color:#b89257;background:#fffaf0}
+.quick-start{margin:0 0 15px;padding:13px;border:1px solid #e4c88f;border-radius:11px;background:linear-gradient(145deg,#fff8e9,#fffdf8)}
+.quick-start-label{display:flex;align-items:center;gap:7px;color:#9a6518;font-size:11px;font-weight:700;letter-spacing:.08em}
+.quick-start strong{display:block;margin-top:7px;font:700 15px/1.45 var(--serif)}
+.quick-start p{margin:6px 0 10px;color:var(--muted);font-size:11px;line-height:1.6}
+.quick-start button{width:100%;min-height:36px;border:0;border-radius:8px;background:#2d2921;color:#fff;font-weight:700;cursor:pointer}
+.quick-start button:hover{background:#463a28}
+.workspace{max-width:1540px;margin:0 auto;display:grid;grid-template-columns:244px minmax(520px,1fr) 268px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;min-height:704px}
+.function-panel,.lesson-panel{background:rgba(255,253,248,.94);padding:18px 16px}
+.function-panel{border-right:1px solid var(--line)}
+.lesson-panel{border-left:1px solid var(--line);display:flex;flex-direction:column}
+.panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.panel-title h2{font:700 17px/1.2 var(--serif);margin:0}
+.panel-title small{color:var(--muted)}
+.functions{display:grid;gap:10px}
+.function-row{border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px;transition:.18s ease}
+.function-row:focus-within{border-color:#b48a49;box-shadow:0 0 0 3px rgba(180,138,73,.1)}
+.function-top{display:flex;align-items:center;gap:7px}
+.color-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+.function-name{font:italic 600 14px/1 var(--serif);color:var(--muted)}
+.function-expression{width:100%;border:0;background:transparent;color:var(--ink);padding:7px 0 3px;font:500 15px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace}
+.function-expression:focus{outline:0}
+.row-actions{margin-left:auto;display:flex;gap:2px}
+.icon-action{width:29px;height:29px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
+.icon-action:hover{background:#f2eadc;color:var(--ink)}
+.icon-action[aria-pressed="false"]{opacity:.4}
+.function-error{color:#b23b30;font-size:11px;min-height:14px;margin-top:3px}
+.add-function{width:100%;height:42px;margin-top:12px;border:1px dashed #c4a978;background:#fffaf1;color:#73501b;border-radius:9px;cursor:pointer}
+.subheading{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin:20px 0 9px}
+.templates{display:grid;gap:8px}
+.template-btn{min-height:40px;text-align:left;padding:0 11px;color:#5f564a;background:#fff}
+.template-btn i{width:22px;color:var(--gold)}
+.panel-foot{margin-top:26px;display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:12px}
+.link-btn{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:5px}
+.graph-stage{min-width:0;background:var(--surface);display:flex;flex-direction:column}
+.graph-toolbar{height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 15px;gap:12px}
+.tool-group{display:flex;align-items:center;gap:7px}
+.tool-btn{width:36px;height:36px;display:grid;place-items:center}
+.tool-btn.active{background:#f1dfbd;color:#6c4715;border-color:#ddc296}
+.graph-card{position:relative;flex:1;min-height:510px;background:#fffdf9;overflow:hidden}
+#mathCanvas{display:block;width:100%;height:100%;min-height:510px;cursor:crosshair}
+.cursor-readout{position:absolute;pointer-events:none;display:none;background:rgba(40,34,24,.9);color:#fff;padding:5px 8px;border-radius:6px;font-size:11px;transform:translate(10px,-28px);white-space:nowrap}
+.parameter-bar{min-height:78px;border-top:1px solid var(--line);padding:13px 18px 11px;display:grid;grid-template-columns:auto minmax(120px,1fr) 72px 42px;gap:12px;align-items:center}
+.parameter-label{font:italic 700 16px var(--serif)}
+#parameterA{width:100%;accent-color:var(--coral)}
+.parameter-value{height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;text-align:center;color:var(--ink);width:72px}
+.graph-hint{grid-column:1/-1;color:var(--muted);font-size:11px}
+.steps{display:grid;gap:11px}
+.step-card{border:1px solid var(--line);border-radius:11px;padding:14px 13px;background:#fff;cursor:pointer;text-align:left;color:var(--ink);transition:.18s ease}
+.step-card:hover{transform:translateY(-1px);border-color:#c8a56d}
+.step-card.active{background:#fff8ea;border-color:#d9a64c;box-shadow:0 7px 18px rgba(166,113,31,.09)}
+.step-head{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px}
+.step-number{width:25px;height:25px;border-radius:50%;background:#eee7dc;color:#6c6255;display:grid;place-items:center;font-weight:700}
+.step-card.active .step-number{background:#d69b31;color:#fff}
+.step-card p{margin:10px 0 0;color:var(--muted);font-size:12px;line-height:1.65}
+.step-status{display:none;color:#a46f19;font-size:11px;margin-top:9px}
+.step-card.active .step-status{display:block}
+.lesson-actions{margin-top:auto;display:grid;gap:9px;padding-top:16px}
+.primary-btn{min-height:54px;border:0;border-radius:10px;color:#fff;background:linear-gradient(135deg,#a87322,#c89231);font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 20px rgba(153,102,28,.2)}
+.primary-btn:hover{filter:brightness(.96)}
+.secondary-btn{min-height:44px;font-weight:600}
+.lesson-note{text-align:center;color:var(--muted);font-size:10px;line-height:1.5}
+.recent{max-width:1540px;margin:16px auto 0;background:rgba(255,253,248,.82);border:1px solid var(--line);border-radius:13px;padding:14px 16px}
+.recent-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.recent-head h2{font:700 16px var(--serif);margin:0}
+.recent-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.recent-card{border:1px solid #e4dccf;border-radius:9px;background:#fff;padding:11px;min-width:0;cursor:pointer}
+.recent-card:hover{border-color:#b99660}
+.recent-card strong{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent-card small{display:block;color:var(--muted);margin-top:6px;font-size:10px}
+.empty-recent{color:var(--muted);font-size:12px;padding:8px}
+.guide-overlay{position:fixed;inset:0;z-index:200;background:rgba(27,23,17,.62);backdrop-filter:blur(5px);display:grid;place-items:center;padding:22px}
+.guide-overlay[hidden]{display:none}
+.guide-card{width:min(760px,100%);max-height:min(720px,calc(100dvh - 44px));overflow:auto;background:#fffdf8;border:1px solid #e6d7bf;border-radius:18px;box-shadow:0 28px 80px rgba(23,18,11,.28);padding:25px}
+.guide-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.guide-eyebrow{display:block;color:#a56d18;font-size:10px;font-weight:800;letter-spacing:.14em;margin-bottom:7px}
+.guide-head h2{font:700 28px/1.2 var(--serif);margin:0}
+.guide-head p{color:var(--muted);font-size:13px;line-height:1.7;margin:8px 0 0;max-width:570px}
+.guide-close{width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--muted);cursor:pointer;flex:0 0 auto}
+.guide-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0}
+.guide-step{border:1px solid var(--line);border-radius:12px;background:#fff;padding:15px;min-height:172px}
+.guide-step span{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:#f2dfb6;color:#835717;font-weight:800;font-size:12px}
+.guide-step h3{font:700 16px/1.35 var(--serif);margin:12px 0 7px}
+.guide-step p{margin:0;color:var(--muted);font-size:12px;line-height:1.7}
+.guide-step code{color:#9b3d32;background:#f8eee9;border-radius:4px;padding:1px 4px}
+.guide-tip{display:flex;gap:10px;align-items:flex-start;background:#f3eee4;border-radius:10px;padding:12px 14px;color:#655b4d;font-size:12px;line-height:1.65}
+.guide-tip i{color:#a97222;margin-top:3px}
+.guide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.guide-actions button{min-height:43px;padding:0 18px}
+.guide-actions .primary-btn{min-height:43px;font-size:13px}
+.parameter-bar.guide-pulse{animation:guidePulse 1.2s ease 2}
+@keyframes guidePulse{50%{background:#fff2ce;box-shadow:inset 0 0 0 3px rgba(211,155,51,.32)}}
+.toast{position:fixed;left:calc(50% + 92px);bottom:32px;transform:translateX(-50%) translateY(12px);background:rgba(39,33,24,.94);color:#fff;padding:10px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.2s ease;z-index:100}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+@media(max-width:1180px){
+  .workspace{grid-template-columns:230px minmax(450px,1fr)}
+  .lesson-panel{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:16px}
+  .lesson-panel .panel-title{grid-column:1/-1}.steps{grid-template-columns:repeat(3,1fr)}.lesson-actions{min-width:220px;padding:0}
+  .recent-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  body{padding-bottom:72px}
+  .math-platform-nav{display:none}
+  .mobile-bar{position:fixed;left:0;right:0;bottom:0;height:64px;display:grid;grid-template-columns:repeat(4,1fr);background:#27231b;color:#efe7da;z-index:80;border-top:1px solid rgba(255,255,255,.08)}
+  .mobile-bar a{color:#cfc5b6;text-decoration:none;display:grid;place-items:center;font-size:10px;gap:2px;padding:6px 2px}
+  .mobile-bar a i{font-size:17px}.mobile-bar a.active{color:#e8b34a;background:#332b1d}
+  .app{margin-left:0;padding:18px 12px 14px}
+  .page-head{display:block;margin-bottom:14px}.page-head h1{font-size:30px}.page-head p{font-size:13px}
+  .head-actions{justify-content:flex-start;margin-top:13px}
+  .workspace{display:flex;flex-direction:column;min-height:0;border-radius:12px}
+  .function-panel{border-right:0;border-bottom:1px solid var(--line);padding:15px 13px}
+  .functions{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}.function-row{min-width:260px;scroll-snap-align:start}.templates{grid-template-columns:repeat(3,1fr)}.template-btn{font-size:11px;padding:0 7px}.template-btn i{display:none}
+  .subheading{margin-top:14px}.panel-foot{display:none}
+  .graph-toolbar{height:52px;padding:0 10px}.tool-btn{width:34px;height:34px}.tool-group:first-child .tool-btn:first-child{display:none}
+  .graph-card,#mathCanvas{min-height:390px}
+  .parameter-bar{grid-template-columns:auto minmax(90px,1fr) 64px 38px;padding:12px 10px}.parameter-value{width:64px}
+  .lesson-panel{display:block;border-top:1px solid var(--line);padding:16px 13px}.steps{grid-template-columns:1fr}.lesson-actions{margin-top:14px}
+  .recent{padding:13px 11px}.recent-list{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.recent-card{min-width:220px;scroll-snap-align:start}
+  .guide-overlay{padding:10px}.guide-card{padding:18px;max-height:calc(100dvh - 20px)}.guide-head h2{font-size:24px}.guide-steps{grid-template-columns:1fr;margin:17px 0}.guide-step{min-height:0}.guide-actions{display:grid;grid-template-columns:.8fr 1.3fr;position:sticky;bottom:-18px;background:#fffdf8;padding:12px 0 4px}.guide-actions button{width:100%;padding:0 8px;font-size:12px}
+  .toast{left:50%;bottom:80px}
+}
+</style>
+</head>
+<body>
+<aside class="math-platform-nav" aria-label="师行数学导航">
+  <a class="brand" href="pro.html#dashboard"><span class="brand-mark"><i class="fa-solid fa-square-root-variable" aria-hidden="true"></i></span><span>师行数学<small>SHIXING MATH</small></span></a>
+  <nav class="nav-links">
+    <a class="nav-item" href="pro.html#dashboard"><i class="fa-solid fa-grip" aria-hidden="true"></i>工作台</a>
+    <a class="nav-item" href="pro.html#generator"><i class="fa-solid fa-camera-retro" aria-hidden="true"></i>拍题生成</a>
+    <a class="nav-item" href="pro.html#library"><i class="fa-regular fa-file-lines" aria-hidden="true"></i>我的课件</a>
+    <a class="nav-item active" href="lab.html" aria-current="page"><i class="fa-solid fa-flask" aria-hidden="true"></i>互动实验室</a>
+    <a class="nav-item" href="pro.html#knowledge"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>知识点</a>
+  </nav>
+  <div class="nav-bottom">
+    <a class="nav-item" href="https://shixing.yingyuzuowen.asia/"><i class="fa-regular fa-circle-question" aria-hidden="true"></i>师行首页</a>
+    <div class="identity"><span class="avatar" id="sideAvatar">师</span><span><b id="sideUser">教师访客</b><small id="sidePoints">登录后同步积分</small></span></div>
+  </div>
+</aside>
+
+<nav class="mobile-bar" aria-label="手机端数学导航">
+  <a href="pro.html#dashboard"><i class="fa-solid fa-grip" aria-hidden="true"></i>工作台</a>
+  <a href="pro.html#generator"><i class="fa-solid fa-camera-retro" aria-hidden="true"></i>拍题</a>
+  <a class="active" href="lab.html" aria-current="page"><i class="fa-solid fa-flask" aria-hidden="true"></i>实验室</a>
+  <a href="pro.html#library"><i class="fa-regular fa-folder-open" aria-hidden="true"></i>课件</a>
+</nav>
+
+<main class="app">
+  <header class="page-head">
+    <div><h1>互动数学实验室</h1><p>把抽象关系拖出来、画出来、讲明白</p></div>
+    <div class="head-actions">
+      <button class="soft-btn" type="button" id="guideBtn"><i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>使用指南</button>
+      <button class="soft-btn" type="button" id="saveBtn"><i class="fa-regular fa-bookmark" aria-hidden="true"></i>保存实验</button>
+      <button class="soft-btn" type="button" id="shareBtn"><i class="fa-solid fa-link" aria-hidden="true"></i>分享链接</button>
+    </div>
+  </header>
+
+  <section class="workspace">
+    <aside class="function-panel" aria-label="函数与工具">
+      <div class="panel-title"><h2>函数与工具</h2><small id="functionCount">3 / 6</small></div>
+      <div class="quick-start" id="quickStart">
+        <span class="quick-start-label"><i class="fa-solid fa-route" aria-hidden="true"></i>第一次使用先跑这一遍</span>
+        <strong>研究参数 a 怎样改变抛物线</strong>
+        <p>载入示例后，只需拖动下方参数 a，再按右侧三步组织课堂讲解。</p>
+        <button type="button" id="quickStartButton">载入二次函数示例</button>
+      </div>
+      <div class="functions" id="functionList"></div>
+      <button class="add-function" type="button" id="addFunction"><i class="fa-solid fa-plus" aria-hidden="true"></i> 添加函数</button>
+      <div class="subheading">快捷模板</div>
+      <div class="templates">
+        <button class="template-btn" type="button" data-template="quadratic"><i class="fa-solid fa-bezier-curve" aria-hidden="true"></i>二次函数</button>
+        <button class="template-btn" type="button" data-template="exponential"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>指数函数</button>
+        <button class="template-btn" type="button" data-template="trigonometric"><i class="fa-solid fa-wave-square" aria-hidden="true"></i>三角函数</button>
+      </div>
+      <div class="panel-foot"><button class="link-btn" type="button" id="clearBtn"><i class="fa-regular fa-trash-can" aria-hidden="true"></i> 清空画布</button><span>最多 6 个函数</span></div>
+    </aside>
+
+    <section class="graph-stage" aria-label="函数图像工作区">
+      <div class="graph-toolbar">
+        <div class="tool-group">
+          <button class="tool-btn active" type="button" aria-label="选择"><i class="fa-solid fa-arrow-pointer" aria-hidden="true"></i></button>
+          <button class="tool-btn" type="button" id="zoomIn" aria-label="放大"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i></button>
+          <button class="tool-btn" type="button" id="zoomOut" aria-label="缩小"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i></button>
+          <button class="tool-btn" type="button" id="fitGraph" aria-label="恢复视图"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>
+        </div>
+        <div class="tool-group">
+          <button class="soft-btn" type="button" id="coordinateBtn"><i class="fa-solid fa-gear" aria-hidden="true"></i>坐标设置</button>
+          <button class="tool-btn" type="button" id="undoView" aria-label="撤销视图"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div class="graph-card" id="graphCard">
+        <canvas id="mathCanvas" aria-label="可交互函数图像"></canvas>
+        <div class="cursor-readout" id="cursorReadout"></div>
+      </div>
+      <div class="parameter-bar">
+        <label class="parameter-label" for="parameterA">参数 a</label>
+        <input id="parameterA" type="range" min="-3" max="3" step="0.1" value="1">
+        <label class="sr-only" for="parameterValue">参数 a 当前值</label>
+        <input class="parameter-value" id="parameterValue" type="number" min="-3" max="3" step="0.1" value="1">
+        <button class="tool-btn" type="button" id="resetParameter" aria-label="重置参数"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+        <div class="graph-hint">拖动参数滑块或编辑左侧表达式，图像会立即更新。普通滚轮滚动页面；按住 Ctrl/⌘ + 滚轮缩放图像；拖动画布可平移。</div>
+      </div>
+    </section>
+
+    <aside class="lesson-panel" aria-label="课堂讲解步骤">
+      <div class="panel-title"><h2>课堂讲解步骤</h2><small><i class="fa-regular fa-circle-question" aria-hidden="true"></i></small></div>
+      <div class="steps" id="lessonSteps">
+        <button class="step-card active" type="button" data-step="0"><span class="step-head"><span class="step-number">1</span>观察与提出问题</span><p>先观察函数整体形态、交点与极值，再提出值得探究的问题。</p><span class="step-status">● 当前步骤</span></button>
+        <button class="step-card" type="button" data-step="1"><span class="step-head"><span class="step-number">2</span>探究与发现规律</span><p>拖动参数 a，比较图像位置和关键点变化，寻找数学规律。</p><span class="step-status">● 当前步骤</span></button>
+        <button class="step-card" type="button" data-step="2"><span class="step-head"><span class="step-number">3</span>总结与应用迁移</span><p>归纳结论，并联系相近函数或新的题目情境完成迁移。</p><span class="step-status">● 当前步骤</span></button>
+      </div>
+      <div class="lesson-actions">
+        <button class="primary-btn" type="button" id="generateLesson"><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> 生成讲解课件　75积分</button>
+        <button class="secondary-btn" type="button" id="fullscreenBtn"><i class="fa-solid fa-expand" aria-hidden="true"></i> 全屏演示</button>
+        <div class="lesson-note">生成时会进入拍题工作台，并沿用师行统一登录和积分。</div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="recent" aria-label="最近实验">
+    <div class="recent-head"><h2>最近实验</h2><button class="link-btn" type="button" id="allRecent">查看全部 <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button></div>
+    <div class="recent-list" id="recentList"><div class="empty-recent">保存一次实验后，会显示在这里。</div></div>
+  </section>
+</main>
+
+<div class="guide-overlay" id="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" hidden>
+  <section class="guide-card">
+    <div class="guide-head">
+      <div><span class="guide-eyebrow">30 秒上手</span><h2 id="guideTitle">它是一块“会动的函数黑板”</h2><p>不是让你从空白开始造复杂课件。最简单的用法，是先载入一个模板，再拖参数观察图像变化，最后按课堂步骤带学生说出规律。</p></div>
+      <button class="guide-close" type="button" id="guideClose" aria-label="关闭使用指南"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    </div>
+    <div class="guide-steps">
+      <article class="guide-step"><span>1</span><h3>先选一个函数模板</h3><p>从二次、指数或三角函数开始。左侧每一行就是一条函数，也可以直接修改表达式。</p></article>
+      <article class="guide-step"><span>2</span><h3>拖动参数 a 看变化</h3><p>只有含 <code>a</code> 的函数会跟着变化，例如 <code>2*a*x^2-1</code>。红色曲线会立即更新。</p></article>
+      <article class="guide-step"><span>3</span><h3>按三步带学生探究</h3><p>观察提问、发现规律、总结迁移。需要投屏时点“全屏演示”，需要完整内容再生成讲解课件。</p></article>
+    </div>
+    <div class="guide-tip"><i class="fa-solid fa-computer-mouse" aria-hidden="true"></i><span><b>滚轮规则：</b>普通滚轮仍然滚动网页；只有按住 Ctrl（Windows）或 ⌘（Mac）再滚动，才会以鼠标位置缩放图像。</span></div>
+    <div class="guide-actions"><button class="secondary-btn" type="button" id="guideLater">我先自己看看</button><button class="primary-btn" type="button" id="guideStart">载入二次函数示例并开始</button></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="math-lab-core.js"></script>
+<script src="math-lab.js"></script>
+</body>
+</html>

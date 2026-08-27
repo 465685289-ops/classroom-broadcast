@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>数学解题助手</title>
+<link rel="stylesheet" href="lib/katex/katex.min.css">
+<link rel="stylesheet" href="lib/cropper/cropper.min.css">
+<script src="lib/katex/katex.min.js"></script>
+<script src="lib/katex/contrib/auto-render.min.js"></script>
+<script src="lib/cropper/cropper.min.js"></script>
+<style>
+:root {
+  --bg: #f5f0eb; --card: #fffef9; --text: #2c2416; --muted: #8b7e6a;
+  --accent: #c44536; --accent-hover: #a83729; --border: #e0d8cc;
+  --shadow: 0 2px 16px rgba(44,36,22,0.06); --radius: 16px;
+  --font: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100dvh; padding: 16px; -webkit-tap-highlight-color: transparent; }
+.container { max-width: 560px; margin: 0 auto; }
+.header { text-align: center; padding: 24px 0 16px; }
+.header h1 { font-size: 22px; font-weight: 700; }
+.header p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+.drop-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 16px; text-align: center; cursor: pointer; background: #fefdf9; }
+.drop-zone:hover { border-color: var(--accent); background: #fef5f3; }
+.drop-zone .icon { font-size: 40px; margin-bottom: 8px; }
+.drop-zone p { font-size: 14px; color: var(--muted); }
+.drop-zone .sub { font-size: 12px; margin-top: 4px; }
+/* 裁剪区 */
+.crop-wrap { display: none; }
+.crop-wrap.show { display: block; }
+.crop-box { background: #faf7f1; border-radius: 12px; overflow: hidden; }
+.crop-box img { display: block; max-width: 100%; }
+.crop-hint { font-size: 12px; color: var(--muted); margin: 10px 2px 0; }
+.crop-reselect { display: inline-block; margin-top: 10px; font-size: 13px; color: var(--accent); cursor: pointer; font-weight: 600; }
+.btns { display: flex; gap: 10px; margin-top: 14px; }
+.btn { flex: 1; padding: 13px 0; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: var(--font); }
+.btn-solve { background: var(--accent); color: white; }
+.btn-solve:hover { background: var(--accent-hover); }
+.btn-solve:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-gen { background: #166534; color: #fff; }
+.btn-gen:hover { background: #14532d; }
+.btn-gen:disabled { opacity: 0.5; cursor: not-allowed; }
+.access-row { margin-bottom: 12px; }
+.access-row input { width: 100%; border: 2px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: var(--font); background: #fefdf9; color: var(--text); }
+.access-row input:focus { outline: none; border-color: var(--accent); }
+.gen-progress { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.response-card { display: none; }
+.response-card.show { display: block; }
+.response-card .label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+.solution { font-size: 15px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
+.solution .katex-display { margin: 12px 0; overflow-x: auto; }
+.loading { display: none; text-align: center; padding: 24px; }
+.loading.show { display: block; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-top: 12px; display: none; }
+.error.show { display: block; }
+.courseware-link { display: none; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 16px; margin-top: 12px; }
+.courseware-link.show { display: block; }
+.courseware-link a { color: #166534; font-weight: 600; word-break: break-all; }
+.footer-hint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 24px; padding-bottom: 16px; }
+@media (max-width: 400px) { body { padding: 10px; } .card { padding: 14px; } .header h1 { font-size: 19px; } .btn { font-size: 14px; padding: 12px 0; } }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header"><h1>📐 数学解题助手</h1><p>拍题 · AI解题 · 生成交互课件</p></div>
+<div class="card" id="inputCard">
+  <!-- 选图 -->
+  <div class="drop-zone" id="dropZone"><div class="icon">📷</div><p>点击拍照 / 选图 / 粘贴截图</p><p class="sub">手机点这里调相机，电脑可直接 Ctrl/⌘+V 粘贴</p></div>
+  <input type="file" id="fileInput" accept="image/*" style="display:none">
+  <!-- 裁剪 -->
+  <div class="crop-wrap" id="cropWrap">
+    <div class="crop-box"><img id="cropImg" alt=""></div>
+    <p class="crop-hint">拖动方框，只框住要解的那道题（不动则用整张图）</p>
+    <span class="crop-reselect" id="reselect">↺ 重新拍 / 选图</span>
+  </div>
+  <div class="access-row"><input type="password" id="accessCode" placeholder="访问码（首次使用请输入一次）" autocomplete="off"></div>
+  <div class="btns"><button class="btn btn-solve" id="btnSolve" onclick="solve()">🔍 解题</button><button class="btn btn-gen" id="btnGen" onclick="genCourseware()">🎬 生成专属课件</button></div>
+  <div class="error" id="errorMsg"></div>
+</div>
+<div class="loading" id="loading"><div class="spinner"></div><p style="color:var(--muted);font-size:13px" id="loadingText">AI 正在解题…</p><p class="gen-progress" id="genProgress"></p></div>
+<div class="card response-card" id="solutionCard"><div class="label">📝 解题过程</div><div class="solution" id="solutionContent"></div></div>
+<div class="card courseware-link" id="linkCard"><div class="label">🔗 交互课件已生成</div><p style="font-size:14px;margin:8px 0">点击打开可交互课件：</p><a id="linkUrl" href="#" target="_blank" style="font-size:14px"></a></div>
+<p class="footer-hint">长铁一中 · 数学教研</p>
+</div>
+<script>
+// ===== 接口 =====
+const PROXY = '/api/ai/deepseek';
+const QWEN = '/api/ai/qwen';
+const HERMES = '/api/ai/hermes';
+
+// ===== 访问码（生成课件需要）=====
+const accessInput = document.getElementById('accessCode');
+accessInput.value = localStorage.getItem('edulab_access_code') || '';
+accessInput.addEventListener('change', () => localStorage.setItem('edulab_access_code', accessInput.value.trim()));
+function getAccessCode() { return accessInput.value.trim(); }
+
+// ===== 图片 + 裁剪 =====
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const cropWrap = document.getElementById('cropWrap');
+const cropImg = document.getElementById('cropImg');
+let cropper = null;
+
+dropZone.addEventListener('click', () => fileInput.click());
+document.getElementById('reselect').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { const f = e.target.files[0]; if(f) loadImage(f); fileInput.value=''; });
+document.addEventListener('paste', e => {
+  const items = e.clipboardData?.items; if(!items) return;
+  for(const item of items) if(item.type.startsWith('image/')) { loadImage(item.getAsFile()); break; }
+});
+function loadImage(file) {
+  const r = new FileReader();
+  r.onload = e => {
+    if(cropper){ cropper.destroy(); cropper = null; }
+    cropImg.src = e.target.result;
+    dropZone.style.display = 'none';
+    cropWrap.classList.add('show');
+    cropper = new Cropper(cropImg, {
+      viewMode: 1, autoCropArea: 1, dragMode: 'crop',
+      background: false, movable: true, zoomable: true, responsive: true,
+      checkOrientation: true
+    });
+  };
+  r.readAsDataURL(file);
+}
+// 取当前裁剪区域的图片（没裁就是整张）
+function getCroppedImage() {
+  if(!cropper) return null;
+  const canvas = cropper.getCroppedCanvas({ maxWidth: 1600, maxHeight: 1600, imageSmoothingQuality: 'high' });
+  return canvas ? canvas.toDataURL('image/jpeg', 0.9) : null;
+}
+
+// ===== System Prompt =====
+const SYSTEM = `你是数学解题助手。严格遵守：
+1. 用 ∵ 表示"因为"，用 ∴ 表示"所以"。禁止使用汉字"因为""所以"。
+2. 数学符号：平方用²，根号用√，角度用∠，三角形用△。
+3. 所有数学公式必须用$$...$$包裹（如$$y=x^2+2x+1$$），独立成行的公式用$$...$$，行内简短公式用$...$。
+4. 步骤清晰，每步有依据。最后给出答案并标注考点。
+示例：∵a=1>0，∴开口向上，对称轴$$x=-\\frac{b}{2a}=-1$$`;
+
+// ===== OCR 图片转题目文本（qwen-vl-max）=====
+async function ocrImage(imageData) {
+  const vr = await fetch(QWEN, {method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'qwen-vl-max',messages:[{role:'user',content:[
+      {type:'image_url',image_url:{url:imageData}},
+      {type:'text',text:'请完整识别图中的数学题目。只需要输出题目内容。'}]}],max_tokens:1000,temperature:0.1})});
+  const vj = await vr.json();
+  if(vj.error) throw new Error(vj.error.message||'图片识别失败');
+  return vj.choices[0].message.content;
+}
+
+// ===== 解题 =====
+async function solve() {
+  resetUI();
+  const img = getCroppedImage();
+  if(!img){ showError('请先拍照或上传题目图片'); return; }
+  const btn = document.getElementById('btnSolve');
+  btn.disabled = true; document.getElementById('loading').classList.add('show');
+  try {
+    const problemText = await ocrImage(img);
+    const sr = await fetch(PROXY, {method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'deepseek-v4-flash',messages:[
+        {role:'system',content:SYSTEM},
+        {role:'user',content:problemText}
+      ],max_tokens:4000,temperature:0.1})});
+    const sj = await sr.json();
+    if(sj.error) throw new Error(sj.error.message||'解题失败');
+    renderInto(document.getElementById('solutionContent'), sj.choices[0].message.content);
+    document.getElementById('solutionCard').classList.add('show');
+    document.getElementById('solutionCard').scrollIntoView({behavior:'smooth'});
+    showCoursewareLink(problemText);
+  } catch(err) {
+    showError(err.message||'出错了');
+  } finally {
+    btn.disabled = false; document.getElementById('loading').classList.remove('show');
+  }
+}
+
+// ===== Render（KaTeX auto-render，稳健处理 $$ \[ $ \( 四种定界符）=====
+function renderInto(el, text) {
+  el.textContent = text || '';
+  el.innerHTML = el.innerHTML
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/^\s*[-—]{3,}\s*$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:14px 0">');
+  if (typeof renderMathInElement === 'function') {
+    try {
+      renderMathInElement(el, {
+        delimiters: [
+          {left:'$$', right:'$$', display:true},
+          {left:'\\[', right:'\\]', display:true},
+          {left:'$',  right:'$',  display:false},
+          {left:'\\(', right:'\\)', display:false}
+        ],
+        throwOnError: false
+      });
+    } catch(e) {}
+  }
+}
+
+// ===== 关联已有模板课件 =====
+function showCoursewareLink(text) {
+  if(!text) return;
+  const specific = [
+    {kw:'正方体',label:'正方体3D课件',page:'cube.html'},
+    {kw:'长方体',label:'长方体3D课件',page:'box.html'},
+    {kw:'正四棱锥',label:'正四棱锥3D课件',page:'pyramid.html'},
+    {kw:'四棱锥',label:'正四棱锥3D课件',page:'pyramid.html'},
+    {kw:'椭圆',label:'椭圆课件',page:'ellipse_dot_range.html'},
+    {kw:'双曲线',label:'双曲线课件',page:'hyperbola_ecc_range.html'},
+    {kw:'抛物线',label:'抛物线课件',page:'parabola_dot_const.html'},
+    {kw:'二次函数',label:'二次函数课件',page:'ellipse_dot_range.html'},
+  ];
+  for(const s of specific) if(text.includes(s.kw)) return showLink(s);
+  const geom = ['体积','面积','距离','平面','向量','棱锥','正方','长方','棱柱','圆柱','圆锥','垂直','平行','夹角','中点','线面'];
+  if(geom.some(t=>text.includes(t))) return;
+  const generic = [
+    {kw:'对称轴',label:'二次函数课件',page:'ellipse_dot_range.html'},
+    {kw:'交点',label:'二次函数课件',page:'ellipse_dot_range.html'},
+    {kw:'函数',label:'函数图像课件',page:'ellipse_dot_range.html'},
+  ];
+  for(const g of generic) if(text.includes(g.kw)) return showLink(g);
+}
+function showLink(item) {
+  const url=`https://notice.yingyuzuowen.asia/edulab/${item.page}`;
+  document.getElementById('linkUrl').href=url;
+  document.getElementById('linkUrl').textContent=`${item.label}：${url}`;
+  document.getElementById('linkCard').classList.add('show');
+}
+
+// ===== 从 agent 回复里提取课件链接 =====
+function extractCoursewareUrl(text) {
+  const m = (text||'').match(/https?:\/\/[^\s)"'，。]*\/edulab\/[^\s)"'，。]+\.html/);
+  return m ? m[0] : null;
+}
+
+// ===== 生成进度计时 =====
+let genTimer = null;
+function startGenProgress() {
+  const start = Date.now();
+  document.getElementById('loadingText').textContent = 'AI 正在生成专属交互课件…';
+  const el = document.getElementById('genProgress');
+  const tick = () => { el.textContent = `已用时 ${Math.floor((Date.now()-start)/1000)}s · 通常需 2–4 分钟，请保持页面打开`; };
+  tick(); genTimer = setInterval(tick, 1000);
+  document.getElementById('loading').classList.add('show');
+}
+function stopGenProgress() {
+  if(genTimer){clearInterval(genTimer);genTimer=null;}
+  document.getElementById('genProgress').textContent='';
+  document.getElementById('loadingText').textContent='AI 正在解题…';
+  document.getElementById('loading').classList.remove('show');
+}
+
+// ===== 生成专属课件（走 Hermes 真生成）=====
+async function genCourseware() {
+  resetUI();
+  const code = getAccessCode();
+  if(!code){ showError('请先填写访问码（向贺老师索取）'); accessInput.focus(); return; }
+  const img = getCroppedImage();
+  if(!img){ showError('请先拍照或上传题目图片'); return; }
+  const btn = document.getElementById('btnGen');
+  btn.disabled = true; startGenProgress();
+  try {
+    const problemText = await ocrImage(img);
+    const r = await fetch(HERMES, {method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ access_code: code, problem: problemText, max_tokens: 8000 })});
+    const j = await r.json();
+    if(r.status===403){ throw new Error('访问码错误，请重新输入'); }
+    if(j.error){ throw new Error(typeof j.error==='string'? j.error : (j.error.message||'生成失败')); }
+    const reply = j.choices?.[0]?.message?.content || '';
+    const url = extractCoursewareUrl(reply);
+    if(url){
+      document.getElementById('linkUrl').href=url;
+      document.getElementById('linkUrl').textContent=url;
+      document.getElementById('linkCard').classList.add('show');
+      document.getElementById('linkCard').scrollIntoView({behavior:'smooth'});
+    } else {
+      renderInto(document.getElementById('solutionContent'), reply || '（无返回内容）');
+      document.getElementById('solutionCard').classList.add('show');
+      showError('已生成完毕但未识别到课件链接，请看上方回复内容');
+    }
+  } catch(err) {
+    showError((err.message||'生成失败') + '（若反复失败，可能是贺老师的电脑当前不在线，请稍后再试）');
+  } finally {
+    stopGenProgress(); btn.disabled = false;
+  }
+}
+
+function resetUI() {
+  ['errorMsg','solutionCard','linkCard'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  document.getElementById('loading').classList.remove('show');
+}
+function showError(msg) { const el=document.getElementById('errorMsg'); el.textContent=msg; el.classList.add('show'); }
+</script>
+</body>
+</html>

@@ -169,3 +169,27 @@ test('date scopes use local calendar boundaries and current period bounds', () =
   assert.equal(period.from, '2026-02-20T00:00:00.000Z');
   assert.equal(period.to, null);
 });
+
+test('starting a new period closes the previous period without deleting its ledger', () => {
+  const previous = dbStore.ensureCurrentClassScorePeriod('class-1', NOW);
+  const next = dbStore.startClassScorePeriod('class-1', {
+    name: '2026年秋季学期',
+    starts_at: '2026-09-01T00:00:00.000Z',
+    created_at: '2026-09-01T00:00:00.000Z'
+  });
+  assert.equal(next.name, '2026年秋季学期');
+  assert.equal(next.status, 'current');
+  assert.notEqual(next.id, previous.id);
+  const periods = dbStore.listClassScorePeriods('class-1');
+  const closed = periods.find(item => item.id === previous.id);
+  assert.equal(closed.status, 'ended');
+  assert.equal(closed.ends_at, '2026-09-01T00:00:00.000Z');
+  assert.equal(dbStore.listClassScoreLedger({ class_id: 'class-1', period_id: previous.id }).length, 2);
+});
+
+test('a class with points history is archived instead of losing its ledger', () => {
+  const archived = dbStore.archiveClass('class-1', '2026-09-02T00:00:00.000Z');
+  assert.equal(archived.archived_at, '2026-09-02T00:00:00.000Z');
+  assert.equal(dbStore.loadClasses().some(item => item.id === 'class-1'), false);
+  assert.equal(dbStore.listClassScoreLedger({ class_id: 'class-1', limit: 20 }).length, 2);
+});
