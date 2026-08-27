@@ -1,0 +1,8 @@
+{
+  "host": "smtp.qq.com",
+  "port": 465,
+  "secure": true,
+  "user": "your_qq_email@qq.com",
+  "pass": "your_smtp_authorization_code",
+  "from": "班级广播 <your_qq_email@qq.com>"
+}

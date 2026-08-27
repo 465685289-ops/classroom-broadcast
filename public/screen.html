@@ -5,147 +5,241 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>班级广播 · 教室屏幕</title>
 <style>
+/* ============ 师行 · 教室大屏 复古暖棕主题 v2 ============ */
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:"Microsoft YaHei","SimHei",sans-serif; background:#111822; color:#fff; height:100vh; overflow:hidden; }
-.screen-bg { position:fixed; top:0; left:0; right:0; bottom:0; background:linear-gradient(135deg,#111822 0%,#182734 42%,#24302b 72%,#12161d 100%); z-index:0; }
-.screen-bg::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px); background-size:56px 56px; opacity:.75; }
-.screen-bg::after { content:''; position:absolute; left:0; right:0; bottom:0; height:34%; background:linear-gradient(180deg,transparent,rgba(215,174,91,.12)); }
-@keyframes bgShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+:root{
+  --ink:#3a3026; --paper:#fbf6ec; --paper-2:#f4ecdd;
+  --brass:#c79a4a; --brass-deep:#8a6228; --brass-soft:rgba(199,154,74,.45);
+  --cream-90:rgba(248,240,226,.9); --cream-60:rgba(248,240,226,.6); --cream-40:rgba(248,240,226,.4); --cream-25:rgba(248,240,226,.25);
+  --green:#8aa86a;
+}
+body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",serif; background:#171109; color:#f3ead9; height:100vh; overflow:hidden; -webkit-font-smoothing:antialiased; }
 
-/* Bind Page */
-.bind-page { display:flex; align-items:center; justify-content:center; height:100vh; }
-.bind-box { text-align:center; }
-.bind-box h1 { font-size:36px; margin-bottom:12px; font-weight:300; }
-.bind-box p { color:#888; font-size:16px; margin-bottom:40px; }
-.bind-box input { width:300px; padding:18px 24px; font-size:28px; text-align:center; letter-spacing:8px; text-transform:uppercase; background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.15); border-radius:14px; color:#fff; outline:none; transition:border .3s; }
-.bind-box input:focus { border-color:#4f8cff; }
-.bind-box button { display:block; width:300px; margin:20px auto 0; padding:16px; background:#4f8cff; color:#fff; border:none; border-radius:14px; font-size:18px; font-weight:600; cursor:pointer; }
-.bind-box button:hover { background:#3a6fdb; }
-.bind-box .error { color:#ff6b6b; margin-top:16px; font-size:15px; }
-.bind-box .saved-hint { color:#666; font-size:13px; margin-top:20px; }
+/* 背景：深棕渐变 + 黄铜光晕 + 四角暗角 */
+.screen-bg { position:fixed; inset:0; background:linear-gradient(140deg,#171109 0%,#241a0e 45%,#2a2112 70%,#150f08 100%); z-index:0; }
+.screen-bg::before { content:''; position:absolute; inset:0;
+  background:
+    radial-gradient(900px 480px at 78% -10%, rgba(199,154,74,.14), transparent 62%),
+    radial-gradient(720px 420px at 8% 108%, rgba(199,154,74,.09), transparent 60%);
+}
+.screen-bg::after { content:''; position:absolute; inset:0; background:radial-gradient(120% 90% at 50% 45%, transparent 58%, rgba(0,0,0,.42) 100%); }
 
-/* Screen Page */
+/* ---------- 绑定页 ---------- */
+.bind-page { display:flex; align-items:center; justify-content:center; height:100vh; position:relative; z-index:1;
+  background:linear-gradient(140deg,#171109 0%,#241a0e 45%,#2a2112 70%,#150f08 100%); }
+.bind-box { text-align:center; padding:64px 72px; border:1px solid rgba(199,154,74,.28); border-radius:22px;
+  background:linear-gradient(165deg,rgba(248,240,226,.07),rgba(248,240,226,.02)); box-shadow:0 30px 90px rgba(0,0,0,.45); position:relative; }
+.bind-box::before { content:''; position:absolute; top:10px; left:10px; right:10px; bottom:10px; border:1px solid rgba(199,154,74,.14); border-radius:16px; pointer-events:none; }
+.bind-box h1 { font-size:38px; margin-bottom:10px; font-weight:600; letter-spacing:3px; color:var(--cream-90); }
+.bind-box p { color:var(--cream-40); font-size:16px; margin-bottom:38px; letter-spacing:1px; }
+.bind-box input { width:300px; padding:18px 24px; font-size:30px; text-align:center; letter-spacing:10px; text-transform:uppercase;
+  font-family:Georgia,"Times New Roman",serif; background:rgba(248,240,226,.07); border:1.5px solid rgba(199,154,74,.35); border-radius:14px; color:#f6efe1; outline:none; transition:border .3s, box-shadow .3s; }
+.bind-box input:focus { border-color:var(--brass); box-shadow:0 0 0 4px rgba(199,154,74,.12); }
+.bind-box button { display:block; width:300px; margin:22px auto 0; padding:16px; background:linear-gradient(180deg,#b8893f,#8a6228); color:#fdf6e7;
+  border:1px solid rgba(253,246,231,.18); border-radius:14px; font-size:18px; font-weight:600; letter-spacing:4px; cursor:pointer; font-family:inherit; transition:filter .2s; }
+.bind-box button:hover { filter:brightness(1.12); }
+.bind-box .error { color:#e0a07a; margin-top:16px; font-size:15px; }
+.bind-box .saved-hint { color:var(--cream-25); font-size:13px; margin-top:20px; }
+
+/* ---------- 大屏页 ---------- */
 .screen-page { display:none; height:100vh; position:relative; }
-.screen-header { position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:18px 34px; z-index:10; }
-.screen-header .class-name { font-size:19px; color:rgba(255,255,255,.72); font-weight:500; letter-spacing:1px; }
-.screen-header .right-btns { display:flex; align-items:center; gap:12px; }
-.screen-header .status { display:flex; align-items:center; gap:6px; font-size:13px; color:rgba(255,255,255,.4); }
-.screen-header .status .dot { width:8px; height:8px; border-radius:50%; background:#52c41a; }
-.screen-header .status .dot.off { background:#ff4d4f; }
-.screen-header .history-btn { padding:4px 12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:8px; color:rgba(255,255,255,.4); font-size:13px; cursor:pointer; }
-.screen-header .history-btn:hover { color:rgba(255,255,255,.7); border-color:rgba(255,255,255,.3); }
+.screen-header { position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:20px 38px; z-index:10; }
+.screen-header .class-name { font-size:20px; color:var(--cream-60); font-weight:500; letter-spacing:3px; display:flex; align-items:center; gap:10px; }
+.screen-header .class-name::before { content:'❧'; color:var(--brass); font-size:15px; }
+.screen-header .right-btns { display:flex; align-items:center; gap:14px; }
+.screen-header .status { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--cream-25); letter-spacing:1px; }
+.screen-header .status .dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px rgba(138,168,106,.6); }
+.screen-header .status .dot.off { background:#c96a4a; box-shadow:0 0 8px rgba(201,106,74,.6); }
+.screen-header .screen-btn { padding:5px 14px; background:rgba(248,240,226,.05); border:1px solid rgba(199,154,74,.25); border-radius:9px; color:var(--cream-25); font-size:13px; letter-spacing:1px; cursor:pointer; transition:.2s; font-family:inherit; }
+.screen-header .screen-btn:hover,.screen-header .screen-btn:focus-visible { color:var(--cream-60); border-color:var(--brass-soft); outline:none; }
 
-/* Idle screen with clock and bulletin board */
-.screen-idle { display:flex; gap:28px; height:100vh; padding:86px 42px 42px; position:relative; z-index:1; }
-.idle-main { width:42%; min-width:360px; min-height:0; display:flex; flex-direction:column; justify-content:center; padding:36px; border:1px solid rgba(255,255,255,.1); border-radius:24px; background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.035)); box-shadow:0 24px 80px rgba(0,0,0,.28); }
-.idle-clock { font-size:108px; font-weight:200; color:rgba(255,255,255,.9); letter-spacing:4px; font-variant-numeric:tabular-nums; }
-.idle-date { font-size:23px; color:rgba(255,255,255,.46); margin-top:8px; font-weight:300; }
-.idle-weekday { font-size:20px; color:rgba(255,255,255,.34); margin-top:4px; }
-.idle-classname { font-size:34px; color:rgba(255,255,255,.74); font-weight:400; margin-bottom:20px; letter-spacing:2px; }
-.idle-quote { margin-top:32px; max-width:100%; }
-.idle-quote .quote-text { font-size:21px; color:rgba(255,255,255,.46); font-weight:300; line-height:1.8; }
-.idle-quote .quote-author { font-size:14px; color:rgba(255,255,255,.24); margin-top:8px; }
-.idle-stats { margin-top:28px; font-size:14px; color:rgba(255,255,255,.28); }
-.idle-status { margin-top:16px; display:flex; align-items:center; gap:10px; color:rgba(255,255,255,.32); font-size:16px; }
-.idle-status .pulse-dot { width:10px; height:10px; border-radius:50%; background:rgba(82,196,26,.6); animation:pulse 2s ease-in-out infinite; }
+/* ---------- 空闲页：时钟 + 告示栏 ---------- */
+.screen-idle { display:flex; gap:30px; height:100vh; padding:84px 44px 44px; position:relative; z-index:1; }
+
+.idle-main { width:42%; min-width:360px; min-height:0; display:flex; flex-direction:column; justify-content:center; padding:40px 42px;
+  border:1px solid rgba(199,154,74,.26); border-radius:24px;
+  background:linear-gradient(160deg,rgba(248,240,226,.075),rgba(248,240,226,.025));
+  box-shadow:0 28px 90px rgba(0,0,0,.4); position:relative; overflow:hidden; }
+.idle-main::before { content:''; position:absolute; top:0; left:8%; right:8%; height:2px;
+  background:linear-gradient(90deg,transparent,var(--brass-soft),transparent); }
+
+.idle-classname { font-size:36px; color:var(--cream-90); font-weight:600; margin-bottom:6px; letter-spacing:4px; }
+.idle-classname::after { content:''; display:block; width:56px; height:1px; margin-top:16px;
+  background:linear-gradient(90deg,var(--brass),transparent); }
+.idle-clock { margin-top:14px; font-size:clamp(72px,8.7vw,118px); font-weight:600; color:#f6efe1; letter-spacing:3px; white-space:nowrap;
+  font-family:Georgia,"Times New Roman",serif; font-variant-numeric:tabular-nums; line-height:1.05;
+  text-shadow:0 4px 30px rgba(199,154,74,.18); }
+.idle-date { font-size:22px; color:var(--cream-40); margin-top:12px; font-weight:400; letter-spacing:2px; display:inline; }
+.idle-weekday { font-size:22px; color:var(--cream-40); margin-top:4px; letter-spacing:2px; display:inline; margin-left:14px; }
+.idle-quote { margin-top:34px; padding-left:18px; border-left:2px solid var(--brass-soft); }
+.idle-quote .quote-text { font-size:21px; color:var(--cream-60); font-weight:400; line-height:1.85; }
+.idle-quote .quote-author { font-size:14px; color:var(--cream-25); margin-top:10px; letter-spacing:1px; }
+.idle-stats { margin-top:30px; font-size:14px; color:var(--cream-25); letter-spacing:1px; }
+.idle-status { margin-top:14px; display:flex; align-items:center; gap:10px; color:var(--cream-40); font-size:15px; letter-spacing:1px; }
+.idle-status .pulse-dot { width:9px; height:9px; border-radius:50%; background:rgba(138,168,106,.75); animation:pulse 2s ease-in-out infinite; }
 @keyframes pulse { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.3)} }
 
-.bulletin-board { flex:1; min-height:0; display:flex; flex-direction:column; border:1px solid rgba(255,255,255,.13); border-radius:24px; background:rgba(248,245,235,.92); color:#1f2a32; box-shadow:0 24px 80px rgba(0,0,0,.32); overflow:hidden; }
-.bulletin-head { display:flex; justify-content:space-between; align-items:flex-end; padding:28px 32px 20px; border-bottom:1px solid rgba(31,42,50,.1); background:linear-gradient(135deg,#fbf7ec,#edf4ef); }
-.bulletin-kicker { font-size:14px; color:#7b6a43; letter-spacing:3px; margin-bottom:8px; }
-.bulletin-head h2 { font-size:34px; color:#1f2a32; font-weight:700; }
-.bulletin-count { font-size:14px; color:#7a868e; }
-.bulletin-list { flex:1; overflow:hidden; padding:22px 26px 26px; }
-.bulletin-item { padding:18px 18px 16px; border:1px solid rgba(31,42,50,.09); border-left:5px solid #d7ae5b; border-radius:16px; background:#fff; box-shadow:0 10px 28px rgba(31,42,50,.08); margin-bottom:16px; }
-.bulletin-item-title { font-size:24px; font-weight:700; color:#17222b; margin-bottom:10px; line-height:1.3; }
-.bulletin-item-content { font-size:20px; line-height:1.65; color:#34434c; white-space:pre-wrap; word-break:break-word; }
-.bulletin-item-meta { margin-top:14px; font-size:14px; color:#7a868e; display:flex; justify-content:space-between; gap:18px; }
-.bulletin-empty { height:100%; display:flex; align-items:center; justify-content:center; text-align:center; color:#9aa1a6; font-size:22px; line-height:1.8; border:1px dashed rgba(31,42,50,.16); border-radius:18px; }
+/* 自传播：扫码给我们班也装一个 */
+.idle-promo { margin-top:32px; display:flex; align-items:center; gap:16px; padding:14px 18px;
+  background:var(--paper); border-radius:14px; box-shadow:0 12px 32px rgba(0,0,0,.3); width:100%; max-width:380px; }
+.idle-promo .promo-qr { width:96px; height:96px; flex-shrink:0; border-radius:6px; background:#fff; padding:8px; object-fit:contain; display:block; }
+.idle-promo .promo-text { min-width:0; color:var(--ink); }
+.idle-promo .promo-line1 { font-size:17px; font-weight:700; letter-spacing:.5px; line-height:1.4; }
+.idle-promo .promo-line2 { font-size:12px; color:#9a8a72; margin-top:6px; letter-spacing:.3px; word-break:break-all; }
+.idle-promo .promo-line2 b { color:#7c5722; font-weight:600; }
 
-@media(max-width:900px){
-  .screen-idle { flex-direction:column; padding:78px 24px 28px; overflow:hidden; }
-  .idle-main { width:100%; min-width:0; }
-  .idle-main { padding:28px; }
-  .idle-clock { font-size:82px; }
-  .bulletin-board { min-height:300px; }
+/* 告示栏：宣纸质感 */
+.bulletin-board { flex:1; min-height:0; display:flex; flex-direction:column; border:1px solid rgba(199,154,74,.3); border-radius:24px;
+  background:linear-gradient(170deg,#fbf6ec 0%,#f4ecdd 100%); color:var(--ink); box-shadow:0 28px 90px rgba(0,0,0,.45); overflow:hidden; }
+.bulletin-head { display:flex; justify-content:space-between; align-items:flex-end; padding:26px 34px 18px;
+  border-bottom:1px double #d9cdb8; background:linear-gradient(135deg,#fbf6ec,#f1e7d2); }
+.bulletin-kicker { font-size:13px; color:#9a6f2e; letter-spacing:5px; margin-bottom:8px; }
+.bulletin-head h2 { font-size:34px; color:var(--ink); font-weight:700; letter-spacing:3px; }
+.bulletin-count { font-size:14px; color:#9a8a72; letter-spacing:1px; }
+.bulletin-list { flex:1; overflow:hidden; padding:22px 28px 28px; }
+.bulletin-item { padding:20px 22px 18px; border:1px solid #e3d8c2; border-left:5px solid var(--brass); border-radius:14px;
+  background:#fffdf7; box-shadow:0 8px 24px rgba(58,48,38,.09); margin-bottom:16px; }
+.bulletin-item-title { font-size:25px; font-weight:700; color:#2c241b; margin-bottom:10px; line-height:1.35; letter-spacing:.5px; }
+.bulletin-item-content { font-size:20px; line-height:1.7; color:#4d4234; white-space:pre-wrap; word-break:break-word; }
+.bulletin-item-meta { margin-top:14px; padding-top:12px; border-top:1px dashed #e3d8c2; font-size:14px; color:#9a8a72; display:flex; justify-content:space-between; gap:18px; }
+.bulletin-empty { height:100%; display:flex; align-items:center; justify-content:center; text-align:center; color:#b0a288; font-size:22px; line-height:1.9; border:1px dashed #d9cdb8; border-radius:16px; letter-spacing:1px; }
+
+@media(max-height:800px) and (min-width:901px){
+  .screen-idle { gap:24px; padding:70px 28px 24px; }
+  .idle-main { min-width:0; padding:24px 28px; }
+  .idle-classname { font-size:30px; margin-bottom:2px; }
+  .idle-classname::after { margin-top:8px; }
+  .idle-clock { margin-top:6px; font-size:clamp(72px,8.7vw,96px); }
+  .idle-date,.idle-weekday { font-size:18px; margin-top:6px; }
+  .idle-quote { margin-top:18px; padding-left:14px; }
+  .idle-quote .quote-text { font-size:17px; line-height:1.6; }
+  .idle-quote .quote-author { margin-top:4px; }
+  .idle-stats { margin-top:16px; }
+  .idle-status { margin-top:10px; }
+  .idle-promo { margin-top:18px; padding:10px 14px; gap:12px; }
+  .idle-promo .promo-qr { width:88px; height:88px; padding:7px; }
+  .idle-promo .promo-line1 { font-size:15px; }
+  .idle-promo .promo-line2 { font-size:10px; margin-top:4px; }
+  .bulletin-head { padding:20px 28px 14px; }
+  .bulletin-list { padding:18px 22px 22px; }
 }
 
-/* Notification Display - Character Animation */
-.notification-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:#1a1a2e; z-index:100; opacity:0; transition:opacity .5s; pointer-events:none; }
+@media(max-width:900px){
+  .screen-header { padding:16px 22px; }
+  .screen-idle { flex-direction:column; gap:14px; padding:64px 18px 18px; overflow:hidden; }
+  .idle-main { width:100%; min-width:0; flex:0 0 220px; padding:18px 326px 18px 24px; justify-content:center; }
+  .idle-classname { font-size:28px; margin-bottom:0; }
+  .idle-classname::after { margin-top:7px; }
+  .idle-clock { margin-top:5px; font-size:clamp(58px,10vw,76px); }
+  .idle-date,.idle-weekday { font-size:16px; margin-top:4px; }
+  .idle-quote,.idle-stats,.idle-status { display:none; }
+  .idle-promo { display:flex; position:absolute; right:18px; top:50%; transform:translateY(-50%); margin:0; width:286px; padding:10px 12px; gap:10px; }
+  .idle-promo .promo-qr { width:82px; height:82px; padding:7px; }
+  .idle-promo .promo-line1 { font-size:14px; }
+  .idle-promo .promo-line2 { font-size:10px; margin-top:4px; }
+  .bulletin-board { min-height:0; flex:1; }
+  .bulletin-head { padding:16px 22px 12px; }
+  .bulletin-head h2 { font-size:27px; }
+  .bulletin-list { padding:14px 18px 18px; }
+}
+
+@media(max-width:640px){
+  .screen-header .class-name { max-width:42vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .screen-header .right-btns { gap:7px; }
+  .screen-header .screen-btn { padding:5px 9px; }
+  .screen-idle { padding-top:60px; }
+  .idle-main { flex-basis:310px; padding:14px 18px; justify-content:flex-start; }
+  .idle-promo { position:static; transform:none; width:100%; margin-top:12px; }
+}
+
+/* ---------- 通知动画 ---------- */
+.notification-overlay { position:fixed; inset:0; background:#1c1610; z-index:100; opacity:0; transition:opacity .5s; pointer-events:none; }
 .notification-overlay.show { opacity:1; pointer-events:auto; }
+.notification-overlay::before { content:''; position:absolute; inset:0;
+  background:radial-gradient(820px 540px at 50% 42%, rgba(199,154,74,.13), transparent 65%); pointer-events:none; }
+.notification-overlay.minimized::before { display:none; }
 
 .notif-stage { position:absolute; top:0; left:0; right:0; bottom:80px; display:flex; align-items:center; justify-content:center; gap:50px; padding:40px; }
 
-/* CSS-based character */
 .notif-character { flex-shrink:0; position:relative; width:250px; height:330px; animation:charWalkIn 1.2s cubic-bezier(.25,.46,.45,.94) forwards; }
 @keyframes charWalkIn { 0%{transform:translateX(-50vw)} 60%{transform:translateX(20px)} 80%{transform:translateX(-5px)} 100%{transform:translateX(0)} }
 @keyframes charBounce { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-8px) rotate(1deg)} }
 .notif-character.arrived { animation:charBounce 1.5s ease-in-out infinite; }
 
 .assistant-figure { position:absolute; left:0; right:0; bottom:0; height:100%; }
-.assistant-img { position:absolute; left:50%; bottom:0; width:250px; height:auto; transform:translateX(-50%); filter:drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
-.assistant-wave { position:absolute; right:-18px; top:135px; width:64px; height:64px; border:4px solid rgba(255,255,255,.65); border-left:0; border-bottom:0; border-radius:0 70px 0 0; opacity:0; transform:rotate(28deg) scale(.6); animation:soundPulse 1.2s ease-out infinite; }
+.assistant-img { position:absolute; left:50%; bottom:0; width:250px; height:auto; transform:translateX(-50%); filter:drop-shadow(0 18px 24px rgba(0,0,0,.32)); }
+.assistant-wave { position:absolute; right:-18px; top:135px; width:64px; height:64px; border:4px solid rgba(248,240,226,.6); border-left:0; border-bottom:0; border-radius:0 70px 0 0; opacity:0; transform:rotate(28deg) scale(.6); animation:soundPulse 1.2s ease-out infinite; }
 .assistant-wave.w2 { right:-36px; top:117px; width:96px; height:96px; animation-delay:.25s; opacity:0; }
 .assistant-wave.w3 { right:-58px; top:96px; width:132px; height:132px; animation-delay:.5s; opacity:0; }
 
-.speech-bubble { background:#fff; color:#333; border-radius:24px; padding:40px 50px; max-width:55vw; font-size:48px; font-weight:700; line-height:1.6; word-break:break-word; position:relative; opacity:0; transform:scale(.8); transition:opacity .5s ease,transform .5s ease; box-shadow:0 10px 50px rgba(0,0,0,.4); }
+/* 气泡：宣纸卡片 + 黄铜内框 */
+.speech-bubble { background:var(--paper); color:var(--ink); border-radius:20px; padding:44px 54px; max-width:55vw; max-height:calc(100vh - 190px); overflow-y:auto;
+  font-size:48px; font-weight:700; line-height:1.65; word-break:break-word; position:relative; opacity:0; transform:scale(.8);
+  transition:opacity .5s ease,transform .5s ease;
+  box-shadow:0 1px 0 #fffaf2 inset, 0 30px 80px rgba(0,0,0,.5); border:1px solid #e0d4bd; }
 .speech-bubble.show { opacity:1; transform:scale(1); }
-.speech-bubble::before { content:''; position:absolute; left:-22px; top:40px; border:12px solid transparent; border-right-color:#fff; }
-.speech-sig { font-size:18px; color:#999; font-weight:400; margin-top:16px; }
+.speech-bubble::before { content:''; position:absolute; left:-22px; top:40px; border:12px solid transparent; border-right-color:var(--paper); }
+.speech-bubble::after { content:''; position:absolute; top:9px; left:9px; right:9px; bottom:9px; border:1px solid rgba(154,111,46,.22); border-radius:14px; pointer-events:none; }
+.speech-sig { font-size:18px; color:#9a8a72; font-weight:400; margin-top:18px; padding-top:14px; border-top:1px solid #ece2cd; text-align:right; letter-spacing:1px; }
 
-.notification-meta { position:absolute; bottom:20px; left:0; right:0; text-align:center; font-size:16px; color:rgba(255,255,255,.4); transition:all .8s ease; }
+.notification-meta { position:absolute; bottom:20px; left:0; right:0; text-align:center; font-size:15px; color:var(--cream-25); transition:all .8s ease; letter-spacing:1px; }
 .notification-meta span { margin:0 12px; }
 
-/* Minimized state */
+/* 品牌角标（通知页右上角，自传播；右下角会被滚动横幅遮挡） */
+.brand-mark { position:absolute; right:30px; top:22px; text-align:right; color:var(--cream-40); font-size:14px; letter-spacing:2px; line-height:1.7; pointer-events:none; }
+.brand-mark::before { content:''; display:block; width:40px; height:1px; margin:0 0 7px auto; background:linear-gradient(90deg,transparent,var(--brass-soft)); }
+.brand-mark span { display:block; font-size:11px; color:rgba(248,240,226,.18); letter-spacing:1px; font-family:Georgia,"Times New Roman",serif; }
+.notification-overlay.minimized .brand-mark { display:none; }
+
+/* 最小化状态 */
 .notification-overlay.minimized .notif-stage { flex-direction:row; align-items:flex-start; justify-content:flex-start; padding:20px 30px; gap:20px; bottom:auto; top:0; }
 .notification-overlay.minimized .notif-character { width:86px; height:112px; animation:none; }
 .notification-overlay.minimized .assistant-img { width:86px; }
 .notification-overlay.minimized .assistant-wave { display:none; }
-.notification-overlay.minimized .speech-bubble { font-size:22px; padding:16px 24px; max-width:70vw; border-radius:14px; box-shadow:none; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.08); color:#fff; }
-.notification-overlay.minimized .speech-bubble::before { display:none; }
-.notification-overlay.minimized .speech-bubble .speech-sig { font-size:13px; color:rgba(255,255,255,.4); }
+.notification-overlay.minimized .speech-bubble { font-size:22px; padding:16px 24px; max-width:70vw; border-radius:14px; box-shadow:none; border:1px solid rgba(199,154,74,.22); background:rgba(248,240,226,.07); color:#f3ead9; }
+.notification-overlay.minimized .speech-bubble::before,
+.notification-overlay.minimized .speech-bubble::after { display:none; }
+.notification-overlay.minimized .speech-bubble .speech-sig { font-size:13px; color:var(--cream-25); border-top:none; padding-top:0; margin-top:8px; }
 .notification-overlay.minimized .notification-meta { position:static; text-align:left; padding:4px 30px; font-size:13px; }
 
-/* Sound wave animation on megaphone */
 @keyframes soundPulse { 0%{opacity:0;transform:scale(.8)} 50%{opacity:.7} 100%{opacity:0;transform:scale(1.3)} }
 .sound-wave { animation:soundPulse 1s ease-out infinite; }
 .sound-wave.sw2 { animation-delay:.3s; }
 .sound-wave.sw3 { animation-delay:.6s; }
 
-/* Scrolling marquee banner */
-.scroll-banner { position:fixed; bottom:0; left:0; right:0; height:70px; background:linear-gradient(90deg, #ff6b35, #ff3535, #ff6b35); z-index:101; overflow:hidden; display:none; }
-.scroll-banner .scroll-track { display:inline-block; white-space:nowrap; animation:scrollLeft linear infinite; padding-top:10px; }
-.scroll-banner .scroll-text { font-size:40px; font-weight:900; color:#fff; text-shadow:2px 2px 4px rgba(0,0,0,.4); padding:0 100px; }
+/* 滚动横幅 */
+.scroll-banner { position:fixed; bottom:0; left:0; right:0; height:72px; background:linear-gradient(90deg,#8a6228,#7d3a3a,#8a6228); z-index:101; overflow:hidden; display:none; border-top:1px solid rgba(253,246,231,.25); }
+.scroll-banner .scroll-track { display:inline-block; white-space:nowrap; animation:scrollLeft linear infinite; padding-top:11px; }
+.scroll-banner .scroll-text { font-size:40px; font-weight:900; color:#fdf6e7; text-shadow:1px 2px 4px rgba(0,0,0,.35); padding:0 100px; letter-spacing:1px; }
 @keyframes scrollLeft { 0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)} }
 
-/* Quick reply buttons */
-.quick-reply { position:fixed; bottom:90px; left:0; right:0; display:none; justify-content:center; gap:20px; z-index:102; transition:all .8s ease; }
+/* 快捷回复 */
+.quick-reply { position:fixed; bottom:96px; left:0; right:0; display:none; justify-content:center; gap:20px; z-index:102; transition:all .8s ease; }
 .quick-reply.centered { bottom:auto; top:55%; transform:translateY(-50%); }
-.quick-reply button { padding:16px 40px; border:2px solid rgba(255,255,255,.5); border-radius:30px; background:rgba(255,255,255,.1); color:#fff; font-size:20px; font-weight:600; cursor:pointer; transition:all .2s; }
-.quick-reply button:hover { background:rgba(255,255,255,.25); border-color:#fff; transform:scale(1.05); }
-.quick-reply button.sent { background:#52c41a; border-color:#52c41a; pointer-events:none; }
+.quick-reply button { padding:16px 42px; border:1.5px solid rgba(199,154,74,.55); border-radius:30px; background:rgba(248,240,226,.08);
+  color:#f6efe1; font-size:20px; font-weight:600; letter-spacing:2px; cursor:pointer; transition:all .2s; font-family:inherit; }
+.quick-reply button:hover { background:rgba(199,154,74,.25); border-color:var(--brass); transform:scale(1.05); }
+.quick-reply button.sent { background:#4a5d44; border-color:#4a5d44; pointer-events:none; }
 
-/* Waiting reply hint */
-.reply-hint { display:none; position:fixed; bottom:160px; left:0; right:0; text-align:center; font-size:16px; color:rgba(255,255,255,.3); z-index:102; animation:pulse 2s ease-in-out infinite; }
+.reply-hint { display:none; position:fixed; bottom:166px; left:0; right:0; text-align:center; font-size:16px; color:var(--cream-25); z-index:102; animation:pulse 2s ease-in-out infinite; letter-spacing:1px; }
 .reply-hint.show { display:block; }
 
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(30px); }
-  to { opacity:1; transform:translateY(0); }
-}
+@keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
 
-/* History panel */
-.history-panel { position:fixed; top:0; right:-400px; width:380px; height:100vh; background:#222244; z-index:200; transition:right .3s; padding:20px; overflow-y:auto; box-shadow:-4px 0 20px rgba(0,0,0,.5); }
+/* 历史面板 */
+.history-panel { position:fixed; top:0; right:-400px; width:380px; height:100vh; background:#241d14; z-index:200; transition:right .3s; padding:22px; overflow-y:auto; box-shadow:-4px 0 30px rgba(0,0,0,.55); border-left:1px solid rgba(199,154,74,.2); }
 .history-panel.show { right:0; }
-.history-panel h3 { font-size:18px; margin-bottom:16px; font-weight:400; color:rgba(255,255,255,.7); }
-.history-panel .close-btn { position:absolute; top:16px; right:16px; width:32px; height:32px; border:none; background:rgba(255,255,255,.1); color:#fff; border-radius:50%; font-size:18px; cursor:pointer; }
-.history-panel .h-item { padding:14px; margin-bottom:10px; background:rgba(255,255,255,.06); border-radius:10px; }
-.history-panel .h-item .h-content { font-size:15px; line-height:1.5; margin-bottom:6px; }
-.history-panel .h-item .h-meta { font-size:12px; color:rgba(255,255,255,.35); }
+.history-panel h3 { font-size:18px; margin-bottom:16px; font-weight:600; color:var(--cream-60); letter-spacing:2px; }
+.history-panel .close-btn { position:absolute; top:16px; right:16px; width:32px; height:32px; border:none; background:rgba(248,240,226,.08); color:#f3ead9; border-radius:50%; font-size:18px; cursor:pointer; }
+.history-panel .h-item { padding:14px 16px; margin-bottom:10px; background:rgba(248,240,226,.05); border:1px solid rgba(199,154,74,.14); border-radius:10px; }
+.history-panel .h-item .h-content { font-size:15px; line-height:1.6; margin-bottom:6px; color:var(--cream-90); }
+.history-panel .h-item .h-meta { font-size:12px; color:var(--cream-25); }
 
-.unbind-btn { position:absolute; bottom:16px; left:16px; padding:6px 14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; color:rgba(255,255,255,.3); font-size:12px; cursor:pointer; z-index:10; }
-.unbind-btn:hover { color:rgba(255,255,255,.6); border-color:rgba(255,255,255,.3); }
+.unbind-btn { position:absolute; bottom:16px; left:16px; padding:6px 14px; background:rgba(248,240,226,.04); border:1px solid rgba(199,154,74,.18); border-radius:8px; color:var(--cream-25); font-size:12px; cursor:pointer; z-index:10; transition:.2s; }
+.unbind-btn:hover { color:var(--cream-60); border-color:var(--brass-soft); }
 </style>
+<link rel="stylesheet" href="/classroom-points-screen.css">
+<link rel="stylesheet" href="/classroom-screen-premium.css">
 </head>
 <body>
 
@@ -167,7 +261,8 @@ body { font-family:"Microsoft YaHei","SimHei",sans-serif; background:#111822; co
   <div class="screen-header">
     <span class="class-name" id="screenClassName"></span>
     <div class="right-btns">
-      <span class="history-btn" onclick="toggleHistory()">历史记录</span>
+      <button class="screen-btn" id="fullscreenBtn" type="button" onclick="toggleFullscreen()">全屏</button>
+      <button class="screen-btn" type="button" onclick="toggleHistory()">历史记录</button>
       <span class="status">
         <span class="dot" id="statusDot"></span>
         <span id="statusText">连接中</span>
@@ -190,6 +285,13 @@ body { font-family:"Microsoft YaHei","SimHei",sans-serif; background:#111822; co
         <span class="pulse-dot"></span>
         <span>已连接 · 等待通知中</span>
       </div>
+      <div class="idle-promo">
+        <img class="promo-qr" src="/qr-site.svg" alt="班级广播二维码">
+        <div class="promo-text">
+          <div class="promo-line1">老师扫码，给我们班<br>也装一个班级广播</div>
+          <div class="promo-line2"><b>师行出品</b> · notice.yingyuzuowen.asia</div>
+        </div>
+      </div>
     </div>
     <div class="bulletin-board">
       <div class="bulletin-head">
@@ -203,24 +305,98 @@ body { font-family:"Microsoft YaHei","SimHei",sans-serif; background:#111822; co
         <div class="bulletin-empty">暂无告示<br>老师发布后会显示在这里</div>
       </div>
     </div>
+    <div class="points-idle-actions" id="pointsIdleActions" hidden>
+      <span id="pointsDailyStat">今日积分变动：0 次</span>
+      <button type="button" onclick="ClassroomPointsScreen.openMode('score')">加扣分</button>
+      <button type="button" onclick="ClassroomPointsScreen.openMode('rank')">积分榜</button>
+      <button type="button" onclick="ClassroomPointsScreen.openMode('ledger')">流水记录</button>
+    </div>
+  </div>
+
+  <div class="points-mode" id="pointsScoreMode" hidden>
+    <section class="points-mode-shell" aria-label="班级加扣分">
+      <header class="points-mode-header">
+        <div class="points-mode-title">
+          <button class="points-back-button" type="button" onclick="ClassroomPointsScreen.backToIdle()">← 返回日常页</button>
+          <div><h2>班级加扣分</h2><p>点学生，再点右侧规则；支持批量登记</p></div>
+        </div>
+        <div class="points-toolbar">
+          <span class="points-sync-status" id="pointsSyncStatus">已同步</span>
+          <button id="pointsBatchToggle" type="button" onclick="ClassroomPointsScreen.toggleBatchMode()">批量登记</button>
+          <button type="button" onclick="ClassroomPointsScreen.undoLatest()">撤销上一条</button>
+        </div>
+      </header>
+      <div class="points-score-layout">
+        <main class="points-seat-area">
+          <div class="points-seat-grid" id="pointsSeatGrid"></div>
+        </main>
+        <aside class="points-score-side">
+          <div class="points-rule-panel" id="pointsRulePanel"></div>
+          <div class="points-recent-panel">
+            <div class="points-section-label">刚刚登记</div>
+            <div class="points-recent-list" id="pointsRecentList"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <div class="points-mode" id="pointsRankMode" hidden>
+    <section class="points-mode-shell" aria-label="班级积分榜">
+      <header class="points-mode-header">
+        <div class="points-mode-title">
+          <button class="points-back-button" type="button" onclick="ClassroomPointsScreen.backToIdle()">← 返回日常页</button>
+          <div><h2>班级积分榜</h2><p>只在需要时展示，60 秒无操作自动返回</p></div>
+        </div>
+        <nav class="points-scope-tabs" aria-label="积分榜时间范围">
+          <button type="button" data-points-scope="today" onclick="ClassroomPointsScreen.setScope('today')">今日</button>
+          <button type="button" data-points-scope="week" onclick="ClassroomPointsScreen.setScope('week')">本周</button>
+          <button type="button" data-points-scope="month" onclick="ClassroomPointsScreen.setScope('month')">本月</button>
+          <button type="button" data-points-scope="term" onclick="ClassroomPointsScreen.setScope('term')">本学期</button>
+        </nav>
+      </header>
+      <main class="points-list-content"><div class="points-ranking-list" id="pointsRankingList"></div></main>
+    </section>
+  </div>
+
+  <div class="points-mode" id="pointsLedgerMode" hidden>
+    <section class="points-mode-shell" aria-label="今日积分流水">
+      <header class="points-mode-header">
+        <div class="points-mode-title">
+          <button class="points-back-button" type="button" onclick="ClassroomPointsScreen.backToIdle()">← 返回日常页</button>
+          <div><h2>今日积分流水</h2><p>每一笔都保留来源；撤销会新增一条冲正记录</p></div>
+        </div>
+        <div class="points-toolbar points-ledger-filters">
+          <select id="pointsLedgerStudentFilter" aria-label="按学生筛选" onchange="ClassroomPointsScreen.setLedgerFilter('student',this.value)"><option value="">全部学生</option></select>
+          <select id="pointsLedgerDirectionFilter" aria-label="按加扣分筛选" onchange="ClassroomPointsScreen.setLedgerFilter('direction',this.value)"><option value="">全部变动</option><option value="positive">只看加分</option><option value="negative">只看扣分</option></select>
+          <button type="button" onclick="ClassroomPointsScreen.undoLatest()">撤销上一条</button>
+        </div>
+      </header>
+      <main class="points-list-content"><div class="points-ledger-list" id="pointsLedgerList"></div></main>
+    </section>
   </div>
 
   <div class="notification-overlay" id="notifOverlay">
     <div class="notif-stage">
       <div class="notif-character" id="notifCharacter">
         <div class="assistant-figure">
-          <img class="assistant-img" id="assistantImg" src="" alt="">
+          <div class="assistant-portrait">
+            <img class="assistant-img" id="assistantImg" src="" alt="">
+          </div>
           <div class="assistant-wave w1"></div>
           <div class="assistant-wave w2"></div>
           <div class="assistant-wave w3"></div>
+          <div class="assistant-caption">TEACHER BROADCAST</div>
         </div>
       </div>
       <div class="speech-bubble" id="speechBubble">
+        <div class="speech-kicker"><span></span>班级即时通知</div>
         <div id="speechText"></div>
         <div class="speech-sig" id="speechSig"></div>
       </div>
     </div>
     <div class="notification-meta" id="notifMeta"></div>
+    <div class="brand-mark">班级广播<span>notice.yingyuzuowen.asia</span></div>
   </div>
 
   <!-- Scrolling banner -->
@@ -234,7 +410,6 @@ body { font-family:"Microsoft YaHei","SimHei",sans-serif; background:#111822; co
   <div class="quick-reply" id="quickReply">
     <button onclick="sendReply('收到')">收到</button>
     <button onclick="sendReply('已完成')">已完成</button>
-    <button onclick="sendReply('请再发一次')">请再发一次</button>
   </div>
   <div class="reply-hint" id="replyHint">请点击上方按钮回复老师</div>
 
@@ -249,6 +424,8 @@ body { font-family:"Microsoft YaHei","SimHei",sans-serif; background:#111822; co
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="/classroom-points-queue.js"></script>
+<script src="/classroom-points-screen.js"></script>
 <script>
 var socket;
 var currentClass = null;
@@ -268,6 +445,7 @@ var audioCtx = null;
 var notifHistory = [];
 var activeBulletins = [];
 var todayNotifCount = 0;
+var statsDay = '';
 var weekdays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
 
 // ========== Avatar ==========
@@ -401,8 +579,56 @@ function updateQuote() {
 }
 
 function updateStats() {
+  ensureCurrentStatsDay();
   var el = document.getElementById('idleStats');
   if (el) el.textContent = '今日通知：' + todayNotifCount + ' 条';
+}
+
+function getStatsDay() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function screenStateKey(classId) {
+  return 'screen_state_' + String(classId || '');
+}
+
+function ensureCurrentStatsDay() {
+  var day = getStatsDay();
+  if (!statsDay) { statsDay = day; return false; }
+  if (statsDay === day) return false;
+  statsDay = day;
+  todayNotifCount = 0;
+  saveScreenState();
+  return true;
+}
+
+function loadScreenState() {
+  statsDay = getStatsDay();
+  todayNotifCount = 0;
+  notifHistory = [];
+  if (!currentClass) return;
+  try {
+    var raw = localStorage.getItem(screenStateKey(currentClass.id));
+    if (!raw) return;
+    var saved = JSON.parse(raw);
+    if (saved && saved.day === statsDay) todayNotifCount = Math.max(0, parseInt(saved.count, 10) || 0);
+    if (saved && Array.isArray(saved.history)) notifHistory = saved.history.slice(0, 50);
+  } catch(e) {
+    todayNotifCount = 0;
+    notifHistory = [];
+  }
+}
+
+function saveScreenState() {
+  if (!currentClass) return;
+  try {
+    localStorage.setItem(screenStateKey(currentClass.id), JSON.stringify({
+      day: statsDay || getStatsDay(),
+      count: todayNotifCount,
+      history: notifHistory.slice(0, 50)
+    }));
+  } catch(e) {}
 }
 
 function renderBulletins() {
@@ -446,6 +672,7 @@ function updateClock() {
     dateEl.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日';
     wdEl.textContent = weekdays[now.getDay()];
   }
+  if (ensureCurrentStatsDay()) updateStats();
 }
 setInterval(updateClock, 1000);
 updateClock();
@@ -503,7 +730,7 @@ function initSocket() {
 
   socket.on('connect', function() {
     updateStatus(true);
-    if (currentClass) {
+    if (savedBind) {
       socket.emit('bind-screen', savedBind);
     }
   });
@@ -518,9 +745,13 @@ function initSocket() {
     document.getElementById('screenClassName').textContent = cls.name;
     document.getElementById('idleClassName').textContent = cls.name;
     currentGrade = cls.grade || 'junior';
+    document.getElementById('savedHint').style.display = 'none';
+    loadScreenState();
     updateQuote();
     updateStats();
+    renderHistory();
     updateStatus(true);
+    ClassroomPointsScreen.onBound(cls, savedBind);
     requestNotifPermission();
     if (!audioCtx) {
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
@@ -528,9 +759,9 @@ function initSocket() {
   });
 
   socket.on('bind-error', function(msg) {
-    document.getElementById('bindError').textContent = msg;
     localStorage.removeItem('screen_bind_code');
     savedBind = '';
+    showBindPage(msg || '绑定码无效，请重新输入');
   });
 
   socket.on('notification', function(data) {
@@ -541,6 +772,10 @@ function initSocket() {
     activeBulletins = list || [];
     renderBulletins();
   });
+
+  ['class-management-update', 'class-roster-update', 'class-score-rules-update', 'class-score-entry', 'class-score-reversal'].forEach(function(eventName) {
+    socket.on(eventName, function() { ClassroomPointsScreen.handleSocketEvent(); });
+  });
 }
 
 function updateStatus(online) {
@@ -548,16 +783,49 @@ function updateStatus(online) {
   document.getElementById('statusText').textContent = online ? '已连接' : '连接断开，重连中...';
 }
 
+function showBindPage(message) {
+  currentClass = null;
+  ClassroomPointsScreen.onUnbound();
+  document.getElementById('screenPage').style.display = 'none';
+  document.getElementById('bindPage').style.display = 'flex';
+  document.getElementById('savedHint').style.display = 'none';
+  document.getElementById('bindCodeInput').value = '';
+  document.getElementById('bindError').textContent = message || '';
+  document.getElementById('bindCodeInput').focus();
+}
+
+function requestClassroomFullscreen() {
+  if (document.fullscreenElement || !document.documentElement.requestFullscreen) return;
+  document.documentElement.requestFullscreen().catch(function(){});
+}
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    if (document.exitFullscreen) document.exitFullscreen().catch(function(){});
+    return;
+  }
+  requestClassroomFullscreen();
+}
+
+function updateFullscreenButton() {
+  var btn = document.getElementById('fullscreenBtn');
+  if (btn) btn.textContent = document.fullscreenElement ? '退出全屏' : '全屏';
+}
+
+document.addEventListener('fullscreenchange', updateFullscreenButton);
+
 function doBind() {
   var code = document.getElementById('bindCodeInput').value.trim().toUpperCase();
   if (!code) return;
   savedBind = code;
   document.getElementById('bindError').textContent = '';
+  requestClassroomFullscreen();
   socket.emit('bind-screen', code);
 }
 
 function unbind() {
   if (!confirm('确定解除绑定？')) return;
+  if (currentClass) localStorage.removeItem(screenStateKey(currentClass.id));
   localStorage.removeItem('screen_bind_code');
   location.reload();
 }
@@ -587,9 +855,11 @@ function displayNotification(data) {
   var scrollTrack = document.getElementById('scrollTrack');
   var quickReply = document.getElementById('quickReply');
 
+  ClassroomPointsScreen.suspendForBroadcast();
+
   playAlertSound();
+  ensureCurrentStatsDay();
   todayNotifCount++;
-  updateStats();
 
   var senderName = data.sender_name || data.signature || '';
   var sender = senderName ? '（' + senderName + '）' : '';
@@ -604,16 +874,19 @@ function displayNotification(data) {
     date: now.toLocaleDateString('zh-CN')
   });
   if (notifHistory.length > 50) notifHistory = notifHistory.slice(0, 50);
+  saveScreenState();
+  updateStats();
   renderHistory();
 
-  // Set matching assistant figure
+  // Use the teacher avatar as the broadcast identity. The old full-body
+  // loudspeaker illustrations made the screen feel like a children's courseware page.
   var avatarId = data.avatar || 'a1';
   var assistantImg = document.getElementById('assistantImg');
   assistantImg.onerror = function() {
     this.onerror = null;
-    this.src = getAvatarSrc(avatarId);
+    this.src = getAvatarSrc('a1');
   };
-  assistantImg.src = getAssistantSrc(avatarId);
+  assistantImg.src = getAvatarSrc(avatarId);
   charEl.classList.remove('arrived');
   // Force reflow to restart walk-in animation
   charEl.style.animation = 'none';
@@ -654,7 +927,7 @@ function displayNotification(data) {
 
   quickReply.style.display = 'flex';
   var btns = quickReply.querySelectorAll('button');
-  var replyTexts = ['收到', '已完成', '请再发一次'];
+  var replyTexts = ['收到', '已完成'];
   for (var i = 0; i < btns.length; i++) {
     btns[i].className = '';
     btns[i].textContent = replyTexts[i] || btns[i].textContent;
@@ -674,11 +947,11 @@ function displayNotification(data) {
 }
 
 function adjustBubbleFont(el, text) {
-  if (text.length <= 8) el.style.fontSize = '56px';
-  else if (text.length <= 15) el.style.fontSize = '48px';
-  else if (text.length <= 30) el.style.fontSize = '38px';
-  else if (text.length <= 60) el.style.fontSize = '28px';
-  else el.style.fontSize = '22px';
+  if (text.length <= 8) el.style.fontSize = '64px';
+  else if (text.length <= 15) el.style.fontSize = '56px';
+  else if (text.length <= 30) el.style.fontSize = '46px';
+  else if (text.length <= 60) el.style.fontSize = '36px';
+  else el.style.fontSize = '30px';
 }
 
 function minimizeNotification() {
@@ -725,6 +998,7 @@ function dismissNotification() {
   if (speakStartTimer) { clearTimeout(speakStartTimer); speakStartTimer = null; }
   stopCurrentTTS();
   notifShowing = false;
+  if (!notifQueue.length) ClassroomPointsScreen.resumeAfterBroadcast();
   if (hadActiveNotification && notifQueue.length) {
     setTimeout(function() { showNextNotification(); }, 300);
   }
@@ -785,6 +1059,7 @@ function finishTTS(runId, onDone) {
 
 function stopCurrentTTS() {
   ttsRunId++;
+  try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
   if (activeReplayTimer) { clearTimeout(activeReplayTimer); activeReplayTimer = null; }
   if (activeTtsXhr) {
     try { activeTtsXhr.abort(); } catch(e) {}
@@ -873,7 +1148,7 @@ function speakText(text, repeatCount, onDone) {
 function speakTextFallback(text, repeatCount, onDone, runId) {
   if (runId !== ttsRunId) return;
   if (!audioCtx) {
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { finishTTS(runId, onDone); return; }
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { speakWithBrowserTTS(text, repeatCount, onDone, runId); return; }
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
   var xhr = new XMLHttpRequest();
@@ -884,18 +1159,49 @@ function speakTextFallback(text, repeatCount, onDone, runId) {
   xhr.onload = function() {
     if (runId !== ttsRunId) return;
     activeTtsXhr = null;
-    if (xhr.status !== 200) { finishTTS(runId, onDone); return; }
+    if (xhr.status !== 200) { speakWithBrowserTTS(text, repeatCount, onDone, runId); return; }
     audioCtx.decodeAudioData(xhr.response, function(buffer) {
       if (runId !== ttsRunId) return;
       playTTSBuffer(buffer, repeatCount, 0, onDone, runId);
-    }, function() { finishTTS(runId, onDone); });
+    }, function() { speakWithBrowserTTS(text, repeatCount, onDone, runId); });
   };
   xhr.onerror = function() {
     if (runId !== ttsRunId) return;
     activeTtsXhr = null;
-    finishTTS(runId, onDone);
+    speakWithBrowserTTS(text, repeatCount, onDone, runId);
   };
-  xhr.send(JSON.stringify({ text: text }));
+  xhr.send(JSON.stringify({ text: text, bind_code: savedBind }));
+}
+
+// 最终回退：浏览器内置语音合成（本地离线可用，不依赖任何外部接口）
+function speakWithBrowserTTS(text, repeatCount, onDone, runId) {
+  if (runId !== ttsRunId) return;
+  if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { finishTTS(runId, onDone); return; }
+  try { window.speechSynthesis.cancel(); } catch(e) {}
+  var count = 0;
+  function speakOnce() {
+    if (runId !== ttsRunId) return;
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN';
+    u.rate = 0.95;
+    u.volume = 1.0;
+    var voices = window.speechSynthesis.getVoices() || [];
+    for (var i = 0; i < voices.length; i++) {
+      if ((voices[i].lang || '').toLowerCase().indexOf('zh') === 0) { u.voice = voices[i]; break; }
+    }
+    u.onend = function() {
+      if (runId !== ttsRunId) return;
+      count++;
+      if (count < repeatCount) {
+        activeReplayTimer = setTimeout(speakOnce, 800);
+      } else {
+        finishTTS(runId, onDone);
+      }
+    };
+    u.onerror = function() { if (runId === ttsRunId) finishTTS(runId, onDone); };
+    window.speechSynthesis.speak(u);
+  }
+  speakOnce();
 }
 
 function playTTSBuffer(buffer, repeatCount, count, onDone, runId) {
@@ -941,12 +1247,6 @@ document.addEventListener('click', function() {
 
 initSocket();
 keepAwake();
-
-document.addEventListener('click', function goFS() {
-  if (currentClass && document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen().catch(function(){});
-  }
-}, { once: true });
 </script>
 </body>
 </html>

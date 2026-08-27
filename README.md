@@ -5,11 +5,12 @@
 ## 功能
 
 - 老师端注册登录、班级管理、班级协作邀请
+- 注册时填写邮箱或手机号码，忘记密码可提交管理员重置申请
 - 教室端绑定班级、实时接收通知、语音播报
 - 班级告示栏，适合发布作业和值日等静默通知
 - 消息中心，接收教室回复和班级邀请
 - 云狗微信支付年费开通
-- JSON 文件本地存储，适合轻量部署
+- SQLite 本地数据库存储，启动时可从旧 `data.json` 自动迁移
 
 ## 技术栈
 
@@ -17,7 +18,7 @@
 - Express
 - Socket.IO
 - 原生 HTML/CSS/JavaScript
-- JSON 文件存储
+- SQLite 文件数据库
 
 ## 本地运行
 
@@ -54,3 +55,38 @@ YEARLY_PLAN_PRICE=9.90
 ## 部署提示
 
 如果用 systemd 部署，建议把 `ADMIN_PASS`、`YUNGOU_MCH_ID`、`YUNGOU_PAY_KEY` 等放到 systemd 环境变量或服务器本地配置文件中，不要写进仓库。
+
+## 数据迁移与备份
+
+系统现在使用 `broadcast.db` 保存用户、班级、通知、告示、消息和支付记录。首次启动时，如果发现旧版 `data.json` 且 SQLite 数据库为空，会自动：
+
+1. 将 `data.json` 复制到 `backups/`
+2. 把旧数据导入 `broadcast.db`
+3. 后续读写改用 SQLite
+
+`broadcast.db`、`backups/`、`data.json` 都属于服务器运行数据，不要提交到 GitHub。
+
+## 代码结构（2026-08 重构后）
+
+```
+server.js               应用引导：express/socket.io 装配、注册登录、账户资料、
+                        支付入口、广播核心路由（班级/通知/大屏/积分）、管理后台、页面服务
+platform-config.js      全部环境变量/JSON 配置常量（env > secrets.env > JSON > 默认值）
+state.js                运行态容器（内存 store 与 socket.io 实例的共享引用）
+auth-core.js            验证码/密码散列(scrypt)/令牌/会员套餐状态 + safeEqual
+http-utils.js           子域识别 / Cookie 签名 / 访客分析埋点 / 邀请归因
+mail-center.js          SMTP 传输器、管理员通知、注册与重置邮件
+messaging-referrals.js  站内消息 / 各产品邀请返奖引擎
+payment-engine.js       云狗网关客户端 / 套餐解析 / 回调验签 / 入账编排 markPaymentPaid
+ai-engines.js           评语(DeepSeek)、作文(Qwen·MiniMax)、学习助手：提示词与归一化
+middleware.js           userAuth/adminAuth/screen 会话等中间件；installAdminSessionRoutes
+*-routes.js             路由域模块（installer 模式，server.js 启动时集中 install）：
+                        comment-routes / learning-routes / english-routes /
+                        referral-routes / essay-routes / roundtable-routes
+```
+
+约定：
+- 模块经 `state` 容器访问共享运行态；互相之间只允许单向 require，禁止回环。
+- 本机私有密钥放 `~/.config/classroom-broadcast/secrets.env`（KEY=VALUE，服务器同名环境变量优先）。
+- 部分测试为源码守卫（直接读源文件做正则断言），迁移实现时需同步守卫目标文件。
+

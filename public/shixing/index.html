@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="师行是一套为一线教师打造的实用工具，涵盖教室广播、期末评语、语文作文批改、英语作文批改、思想圆桌和数学课件。">
+<link rel="canonical" href="https://shixing.yingyuzuowen.asia/">
+<title>师行 · 教学工具</title>
+<style>
+  :root {
+    --bg:#f7f2e9;
+    --paper:#fffaf1;
+    --ink:#3e3124; --ink-soft:#7d6e5d; --ink-faint:#a89985;
+    --gold:#a6734f; --gold-deep:#76503a;
+    --line:rgba(121,92,66,.18); --line-soft:rgba(121,92,66,.10);
+    --glass:rgba(255,252,246,.68);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.6;
+    background:var(--bg);
+  }
+  .song { font-family:"Songti SC","STSong","SimSun",serif; }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 28px; }
+
+  /* 顶栏 */
+  .topbar {
+    position:sticky; top:0; z-index:40; backdrop-filter:blur(18px);
+    background:rgba(255,250,241,.84); border-bottom:1px solid var(--line-soft);
+  }
+  .topbar .row { display:flex; align-items:center; gap:12px; height:60px; }
+  .topbar .wordmark { font-family:"Songti SC","STSong","SimSun",serif; font-size:27px; font-weight:600; letter-spacing:.04em; line-height:1; color:var(--ink); }
+  .topbar .slogan { margin-left:auto; font-size:12px; color:var(--ink-faint); letter-spacing:1px; }
+  @media (max-width:560px){ .topbar .slogan{ display:none; } }
+
+  /* Hero */
+  .hero { position:relative; isolation:isolate; padding:46px 0 8px; text-align:center; }
+  .hero-decor { position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden; }
+  .hero-decor img { position:absolute; display:block; user-select:none; mix-blend-mode:multiply; -webkit-mask-image:radial-gradient(ellipse at center, #000 30%, transparent 76%); mask-image:radial-gradient(ellipse at center, #000 30%, transparent 76%); }
+  .hero-decor .leaf-top { width:160px; top:-46px; right:-20px; opacity:.48; transform:rotate(8deg); }
+  .hero-decor .books { width:142px; top:222px; left:0; opacity:.58; transform:rotate(-3deg); }
+  .hero-decor .leaf-bottom { width:130px; right:32px; bottom:-8px; opacity:.28; transform:rotate(184deg); }
+  .hero .eyebrow { font-size:11px; letter-spacing:4px; color:var(--gold-deep); font-weight:600; margin-bottom:9px; }
+  .hero h1 {
+    font-size:clamp(38px,5vw,56px); font-weight:600; line-height:1.15; letter-spacing:.04em; color:var(--ink);
+  }
+  .hero h1 .hl { color:var(--gold-deep); }
+  .hero .sub { margin:10px auto 0; font-size:clamp(14px,1.6vw,16px); color:var(--ink-soft); max-width:570px; line-height:1.7; }
+  .badge {
+    margin-top:14px; display:inline-flex; align-items:center; gap:9px; padding:8px 13px;
+    background:var(--glass); border:1px solid var(--line-soft); border-radius:999px;
+    box-shadow:0 8px 22px rgba(88,62,38,.05); font-size:13px; color:var(--ink-soft);
+  }
+  .badge .dot { width:8px; height:8px; border-radius:50%; background:#5c8c4d; box-shadow:0 0 8px #5c8c4d; flex-shrink:0; }
+  .badge b { color:var(--ink); font-weight:600; }
+  .stats { margin-top:10px; display:flex; flex-wrap:wrap; justify-content:center; gap:0; }
+  .stat { padding:0 12px; font-size:12px; color:var(--ink-faint); border-right:1px solid var(--line); }
+  .stat:last-child { border-right:0; }
+  .stat b { color:var(--gold-deep); font-weight:700; }
+
+  /* 区块标题 */
+  .sec-head { display:flex; justify-content:center; align-items:baseline; gap:12px; margin:30px 0 18px; }
+  .sec-head h2 { font-size:clamp(23px,3vw,31px); font-weight:600; letter-spacing:.06em; }
+  .sec-head .en { font-size:11px; letter-spacing:3px; color:var(--ink-faint); text-transform:uppercase; }
+
+  /* 书签式工具展开面板 */
+  .reel { display:flex; gap:12px; height:400px; }
+  .rpanel {
+    position:relative; flex:1 1 0; min-width:0; padding:28px 20px 24px; overflow:hidden;
+    text-decoration:none; color:var(--ink); background:var(--panel); border:1px solid var(--line);
+    border-radius:14px 14px 10px 10px; box-shadow:0 12px 22px rgba(82,58,37,.08);
+    transition:flex-grow .48s cubic-bezier(.2,.7,.2,1), box-shadow .35s, border-color .35s;
+  }
+  .rpanel::before { content:""; display:block; width:24px; height:2px; margin-bottom:24px; background:var(--ac); }
+  .rpanel-spine { display:flex; flex-direction:column; align-items:flex-start; gap:64px; height:100%; }
+  .rpanel-spine .rnum { font-family:"Songti SC",serif; font-size:15px; color:var(--ink-faint); }
+  .rpanel-spine .rname { font-family:"Songti SC",serif; font-size:clamp(22px,2vw,30px); font-weight:600; line-height:1.35; letter-spacing:.12em; writing-mode:vertical-rl; }
+  .rpanel-detail { position:absolute; inset:0; padding:28px 24px; opacity:0; transform:translateY(12px); transition:opacity .25s, transform .3s; pointer-events:none; background:var(--panel); }
+  .rpanel-detail h3 { font-family:"Songti SC",serif; font-size:clamp(24px,2.6vw,32px); font-weight:600; margin:28px 0 12px; color:var(--ink); }
+  .rpanel-detail p { font-size:14px; line-height:1.82; color:var(--ink-soft); }
+  .type-line { min-height:76px; }
+  .typing-cursor::after { content:""; display:inline-block; width:1px; height:1.1em; margin-left:3px; vertical-align:-.16em; background:currentColor; animation:blink .72s steps(1) infinite; }
+  .rpanel-meta { margin-top:16px; padding-top:14px; border-top:1px solid color-mix(in srgb, var(--ac) 22%, transparent); font-size:12px; line-height:1.75; color:var(--ink-soft); }
+  .rpanel-meta b { color:var(--ink); font-weight:600; }
+  .rpanel-detail .renter { display:inline-block; margin-top:22px; color:#fff; background:var(--ac); font-weight:600; font-size:13px; padding:10px 18px; border-radius:999px; }
+  .rpanel.is-active, .rpanel:hover, .rpanel:focus-visible { flex-grow:2.45; border-color:color-mix(in srgb, var(--ac) 45%, var(--line)); box-shadow:0 18px 32px rgba(82,58,37,.13); outline:none; }
+  .rpanel.is-active .rpanel-spine, .rpanel:hover .rpanel-spine, .rpanel:focus-visible .rpanel-spine { opacity:0; }
+  .rpanel.is-active .rpanel-detail, .rpanel:hover .rpanel-detail, .rpanel:focus-visible .rpanel-detail { opacity:1; transform:none; pointer-events:auto; }
+  @media (max-width:720px){
+    .wrap { padding:0 18px; }
+    .hero { padding-top:56px; }
+    .hero-decor { display:none; }
+    .reel { flex-direction:column; height:auto; gap:10px; }
+    .rpanel, .rpanel.is-active, .rpanel:hover, .rpanel:focus-visible { flex:none; min-height:164px; padding:22px; }
+    .rpanel::before { margin-bottom:16px; }
+    .rpanel-spine { display:none; }
+    .rpanel-detail { position:relative; inset:auto; opacity:1; transform:none; pointer-events:auto; padding:0; background:transparent; }
+    .rpanel-detail h3 { margin:0 0 7px; font-size:24px; }
+    .type-line { min-height:0; }
+    .rpanel-meta { margin-top:11px; padding-top:10px; }
+    .rpanel-detail .renter { margin-top:12px; }
+  }
+
+  /* 理念条 */
+  .ethos { margin:56px 0; padding:38px 42px; background:var(--glass); border:1px solid var(--line-soft); border-radius:18px; }
+  .ethos h2 { font-size:clamp(22px,3vw,30px); font-weight:600; letter-spacing:.04em; margin-bottom:12px; }
+  .ethos p { font-size:15px; color:var(--ink-soft); line-height:2; max-width:760px; }
+
+  /* 页脚 */
+  .footer { text-align:center; padding:36px 0 40px; border-top:1px solid var(--line-soft); }
+  .footer .big { font-size:clamp(48px,8vw,76px); font-weight:600; letter-spacing:.16em; line-height:1; color:var(--ink); }
+  .footer p { margin-top:14px; font-size:13px; color:var(--ink-faint); letter-spacing:2px; line-height:2; }
+
+  /* 进场动画 */
+  .rv { opacity:0; transform:translateY(34px); transition:opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1); }
+  .rv.in { opacity:1; transform:none; }
+  @keyframes blink { 50% { opacity:0; } }
+  @media (prefers-reduced-motion:reduce){ .rv{opacity:1;transform:none;transition:none;} .typing-cursor::after{ animation:none; } }
+</style>
+</head>
+<body>
+
+<!-- 顶栏 -->
+<div class="topbar"><div class="wrap row">
+  <a href="https://shixing.yingyuzuowen.asia/invite.html?center=1" style="font-size:13px;color:var(--gold-deep);text-decoration:none;font-weight:600">🎁 邀请有礼</a>
+  <div class="wordmark">师行</div>
+  <div class="slogan">为一线教师打造的 AI 实用工具</div>
+</div></div>
+
+<div class="wrap">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-decor" aria-hidden="true">
+      <img class="leaf-top" src="assets/leaf-shadow.png" alt="">
+      <img class="books" src="assets/desk-books.png" alt="">
+      <img class="leaf-bottom" src="assets/leaf-shadow.png" alt="">
+    </div>
+    <h1 class="song rv">把重复活儿<br><span class="hl">交给 AI。</span></h1>
+    <p class="sub rv">六件给中小学老师用的小工具，一个账号全部打通。少花点时间在重复劳动上，把精力还给自己。</p>
+    <div class="badge rv"><span class="dot"></span>师行漫录 · <b>一线教师自研自用</b> · 仅供教学，登录即可免费试用</div>
+    <div class="stats rv">
+      <span class="stat"><b>6</b> 件实用工具</span>
+      <span class="stat">覆盖 <b>语文 · 英语 · 数学 · 通用</b></span>
+      <span class="stat">一个账号 <b>全部通用</b></span>
+    </div>
+  </section>
+
+  <!-- 工具 -->
+  <div class="sec-head rv">
+    <h2 class="song">六件趁手的工具</h2>
+    <span class="en">The Toolkit</span>
+  </div>
+
+  <div class="reel rv" id="reel">
+    <!-- 01 广播 -->
+    <a class="rpanel" style="--ac:#b96c4b;--panel:#fbf0ea" href="https://notice.yingyuzuowen.asia/" data-analytics-product="broadcast" aria-label="进入教室广播系统">
+      <div class="rpanel-spine"><span class="rnum">01</span><span class="rname">教室广播</span></div>
+      <div class="rpanel-detail"><h3>教室广播</h3><p class="type-line" data-text="文字转语音，把全班通知、面批点名和临时提醒整理成能直接播报的话。少一点重复喊话，把更多注意力留给眼前的学生。">文字转语音，把全班通知、面批点名和临时提醒整理成能直接播报的话。少一点重复喊话，把更多注意力留给眼前的学生。</p><div class="rpanel-meta"><b>适用：</b>全班通知、课前提醒、面批点名</div><span class="renter">开始使用</span></div>
+    </a>
+    <!-- 02 评语 -->
+    <a class="rpanel" style="--ac:#7f8c66;--panel:#f0f4e8" href="https://comment.yingyuzuowen.asia/" data-analytics-product="comment" aria-label="进入 AI 评语生成">
+      <div class="rpanel-spine"><span class="rnum">02</span><span class="rname">期末评语</span></div>
+      <div class="rpanel-detail"><h3>期末评语</h3><p class="type-line" data-text="录入学生特点与语气风格，先得到一段有温度、不套路的期末评语初稿，再按自己的表达习惯慢慢调整。">录入学生特点与语气风格，先得到一段有温度、不套路的期末评语初稿，再按自己的表达习惯慢慢调整。</p><div class="rpanel-meta"><b>适用：</b>期末评语、个性化表达、语气打磨</div><span class="renter">开始使用</span></div>
+    </a>
+    <!-- 03 作文 -->
+    <a class="rpanel is-active" style="--ac:#6685a5;--panel:#edf2f8" href="https://zuowen.yingyuzuowen.asia/" data-analytics-product="essay" aria-label="进入 AI 作文批改">
+      <div class="rpanel-spine"><span class="rnum">03</span><span class="rname">作文批改</span></div>
+      <div class="rpanel-detail"><h3>作文批改</h3><p class="type-line" data-text="拍照上传作文后，按小初高全学段标准批改、打分，并从内容、结构和语言三个层面给出可落地的修改建议。">拍照上传作文后，按小初高全学段标准批改、打分，并从内容、结构和语言三个层面给出可落地的修改建议。</p><div class="rpanel-meta"><b>适用：</b>作业批改、分层点评、修改建议</div><span class="renter">开始使用</span></div>
+    </a>
+    <!-- 04 英语 -->
+    <a class="rpanel" style="--ac:#3f7184;--panel:#eaf2f4" href="https://notice.yingyuzuowen.asia/english.html" data-analytics-product="english" aria-label="进入英语作文批改">
+      <div class="rpanel-spine"><span class="rnum">04</span><span class="rname">英语批改</span></div>
+      <div class="rpanel-detail"><h3>英语作文批改</h3><p class="type-line" data-text="面向初高中英语教师，按中考作文、高中应用文和读后续写分别评分；逐句给出中文解释与英文修改建议，由教师审核后再返还学生。">面向初高中英语教师，按中考作文、高中应用文和读后续写分别评分；逐句给出中文解释与英文修改建议，由教师审核后再返还学生。</p><div class="rpanel-meta"><b>适用：</b>单篇批改、整班作业、学生返修</div><span class="renter">开始使用</span></div>
+    </a>
+    <!-- 05 圆桌 -->
+    <a class="rpanel" style="--ac:#8b6687;--panel:#f5edf4" href="https://notice.yingyuzuowen.asia/roundtable/" data-analytics-product="roundtable" aria-label="进入思想圆桌">
+      <div class="rpanel-spine"><span class="rnum">05</span><span class="rname">思想圆桌</span></div>
+      <div class="rpanel-detail"><h3>思想圆桌 · 七人谈</h3><p class="type-line" data-text="抛一个话题，让马克思、王阳明、庄子、福柯、巴菲特、鲁迅同桌开聊，流式发言、互相回应，把问题替你吵透。">抛一个话题，让马克思、王阳明、庄子、福柯、巴菲特、鲁迅同桌开聊，流式发言、互相回应，把问题替你吵透。</p><div class="rpanel-meta"><b>适用：</b>议题拆解、观点碰撞、课堂讨论</div><span class="renter">开始使用</span></div>
+    </a>
+    <!-- 06 数学 -->
+    <a class="rpanel" style="--ac:#57877f;--panel:#eaf3f0" href="https://notice.yingyuzuowen.asia/edulab/pro.html" data-analytics-product="edulab" aria-label="进入数学解题课件">
+      <div class="rpanel-spine"><span class="rnum">06</span><span class="rname">数学课件</span></div>
+      <div class="rpanel-detail"><h3>数学课件</h3><p class="type-line" data-text="输入一道题，自动生成可在课堂演示的解题课件，把解题路径和关键步骤讲清楚，省下手画板书的功夫。">输入一道题，自动生成可在课堂演示的解题课件，把解题路径和关键步骤讲清楚，省下手画板书的功夫。</p><div class="rpanel-meta"><b>适用：</b>解题演示、课堂讲解、板书准备</div><span class="renter">开始使用</span></div>
+    </a>
+  </div>
+
+  <!-- 理念 -->
+  <section class="ethos rv">
+    <h2 class="song">为什么做这些</h2>
+    <p>我是一名一线老师。这些工具最初都是为了自己和身边的人省事而做——批一摞作文、写几十条评语、远程喊话播报，重复又费神。能交给 AI 的，就交给 AI；省下来的时间，留给真正需要人的事：备好一节课，多看一眼那个走神的孩子。</p>
+  </section>
+
+</div>
+
+<!-- 页脚 -->
+<footer class="footer">
+  <div class="big song rv">师行</div>
+  <p class="rv">师行漫录 · 为一线教师而做 · 仅供教学使用</p>
+</footer>
+
+<script>
+const io = new IntersectionObserver((es)=>{
+  es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold:0.15 });
+document.querySelectorAll('.rv').forEach((el,i)=>{ el.style.transitionDelay=(Math.min(i,6)*0.05)+'s'; io.observe(el); });
+
+const panels = [...document.querySelectorAll('.rpanel')];
+const typeLines = [...document.querySelectorAll('.type-line')];
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let typingTimer;
+
+const showFullCopy = () => typeLines.forEach((line) => {
+  line.textContent = line.dataset.text;
+  line.classList.remove('typing-cursor');
+});
+
+const typePanelCopy = (panel) => {
+  clearTimeout(typingTimer);
+  if (reduceMotion.matches || window.matchMedia('(max-width: 720px)').matches) {
+    showFullCopy();
+    return;
+  }
+
+  typeLines.forEach((line) => {
+    line.textContent = line.dataset.text;
+    line.classList.remove('typing-cursor');
+  });
+
+  const line = panel.querySelector('.type-line');
+  const copy = line.dataset.text;
+  let index = 0;
+  line.textContent = '';
+  line.classList.add('typing-cursor');
+
+  const typeNext = () => {
+    line.textContent += copy[index];
+    index += 1;
+    if (index < copy.length) {
+      typingTimer = setTimeout(typeNext, 24);
+    } else {
+      line.classList.remove('typing-cursor');
+    }
+  };
+  typeNext();
+};
+
+const activatePanel = (panel) => {
+  panels.forEach((item) => item.classList.toggle('is-active', item === panel));
+  typePanelCopy(panel);
+};
+panels.forEach((panel) => {
+  panel.addEventListener('pointerenter', () => activatePanel(panel));
+  panel.addEventListener('focusin', () => activatePanel(panel));
+});
+
+reduceMotion.addEventListener('change', () => {
+  if (reduceMotion.matches) showFullCopy();
+});
+typePanelCopy(document.querySelector('.rpanel.is-active'));
+</script>
+<script src="/analytics.js"></script>
+</body>
+</html>

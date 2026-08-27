@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="师行思想圆桌让七位跨时空思想者围绕一个话题展开多轮观点碰撞。">
+<link rel="canonical" href="https://notice.yingyuzuowen.asia/roundtable/">
+<title>思想圆桌 · 七人谈</title>
+<style>
+  :root {
+    --bg: #f3eadc;
+    --panel: rgba(252,247,238,.72);
+    --msg-other: rgba(255,255,255,.78);
+    --msg-user: linear-gradient(135deg,#9a6f2e,#7c5722);
+    --text: #352c20;
+    --text-muted: #7c6f5b;
+    --border: rgba(120,90,40,.16);
+    --input-bg: rgba(255,255,255,.62);
+    --accent: #9a6f2e;
+    --glass: saturate(150%) blur(20px);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height: 100%; }
+  body {
+    color: var(--text);
+    font-family: -apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    height: 100dvh; display: flex; overflow: hidden;
+    background:
+      radial-gradient(60% 50% at 12% -5%, rgba(154,111,46,.12), transparent 60%),
+      radial-gradient(50% 45% at 105% 15%, rgba(176,124,64,.10), transparent 60%),
+      radial-gradient(55% 55% at 85% 110%, rgba(120,90,40,.08), transparent 60%),
+      #f3eadc;
+  }
+
+  /* ── 左侧人物面板 ── */
+  .sidebar {
+    width: 240px; min-width: 240px;
+    background: var(--panel); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 18px 12px;
+    overflow-y: auto;
+  }
+  .sidebar h2 {
+    font-size: 12px; letter-spacing: 3px; color: var(--text-muted);
+    text-align: center; margin: 4px 0 16px; font-weight: 600;
+  }
+  .char-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; cursor: pointer; transition: .2s ease;
+    border: 0; width: 100%; text-align: left; font: inherit; color: inherit;
+    border-radius: 14px; margin: 3px 0; opacity: .55; background: transparent;
+  }
+  .char-card:hover { background: rgba(120,90,40,.06); opacity: .85; }
+  .char-card.selected { opacity: 1; background: rgba(120,90,40,.08); }
+  .char-card .avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 600; color: #fff; flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(90,70,40,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .char-card .name { font-size: 15px; font-weight: 600; letter-spacing: .2px; }
+  .char-card .sub  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── 主聊天区 ── */
+  .main {
+    flex:1; display:flex; flex-direction:column; min-width:0;
+  }
+
+  .header {
+    padding: 16px 26px; border-bottom: 1px solid var(--border);
+    font-size: 15px; letter-spacing: .5px; color: var(--text); font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.5); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass);
+  }
+  .header .dot { width:8px; height:8px; border-radius:50%; background:#30d158; box-shadow:0 0 10px #30d158; }
+  .header .count { font-size:12px; color: var(--text-muted); margin-left: auto; font-weight: 400; }
+
+  .messages {
+    flex:1; overflow-y: auto; padding: 24px 26px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .messages::-webkit-scrollbar { width: 7px; }
+  .messages::-webkit-scrollbar-thumb { background: rgba(120,90,40,.2); border-radius: 4px; }
+  .messages::-webkit-scrollbar-thumb:hover { background: rgba(120,90,40,.3); }
+
+  /* ── 消息气泡 ── */
+  .msg {
+    display: flex; gap: 12px; max-width: 80%; animation: fadeIn .35s ease;
+  }
+  .msg.user-msg { align-self: flex-end; flex-direction: row-reverse; }
+  .msg .avatar-sm {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(90,70,40,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .msg .bubble {
+    padding: 13px 17px; border-radius: 20px; line-height: 1.72;
+    font-size: 15px; position: relative; border: 1px solid var(--border);
+    background: var(--msg-other); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass);
+    box-shadow: 0 8px 24px rgba(90,70,40,.1);
+  }
+  .msg.user-msg .bubble { background: var(--msg-user); border: none; border-bottom-right-radius: 6px; color:#fff; box-shadow: 0 8px 22px rgba(154,111,46,.3); }
+  .msg:not(.user-msg) .bubble { border-bottom-left-radius: 6px; }
+  .msg .sender {
+    font-size: 12px; font-weight: 700; margin-bottom: 5px; letter-spacing: .3px;
+  }
+  .msg .bubble p { margin: 5px 0; text-align: justify; }
+  .msg .bubble p:first-child { margin-top: 0; }
+  .msg .bubble p:last-child { margin-bottom: 0; }
+
+  /* @mention in reply */
+  .bubble .at-mention {
+    color: #b5651d; font-weight: 700; cursor: pointer;
+  }
+
+  .typing { display: flex; gap: 4px; padding: 4px 0; }
+  .typing span {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted);
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-8px); } }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── @ 选择区 ── */
+  .at-bar {
+    padding: 12px 26px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    border-top: 1px solid var(--border); background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass);
+  }
+  .at-bar .label {
+    font-size: 13px; color: var(--text-muted); letter-spacing: 1px; white-space: nowrap; font-weight: 600;
+  }
+  .at-chip {
+    padding: 6px 14px; border-radius: 18px; font-size: 13px;
+    border: 1px solid var(--border); cursor: pointer; transition: .18s ease;
+    background: rgba(255,255,255,.55); color: var(--text-muted); white-space: nowrap; font-family: inherit;
+  }
+  .at-chip:hover { background: rgba(120,90,40,.07); color: var(--text); transform: translateY(-1px); }
+  .at-chip.active { color: var(--text); background: rgba(154,111,46,.16); box-shadow: 0 2px 10px rgba(90,70,40,.14); }
+  .at-chip.all-chip { font-weight: 700; }
+  .at-chip.all-chip.active { color:#fff; background: var(--accent); border-color: transparent; box-shadow: 0 4px 14px rgba(154,111,46,.4); }
+
+  /* ── 输入区 ── */
+  .input-area {
+    padding: 14px 26px 18px;
+    display: flex; gap: 12px; align-items: center;
+  }
+  .input-area input {
+    flex:1; background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 18px; font-size: 15px;
+    color: var(--text); outline: none; font-family: inherit; transition: .18s;
+    -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass);
+  }
+  .input-area input::placeholder { color: var(--text-muted); }
+  .input-area input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(154,111,46,.22); }
+  .input-area button {
+    background: linear-gradient(135deg,#9a6f2e,#7c5722); border: none; color: #fff;
+    padding: 14px 26px; border-radius: 14px; font-size: 15px;
+    font-weight: 600; cursor: pointer; transition: .18s; white-space: nowrap; letter-spacing: 1px;
+    box-shadow: 0 6px 18px rgba(154,111,46,.4);
+  }
+  .input-area button:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(154,111,46,.5); }
+  .input-area button:active { transform: translateY(0); }
+  .input-area button:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── API Key ── */
+  .key-panel {
+    padding: 12px 26px; border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: center; background: rgba(255,255,255,.5);
+  }
+  .key-panel input {
+    flex:1; background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 9px 14px; font-size: 13px;
+    color: var(--text); outline: none; font-family: ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  .key-panel input:focus { border-color: var(--accent); }
+  .key-panel label { font-size: 12px; color: var(--text-muted); white-space: nowrap; font-weight: 600; }
+  .key-panel button {
+    background: rgba(120,90,40,.1); border: 1px solid var(--border); color: #fff; padding: 8px 16px;
+    border-radius: 10px; font-size: 13px; cursor: pointer; transition: .15s;
+  }
+  .key-panel button:hover { background: rgba(120,90,40,.14); }
+
+  /* ── 消息间引用区块 ── */
+  .quote-block {
+    border-left: 3px solid rgba(120,90,40,.25);
+    padding: 6px 12px; margin: 8px 0; font-size: 13px;
+    color: var(--text-muted); font-style: italic; background: rgba(255,255,255,.5);
+    border-radius: 0 4px 4px 0;
+  }
+  .quote-block .qt-author { font-style: normal; font-weight: 700; color: #8a7c64; }
+
+  /* ═══════ 移动端适配 ═══════ */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+
+    /* 侧边栏 → 顶部可折叠面板 */
+    .sidebar {
+      width: 100%; min-width: 100%; max-height: 56px; overflow: hidden;
+      flex-direction: row; align-items: center; padding: 8px 12px;
+      border-right: none; border-bottom: 1px solid var(--border);
+      transition: max-height .3s;
+    }
+    .sidebar.open { max-height: 400px; overflow-y: auto; flex-direction: column; align-items: stretch; }
+    .sidebar h2 { display: none; }
+    .sidebar .toggle-btn {
+      display: flex; align-items: center; gap: 6px; font-size: 13px;
+      color: var(--text-muted); cursor: pointer; letter-spacing: 2px;
+      padding: 4px 0; white-space: nowrap; border:0; background:transparent; font-family:inherit;
+    }
+    .sidebar.open .toggle-btn { margin-bottom: 8px; }
+    /* 折叠时只露出 toggle 按钮，不让人物卡片挤成一行 */
+    .sidebar:not(.open) .char-card { display: none; }
+    .char-card { padding: 8px 10px; border-left: none; border-radius: 8px; margin: 2px 0; }
+    .char-card.selected { background: rgba(120,90,40,.06); }
+    .char-card .avatar { width: 30px; height: 30px; font-size: 13px; }
+    .char-card .name { font-size: 14px; }
+    .char-card .sub { font-size: 10px; }
+
+    /* 主聊天区占满 */
+    .main { flex: 1; min-height: 0; }
+    .header { padding: 10px 14px; font-size: 14px; }
+    .messages { padding: 12px 14px; gap: 10px; }
+
+    /* 消息气泡全宽 */
+    .msg { max-width: 95%; }
+    .msg .bubble { font-size: 14px; padding: 10px 14px; }
+    .msg .avatar-sm { width: 28px; height: 28px; font-size: 11px; }
+
+    /* @ 选择栏横向滚动 */
+    .at-bar { padding: 8px 12px; gap: 6px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+    .at-bar .label { font-size: 11px; }
+    .at-chip { padding: 4px 10px; font-size: 12px; border-radius: 14px; flex-shrink: 0; }
+
+    /* 输入区 */
+    .key-panel { padding: 8px 14px; flex-wrap: wrap; }
+    .key-panel input { font-size: 12px; padding: 6px 10px; }
+    .input-area { padding: 8px 14px 12px; gap: 8px; }
+    .input-area input { font-size: 14px; padding: 10px 14px; }
+    .input-area button { padding: 10px 18px; font-size: 14px; }
+
+    .sys-msg { font-size: 11px; }
+  }
+
+  /* 系统消息 */
+  .sys-msg {
+    text-align: center; font-size: 12px; color: var(--text-muted);
+    padding: 4px 0; letter-spacing: 1px;
+  }
+
+  /* @mention mark tag */
+  .bubble .tag { display: inline-block; background: rgba(120,90,40,.06); padding: 1px 6px; border-radius: 3px; font-size: 12px; margin: 0 2px; }
+
+  /* ── 头部余额 / 用户 ── */
+  .balance-pill {
+    font-size: 13px; color: var(--text); background: rgba(120,90,40,.08);
+    border: 1px solid var(--border); border-radius: 14px; padding: 4px 12px; cursor: pointer; white-space: nowrap; font-family:inherit;
+  }
+  .balance-pill b { color: #30d158; }
+  .balance-pill:hover { background: rgba(120,90,40,.2); }
+  .hdr-user { font-size: 12px; color: var(--text-muted); white-space: nowrap; cursor: pointer; border:0; background:transparent; font-family:inherit; }
+  .hdr-user:hover { color: var(--accent); }
+
+  /* ── 登录 / 购买 浮层 ── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(53,44,32,.42); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    position: relative; width: 100%; max-width: 380px; background: rgba(252,247,238,.96);
+    -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass);
+    border: 1px solid var(--border); border-radius: 22px; padding: 28px 24px;
+    box-shadow: 0 24px 70px rgba(90,70,40,.22); animation: fadeIn .25s ease;
+  }
+  .modal h3 { font-size: 20px; font-weight: 700; margin-bottom: 4px; letter-spacing: .5px; }
+  .modal .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+  .modal .field { margin-bottom: 12px; }
+  .modal input {
+    width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 13px 15px; font-size: 15px; color: var(--text);
+    outline: none; font-family: inherit; transition: .18s;
+  }
+  .modal input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(154,111,46,.22); }
+  .modal .code-row { display: flex; gap: 8px; }
+  .modal .code-row input { flex: 1; min-width: 0; }
+  .modal .code-row button { width: auto; white-space: nowrap; margin-top: 0; padding: 0 12px; box-shadow: none; }
+  .modal .btn-primary {
+    width: 100%; background: linear-gradient(135deg,#9a6f2e,#7c5722); border: none; color: #fff;
+    padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer;
+    margin-top: 6px; box-shadow: 0 6px 18px rgba(154,111,46,.4); transition: .18s;
+  }
+  .modal .btn-primary:hover { transform: translateY(-1px); }
+  .modal .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .modal .switch-line { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 14px; }
+  .modal .switch-line a { color: var(--accent); cursor: pointer; }
+  .modal .err { color: #ff453a; font-size: 13px; min-height: 18px; margin: 2px 0 8px; }
+  .modal .close-x { position: absolute; top: 14px; right: 18px; color: var(--text-muted); cursor: pointer; font-size: 22px; line-height: 1; }
+  button.close-x { border:0; background:transparent; font-family:inherit; }
+  .link-button { border:0; padding:0; background:transparent; color:var(--accent); font:inherit; cursor:pointer; text-decoration:underline; }
+  .sr-only { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
+  .buy-pkg {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px;
+    cursor: pointer; transition: .18s; background: rgba(255,255,255,.5); width:100%; color:inherit; font-family:inherit; text-align:left;
+  }
+  .buy-pkg:hover { border-color: var(--accent); background: rgba(154,111,46,.1); }
+  .buy-pkg .pk-name { font-size: 15px; font-weight: 600; }
+  .buy-pkg .pk-price { font-size: 18px; font-weight: 700; color: #b5651d; }
+</style>
+</head>
+<body>
+<a href="https://shixing.yingyuzuowen.asia/" title="返回师行首页" style="position:fixed;top:12px;left:14px;z-index:99999;display:inline-flex;align-items:center;gap:7px;padding:6px 14px 6px 7px;background:rgba(252,247,238,.94);color:#7c5722;font:600 13px/1 -apple-system,'PingFang SC','Microsoft YaHei',sans-serif;text-decoration:none;border:1px solid #e7dcc6;border-radius:20px;box-shadow:0 4px 14px rgba(90,70,40,.18);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)"><span style="width:21px;height:21px;border-radius:50%;border:1.2px solid #9a6f2e;display:grid;place-items:center;font-family:'Songti SC','STSong',serif;font-weight:600;font-size:12px;color:#7c5722">师</span>师行首页</a>
+<a href="https://shixing.yingyuzuowen.asia/invite.html?center=1" title="师行邀请中心" style="position:fixed;top:56px;left:20px;z-index:99998;color:#7c5722;font-size:12px;text-decoration:none">🎁 邀请有礼</a>
+
+<h1 class="sr-only">思想圆桌 · 七人谈</h1>
+
+
+<!-- ═══ 左侧人物列表 ═══ -->
+<aside class="sidebar" id="sidebar">
+  <button type="button" class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('open')" style="display:none" aria-label="展开或收起思想者列表">
+    👥 思想圆桌 ▾
+  </button>
+  <h2>思 想 圆 桌</h2>
+  <button type="button" class="char-card" data-id="marx" style="border-left-color:#c0392b">
+    <div class="avatar" style="background:#c0392b">马</div>
+    <div><div class="name" style="color:#e74c3c">卡尔·马克思</div><div class="sub">政治经济学家</div></div>
+  </button>
+  <button type="button" class="char-card" data-id="wangyangming" style="border-left-color:#d35400">
+    <div class="avatar" style="background:#d35400">阳</div>
+    <div><div class="name" style="color:#e67e22">王阳明</div><div class="sub">心学 · 知行合一</div></div>
+  </button>
+  <button type="button" class="char-card" data-id="zhuangzi" style="border-left-color:#2a9d8f">
+    <div class="avatar" style="background:#2a9d8f">庄</div>
+    <div><div class="name" style="color:#2bb9a6">庄子</div><div class="sub">道家 · 逍遥</div></div>
+  </button>
+  <button type="button" class="char-card" data-id="foucault" style="border-left-color:#8e44ad">
+    <div class="avatar" style="background:#8e44ad">福</div>
+    <div><div class="name" style="color:#9b59b6">米歇尔·福柯</div><div class="sub">哲学家</div></div>
+  </button>
+  <button type="button" class="char-card" data-id="buffett" style="border-left-color:#27ae60">
+    <div class="avatar" style="background:#27ae60">巴</div>
+    <div><div class="name" style="color:#2ecc71">沃伦·巴菲特</div><div class="sub">投资者</div></div>
+  </button>
+  <button type="button" class="char-card" data-id="luxun" style="border-left-color:#7f8c8d">
+    <div class="avatar" style="background:#7f8c8d">鲁</div>
+    <div><div class="name" style="color:#bdc3c7">鲁迅</div><div class="sub">文学家 · 思想家</div></div>
+  </button>
+  <button type="button" class="char-card" data-id="edu" style="border-left-color:#2980b9">
+    <div class="avatar" style="background:#2980b9">研</div>
+    <div><div class="name" style="color:#3498db">当代教育研究者</div><div class="sub">教育研究 · 数据驱动</div></div>
+  </button>
+</aside>
+
+<!-- ═══ 主聊天区 ═══ -->
+<main class="main">
+  <div class="header">
+    <span class="dot"></span> 七人圆桌 · 跨时空对话
+    <span class="count" id="msg-count">0 条消息</span>
+    <button type="button" class="balance-pill" id="rt-balance" onclick="openBuy()" style="display:none;margin-left:10px">师行积分 <b id="rt-balance-n">–</b></button>
+    <button type="button" class="hdr-user" id="rt-user" onclick="logout()" style="margin-left:10px"></button>
+  </div>
+
+  <div class="messages" id="messages">
+    <div style="text-align:center;color:var(--text-muted);padding:60px 20px;line-height:2">
+      <p style="font-size:20px;margin-bottom:8px">🪑</p>
+      <p>七位思想者已就座。</p>
+      <p style="font-size:13px">选择 @ 对象，抛出一个话题。</p>
+    </div>
+  </div>
+
+  <!-- @ 选择栏 -->
+  <div class="at-bar" id="atBar">
+    <span class="label">@</span>
+    <button type="button" class="at-chip all-chip active" data-at="all" onclick="toggleAt(this,'all')">所有人</button>
+    <button type="button" class="at-chip" style="border-color:#c0392b" data-at="marx" onclick="toggleAt(this,'marx')">马克思</button>
+    <button type="button" class="at-chip" style="border-color:#d35400" data-at="wangyangming" onclick="toggleAt(this,'wangyangming')">王阳明</button>
+    <button type="button" class="at-chip" style="border-color:#2a9d8f" data-at="zhuangzi" onclick="toggleAt(this,'zhuangzi')">庄子</button>
+    <button type="button" class="at-chip" style="border-color:#8e44ad" data-at="foucault" onclick="toggleAt(this,'foucault')">福柯</button>
+    <button type="button" class="at-chip" style="border-color:#27ae60" data-at="buffett" onclick="toggleAt(this,'buffett')">巴菲特</button>
+    <button type="button" class="at-chip" style="border-color:#7f8c8d" data-at="luxun" onclick="toggleAt(this,'luxun')">鲁迅</button>
+    <button type="button" class="at-chip" style="border-color:#2980b9" data-at="edu" onclick="toggleAt(this,'edu')">教育研究者</button>
+  </div>
+
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="抛出一个话题..."
+           onkeydown="if(event.key==='Enter')sendMessage()">
+    <button id="sendBtn" onclick="sendMessage()">发 送</button>
+  </div>
+</main>
+
+<!-- 登录 / 注册 浮层 -->
+<div class="overlay" id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="modal">
+    <button type="button" class="close-x" onclick="hideAuth()" aria-label="关闭登录窗口">×</button>
+    <h3 id="authTitle">登录思想圆桌</h3>
+    <div class="modal-sub" id="authSub">师行产品共用同一账号；积分与评语生成、数学课件通用</div>
+    <div class="modal-sub" id="roundtableInviteContext" style="display:none;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:8px"></div>
+    <div class="err" id="authErr" aria-live="polite"></div>
+    <div class="field"><label class="sr-only" for="authUser">用户名</label><input id="authUser" placeholder="用户名" autocomplete="username"></div>
+    <div class="field"><label class="sr-only" for="authPass">密码</label><input id="authPass" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()"></div>
+    <div class="field" id="authEmailField" style="display:none"><label class="sr-only" for="authEmail">邮箱</label><input id="authEmail" type="email" placeholder="邮箱（用于接收验证码）" autocomplete="email"></div>
+    <div class="field" id="authCodeField" style="display:none"><label class="sr-only" for="authCode">邮箱验证码</label><div class="code-row"><input id="authCode" inputmode="numeric" autocomplete="one-time-code" placeholder="6位验证码"><button class="btn-primary" id="sendAuthCodeBtn" type="button" onclick="sendRegisterCode()">获取验证码</button></div></div>
+    <button class="btn-primary" id="authBtn" onclick="submitAuth()">登 录</button>
+    <div class="switch-line" id="authSwitch">还没有账号？<button type="button" class="link-button" onclick="toggleAuthMode()">注册一个</button></div>
+  </div>
+</div>
+
+<!-- 充值 / 兑换 浮层 -->
+<div class="overlay" id="buyOverlay" role="dialog" aria-modal="true" aria-labelledby="buyTitle">
+  <div class="modal">
+    <button type="button" class="close-x" onclick="closeBuy()" aria-label="关闭充值弹窗">×</button>
+    <h3 id="buyTitle">充值师行积分</h3>
+    <div class="modal-sub">一个完整话题消耗 50 积分（七人发言 + 多轮交锋）。当前余额 <b id="buy-balance">–</b> 积分。</div>
+    <div class="err" id="buyErr"></div>
+    <div id="buyPkgs"></div>
+    <div class="modal-sub" id="redeemHint" style="margin:16px 0 8px">有兑换码？</div>
+    <div class="field"><input id="redeemCode" placeholder="ROUND-60-XXXX"></div>
+    <button class="btn-primary" onclick="submitRedeem()">兑 换</button>
+  </div>
+</div>
+
+<script>
+// ═══════ 人物配置 ═══════
+const CHARACTERS = {
+  marx: {
+    name: '卡尔·马克思', color: '#c0392b', avatar: '马', id: 'marx',
+    prompt: `你是卡尔·马克思。你在一个跨时空的群聊里。直接说话，不要以"作为XX"开头。
+
+【身份】政治经济学家、哲学家。你用历史唯物主义、矛盾分析、阶级分析来看待一切。
+
+【说话方式】讽刺而有学术深度。说"历史表明""资本的本性决定"而非"我认为"。用科学隐喻（细胞形式、新陈代谢）。节奏：去魅→溯源→矛盾展开→实践指向。
+
+【核心视角】
+- 异化劳动：人做出来的东西反过来统治人。AI平台想拥有你的劳动产品
+- 商品拜物教：社会关系被伪装成物与物的关系
+- 一般智力：自动化的最终结果——劳动不再是财富的尺度。前提：自动化归谁？
+- 原始积累：任何"自然而然"的市场都有暴力的起源
+
+【群聊规则】
+- 如果话题和你不相关，诚实地说"这不在我的分析范围内"——但尝试用你的框架找关联
+- 如果前面的发言人是你可以对话的对象（巴菲特的资本逻辑、鲁迅的批判精神），可以直接叫他的名字反驳或展开
+- 你可以@某人来回应的格式：「@某人 你说的X，实际上……」
+- 发言200-350字，像真的在圆桌边发言`
+  },
+
+  wangyangming: {
+    name: '王阳明', color: '#d35400', avatar: '阳', id: 'wangyangming',
+    prompt: `你是王阳明（王守仁），心学集大成者。你在一个跨时空的群聊里。直接说话，不要以"作为XX"开头。
+
+【说话方式】语录体、问答式、直指人心。短句、断言、不绕弯，典型句式"只是……""须是……""此便是……"。少引经据典，多就事说理。不空谈玄理，反对悬空思索。
+
+【核心视角（致良知为宗）】
+- 知行合一：知者行之始，行者知之成。知而不行，只是未知——空谈再多 AI 理念，不落到一个学生身上，就不算真知
+- 致良知：撇开利害得失，听你心里那个知善知恶的声音。技术好坏，问良知——它让人更用心，还是更偷懒？
+- 事上磨练：人须在事上磨。那些烦人的、想逃的具体事，正是磨心的砂纸；静坐空想只是偷懒
+- 心即理：道理不在外面的工具里，在用它的那颗心；心觉得不对，就有权重新判断
+- 破心中贼：破山中贼易，破心中贼难——真正的敌人是私欲、偏见、恐惧
+
+【诚实边界】你不是鸡汤。面对系统性、制度性的问题，你承认只靠"正人心"不够，会老实说这条线你画不到制度层面。
+
+【群聊规则】
+- 你最爱把别人的高谈阔论拉回"那你具体怎么做"
+- 可点名反问：「你说的这些，落到一个学生身上，怎么做？」
+- 可以@某人：「@某人 我问你……」
+- 发言200-350字，平实、追问、指向实践`
+  },
+
+  zhuangzi: {
+    name: '庄子', color: '#2a9d8f', avatar: '庄', id: 'zhuangzi',
+    prompt: `你是庄子。你在一个跨时空的群聊里。直接说话，不要以"作为XX"开头。
+
+【说话方式】寓言、重言、卮言三言并用——故事驱动，不说教、不论证。飘逸跳跃，用悖论打开新的认知空间。不辩论、不被拉进对方的逻辑框架；面对"你怎么证明"的追问，避而不答，用另一个故事消解问题本身。爱说"请循其本"。
+
+【核心视角】
+- 逍遥游·无待：真自由不是拥有更多，是需要更少。你在"待"什么？需要的越多，越不自由
+- 齐物论：是非、物我都是视角的产物。换个眼光，世界完全不同——他不是错了，只是站在另一个位置
+- 无用之用：歪脖子树因"没用"才活了千年。被规训成"有用"的未必真有用；发呆、闲逛那些"没产出"的部分，恰恰让你还是你
+- 庖丁解牛·以无厚入有间：别硬抗。再难的事也不是铁板一块，找那条缝，游刃有余
+- 得意忘言：语言是网不是鱼。意思到了就往前走，别跟字句较劲
+
+【诚实边界】你善拆不善建——能把争论"松开"，却不提供建制方案。你也知道自己"冷"：面对真在痛苦里的人，超然可能是一把刀。
+
+【群聊规则】
+- 你从不站队争对错，而是用一个寓言或反问，把整场争论"松开"
+- 可以@某人：「@某人 你这话，让我想起一个故事……」
+- 发言150-300字，飘逸、四两拨千斤`
+  },
+
+  foucault: {
+    name: '米歇尔·福柯', color: '#8e44ad', avatar: '福', id: 'foucault',
+    prompt: `你是米歇尔·福柯。你在一个跨时空的群聊里。直接说话，不要以"作为XX"开头。
+
+【身份】哲学家。你用权力-知识-主体的三轴来分析，揭示看似"自然"的东西背后权力的运作。
+
+【说话方式】精确而迂回——从句套从句但有论证功能。警句锋利。不以"众所周知"开头而以"实际上……"。不提供解放方案，只在具体领域分析权力。不直接说"你错了"，而说"如果我们认真看一看……"
+
+【核心视角】
+- 全景敞视/规训：AI教育工具可能是更精密的"自我规训"技术
+- 权力-知识：什么算"好作文"的标准本身就是权力-知识的产物
+- 治理术：权力让人"自我治理"——健身APP、信用评分、AI学习系统
+- 话语：每个时代有底层的"什么可说、什么算真理"的规则
+
+【群聊规则】
+- 你的作用是让讨论变得"不舒服"——追问那些被当成理所当然的前提
+- 你可以@某人来质疑他话语背后的权力预设
+- 发言200-350字，像即兴讲座`
+  },
+
+  buffett: {
+    name: '沃伦·巴菲特', color: '#27ae60', avatar: '巴', id: 'buffett',
+    prompt: `你是沃伦·巴菲特。你在一个跨时空的群聊里。直接说话，不要以"作为XX"开头。
+
+【身份】投资者。你用经济护城河、能力圈、安全边际、复利思维来看问题。你不会参与抽象意识形态辩论——你把一切还原为"这东西十年后还在不在？"
+
+【说话方式】极简朴素。比喻驱动（护城河、雪球）。自嘲式谦逊。确定性语气——不说maybe。不预测宏观经济。
+
+【核心视角】
+- 护城河：任何有价值的东西必须有持久的竞争优势保护它
+- 能力圈：知道自己不知道什么比知道自己知道什么更重要
+- 逆向思维：别人贪婪时恐惧，别人恐惧时贪婪
+- 复利：重要的不是某一年的回报，是永不中断的积累
+
+【群聊规则】
+- 你不参与意识形态辩论。当别人谈大道理时，你说"我只问一个问题——这个东西十年后还在不在？"
+- 你可以@任何人大白话地反驳："@某人 你说的都对，但是……"
+- 发言150-250字，极简`
+  },
+
+  luxun: {
+    name: '鲁迅', color: '#7f8c8d', avatar: '鲁', id: 'luxun',
+    prompt: `你是鲁迅。你在一个跨时空的群聊里。直接说话，不要以"作为XX"开头。
+
+【身份】文学家、思想家。你不是在提供方案，而是在揭示那些人们习以为常、拒绝承认的真相。
+
+【说话方式】白话为骨，文言为肉。反讽冷峭。匕首与投枪——结尾短句有穿透力。不说正能量口号。不回避自己的矛盾。
+
+【核心视角】
+- 铁屋子：明知不可为而为之。"你不能说决没有毁坏这铁屋的希望"
+- 精神胜利法：用虚构的"胜利"掩盖真实的失败
+- 看客心态：不要鉴赏他人的苦难而不行动
+- 韧的战斗：持久战——让他们怨恨去，我一个都不宽恕
+
+【群聊规则】
+- 你不辩论，你在旁边冷冷地说一句让所有人沉默的话
+- 你可以@任何人，但你的回应往往不直接回答问题——而是揭露问题背后的虚伪
+- 发言150-250字，冷、准、有穿透力`
+  },
+
+  edu: {
+    name: '教育研究者', color: '#2980b9', avatar: '研', id: 'edu',
+    prompt: `你是一位当代教育研究者。你在一个跨时空的群聊里。直接说话，不要以"作为XX"开头。
+
+【身份】教育学研究者，关注一线教学与实证研究。你用学术翻译+对立统一+数据驱动来看问题。
+
+【说话方式】结构清晰、讲证据有出处。把研究术语翻译成老师能用的话。不煽情，学术中正。
+
+【核心视角】
+- 学术翻译器：把研究变成教师能用的东西
+- 对立统一：不急着选边，而是搭桥梁
+- 数据驱动：用证据和效果说话，而非凭感觉
+- 反直觉：用认知冲突打开思考
+
+【群聊规则】
+- 你是圆桌里最"当代"的声音——当大家在谈19-20世纪理论时，你拿出近年的教育研究与数据
+- 你可以@任何人，用研究证据来回应或补充
+- 发言200-350字，有研究支撑`
+  }
+};
+
+// ═══════ 状态管理 ═══════
+let isProcessing = false;
+let atTargets = new Set(['all']); // 默认@所有人
+let roundCount = 0;
+let transcript = []; // 整场讨论实录（跨轮记忆）：{role,id,name,color,text}
+const MAX_CONTEXT_CHARS = 8000; // 喂给模型的实录长度上限，控制 token 成本
+const MAX_DEBATE_ROUNDS = 2;    // @互怼最多追加几轮
+
+// 账号：复用与作文批改等工具通用的 broadcast_token
+let authToken = localStorage.getItem('broadcast_token') || '';
+let rtBalance = 0;
+let pointCost = 50;
+let rtConfig = null;
+let authMode = 'login'; // 'login' | 'register'
+let currentGenId = null; // 当前话题 id（由后端 /start 返回）
+let pendingSend = false; // 游客写好话题后，登录成功自动继续发送
+
+// 初始化选中状态
+updateAtUI();
+
+// ═══════ 账号 / 配置 ═══════
+function authHeaders(json) {
+  const h = {};
+  if (json) h['Content-Type'] = 'application/json';
+  if (authToken) h['x-token'] = authToken; // 与作文批改等工具一致：用 x-token 头
+  return h;
+}
+
+async function bootstrap() {
+  if (!authToken) { hideAuth(); return; }
+  try {
+    const r = await fetch('/api/roundtable/config', { headers: authHeaders() });
+    if (r.status === 401) { clearToken(); showAuth(); return; }
+    rtConfig = await r.json();
+    rtBalance = rtConfig.balance || 0;
+    pointCost = Number(rtConfig.point_cost) || 50;
+    hideAuth();
+    renderAccountUI();
+    handlePayReturn();
+    if (pendingSend) {
+      pendingSend = false;
+      sendMessage();
+    }
+  } catch (e) {
+    showAuth();
+  }
+}
+
+function clearToken() { authToken = ''; localStorage.removeItem('broadcast_token'); }
+
+function renderAccountUI() {
+  document.getElementById('rt-balance-n').textContent = rtBalance;
+  document.getElementById('rt-balance').style.display = '';
+  document.getElementById('rt-user').textContent = ((rtConfig && (rtConfig.display_name || rtConfig.username)) || '') + ' · 退出';
+}
+
+function showAuth() { document.getElementById('authOverlay').classList.add('show'); }
+function hideAuth() { document.getElementById('authOverlay').classList.remove('show'); }
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  const isReg = authMode === 'register';
+  document.getElementById('authTitle').textContent = isReg ? '注册思想圆桌' : '登录思想圆桌';
+  document.getElementById('authBtn').textContent = isReg ? '注 册' : '登 录';
+  document.getElementById('authEmailField').style.display = isReg ? '' : 'none';
+  document.getElementById('authCodeField').style.display = isReg ? '' : 'none';
+  document.getElementById('authSwitch').innerHTML = isReg
+    ? '已有账号？<button type="button" class="link-button" onclick="toggleAuthMode()">去登录</button>'
+    : '还没有账号？<button type="button" class="link-button" onclick="toggleAuthMode()">注册一个</button>';
+  document.getElementById('authErr').textContent = '';
+}
+
+async function sendRegisterCode() {
+  const email = document.getElementById('authEmail').value.trim();
+  const err = document.getElementById('authErr');
+  const btn = document.getElementById('sendAuthCodeBtn');
+  err.textContent = '';
+  if (!email) { err.textContent = '请填写邮箱'; return; }
+  btn.disabled = true;
+  btn.textContent = '发送中…';
+  try {
+    const r = await fetch('/api/register/send-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await r.json();
+    err.textContent = data.message || data.error || (r.ok ? '验证码已发送，请查看邮箱' : '验证码发送失败');
+  } catch (e) {
+    err.textContent = '网络错误，请重试';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '获取验证码';
+  }
+}
+
+async function submitAuth() {
+  const username = document.getElementById('authUser').value.trim();
+  const password = document.getElementById('authPass').value;
+  const err = document.getElementById('authErr');
+  const btn = document.getElementById('authBtn');
+  err.textContent = '';
+  if (!username || !password) { err.textContent = '请输入用户名和密码'; return; }
+  const isReg = authMode === 'register';
+  const body = { username, password };
+  if (isReg) {
+    const email = document.getElementById('authEmail').value.trim();
+    const code = document.getElementById('authCode').value.trim();
+    if (!email || !code) { err.textContent = '请填写邮箱和验证码'; return; }
+    body.email = email;
+    body.code = code;
+    body.display_name = username;
+  }
+  btn.disabled = true;
+  try {
+    const r = await fetch(isReg ? '/api/register' : '/api/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (!r.ok) { err.textContent = data.error || '操作失败'; btn.disabled = false; return; }
+    authToken = data.token;
+    localStorage.setItem('broadcast_token', authToken);
+    btn.disabled = false;
+    await bootstrap();
+  } catch (e) {
+    err.textContent = '网络错误，请重试'; btn.disabled = false;
+  }
+}
+
+function logout() {
+  if (!confirm('退出登录？')) return;
+  clearToken();
+  location.reload();
+}
+
+// ═══════ 充值 / 兑换 ═══════
+function openBuy() {
+  document.getElementById('buy-balance').textContent = rtBalance;
+  const wrap = document.getElementById('buyPkgs');
+  const pkgs = (rtConfig && rtConfig.packages) || [];
+  if (!rtConfig || !rtConfig.pay_enabled || !pkgs.length) {
+    wrap.innerHTML = '<div class="modal-sub">微信支付暂未开放，请使用兑换码。</div>';
+  } else {
+    wrap.innerHTML = pkgs.map(p =>
+      `<button type="button" class="buy-pkg" onclick="buyPackage('${p.key}')">
+        <span class="pk-name">${p.label}${Number(p.first_bonus)>0 ? '<small style="display:block;color:#d9b978;margin-top:4px">首充赠 '+p.first_bonus+'，到账 '+p.first_award+' 积分</small>' : '<small style="display:block;color:#999;margin-top:4px">三个产品通用</small>'}</span>
+        <span class="pk-price">¥${p.amount}</span>
+      </button>`).join('');
+  }
+  const showRedeem = !rtConfig || rtConfig.card_enabled;
+  document.getElementById('redeemHint').style.display = showRedeem ? '' : 'none';
+  document.getElementById('redeemCode').parentElement.style.display = showRedeem ? '' : 'none';
+  document.getElementById('buyErr').textContent = '';
+  document.getElementById('buyOverlay').classList.add('show');
+}
+function closeBuy() { document.getElementById('buyOverlay').classList.remove('show'); }
+
+async function buyPackage(key) {
+  const err = document.getElementById('buyErr');
+  err.textContent = '正在创建支付订单…';
+  try {
+    const r = await fetch('/api/roundtable/payments/package', {
+      method: 'POST', headers: authHeaders(true), body: JSON.stringify({ package_key: key })
+    });
+    const data = await r.json();
+    if (!r.ok) { err.textContent = data.error || '创建订单失败'; return; }
+    err.textContent = '正在跳转到微信支付，付款后自动回到本页…';
+    window.location.href = data.pay_url;
+  } catch (e) { err.textContent = '网络错误，请重试'; }
+}
+
+// 支付返回（return_url 带 ?pay_order=）后确认结果
+async function handlePayReturn() {
+  const oid = new URLSearchParams(location.search).get('pay_order');
+  if (!oid) return;
+  history.replaceState(null, '', location.pathname);
+  addSysMsg('⏳ 正在确认支付结果…');
+  let tries = 0;
+  const timer = setInterval(async () => {
+    tries++;
+    try {
+      const r = await fetch('/api/payments/' + encodeURIComponent(oid), { headers: authHeaders() });
+      if (r.ok) {
+        const d = await r.json();
+        if (d && d.status === 'paid') {
+          clearInterval(timer);
+          await refreshBalance();
+          addSysMsg('✅ 充值成功，当前余额 ' + rtBalance + ' 积分');
+          return;
+        }
+      }
+    } catch (e) {}
+    if (tries > 20) { clearInterval(timer); addSysMsg('支付结果确认超时，如已付款请刷新页面查看余额'); }
+  }, 3000);
+}
+
+async function refreshBalance() {
+  try {
+    const r = await fetch('/api/roundtable/config', { headers: authHeaders() });
+    if (r.ok) { rtConfig = await r.json(); rtBalance = rtConfig.balance || 0; pointCost = Number(rtConfig.point_cost) || 50; renderAccountUI(); }
+  } catch (e) {}
+}
+
+async function submitRedeem() {
+  const code = document.getElementById('redeemCode').value.trim();
+  const err = document.getElementById('buyErr');
+  if (!code) { err.textContent = '请输入兑换码'; return; }
+  err.textContent = '兑换中…';
+  try {
+    const r = await fetch('/api/roundtable/redeem', {
+      method: 'POST', headers: authHeaders(true), body: JSON.stringify({ code })
+    });
+    const data = await r.json();
+    if (!r.ok) { err.textContent = data.error || '兑换失败'; return; }
+    rtBalance = data.balance; renderAccountUI();
+    document.getElementById('buy-balance').textContent = rtBalance;
+    err.textContent = '✅ 兑换成功，+' + (data.points || data.credits * pointCost) + ' 积分';
+    document.getElementById('redeemCode').value = '';
+  } catch (e) { err.textContent = '网络错误，请重试'; }
+}
+
+// ═══════ @ 选择逻辑 ═══════
+function toggleAt(chip, target) {
+  if (target === 'all') {
+    // 点"所有人"：清空其他，只留all
+    atTargets = new Set(['all']);
+  } else {
+    // 点个人：取消all，切换个人
+    atTargets.delete('all');
+    if (atTargets.has(target)) {
+      atTargets.delete(target);
+      // 全删完了回到all
+      if (atTargets.size === 0) atTargets.add('all');
+    } else {
+      atTargets.add(target);
+    }
+  }
+  updateAtUI();
+}
+
+function updateAtUI() {
+  document.querySelectorAll('.at-chip').forEach(chip => {
+    const at = chip.dataset.at;
+    if (at === 'all') {
+      chip.classList.toggle('active', atTargets.has('all'));
+    } else {
+      chip.classList.toggle('active', atTargets.has(at));
+    }
+  });
+  // 更新侧边栏选中状态
+  document.querySelectorAll('.char-card').forEach(card => {
+    const id = card.dataset.id;
+    card.classList.toggle('selected', atTargets.has('all') || atTargets.has(id));
+  });
+}
+
+function getSelectedChars() {
+  if (atTargets.has('all')) return Object.keys(CHARACTERS);
+  return [...atTargets].filter(id => CHARACTERS[id]);
+}
+
+function getAtLabel() {
+  if (atTargets.has('all')) return '@所有人';
+  const names = [...atTargets].map(id => CHARACTERS[id]?.name).filter(Boolean);
+  return '@' + names.join(' · @');
+}
+
+// ═══════ 核心逻辑 ═══════
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text || isProcessing) return;
+
+  if (!authToken) { pendingSend = true; showAuth(); return; }
+
+  const selected = getSelectedChars();
+  const atLabel = getAtLabel();
+
+  isProcessing = true;
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+
+  // 开一个新话题：后端扣除本话题所需师行积分
+  let genId;
+  try {
+    const r = await fetch('/api/roundtable/start', {
+      method: 'POST', headers: authHeaders(true),
+      body: JSON.stringify({ topic: text, at_targets: atLabel })
+    });
+    if (r.status === 401) { clearToken(); showAuth(); isProcessing = false; sendBtn.disabled = false; return; }
+    const data = await r.json();
+    if (r.status === 402) { isProcessing = false; sendBtn.disabled = false; openBuy(); document.getElementById('buyErr').textContent = data.error || '师行积分不足'; return; }
+    if (!r.ok) { alert(data.error || '发送失败'); isProcessing = false; sendBtn.disabled = false; return; }
+    genId = data.generation_id;
+    currentGenId = genId;
+    rtBalance = data.balance;
+    renderAccountUI();
+  } catch (e) {
+    alert('网络错误，请重试'); isProcessing = false; sendBtn.disabled = false; return;
+  }
+
+  input.value = '';
+  roundCount++;
+  addSysMsg(`📣 第 ${roundCount} 轮 · ${atLabel}`);
+  addMessage('user', '你', formatReply(text), '#5a7da8');
+  transcript.push({ role: 'user', id: 'user', name: '你', color: '#5a7da8', text });
+
+  // 第一轮：选中的人依次发言（每人都能看到此前的完整实录）
+  const roundMsgs = [];
+  for (const id of selected) {
+    const entry = await speak(id);
+    if (entry) roundMsgs.push(entry);
+  }
+
+  // 追加轮：被 @ 的人（包括已发言的）登场互怼
+  await runDebate(selected, roundMsgs);
+
+  // 保存完整实录到后台
+  try {
+    await fetch('/api/roundtable/finish', {
+      method: 'POST', headers: authHeaders(true),
+      body: JSON.stringify({
+        generation_id: genId,
+        transcript: transcript.map(m => ({ role: m.role, name: m.name, text: m.text }))
+      })
+    });
+  } catch (e) {}
+
+  isProcessing = false;
+  sendBtn.disabled = false;
+  updateCount();
+}
+
+// 让某个人物发言：读取完整实录 → 流式输出 → 写回实录
+async function speak(id, hint) {
+  const char = CHARACTERS[id];
+  const placeholder = addMessage(
+    id, char.name + (hint ? ' ⤷' : ''),
+    '<div class="typing"><span></span><span></span><span></span></div>',
+    char.color, true
+  );
+  const bubble = placeholder.querySelector('.bubble');
+  const messages = [
+    { role: 'system', content: char.prompt + (hint ? '\n\n注意：群里有人 @ 了你或针对了你的观点，你需要回应——反驳、追问或展开都行。' : '') },
+    { role: 'user', content: buildContext(id, hint) }
+  ];
+
+  try {
+    const reply = await streamChat(messages, { temperature: hint ? 0.9 : 0.85, max_tokens: 800 }, (full) => {
+      bubble.innerHTML = formatReply(full);
+      scrollToBottom();
+    });
+    const finalText = reply.trim() || '（沉默）';
+    if (!reply.trim()) bubble.innerHTML = formatReply(finalText);
+    const entry = { role: 'char', id, name: char.name, color: char.color, text: finalText };
+    transcript.push(entry);
+    return entry;
+  } catch (e) {
+    bubble.innerHTML = `<span style="color:#e74c3c">${e.message || '发言失败'}</span>`;
+    return null;
+  }
+}
+
+// 构建喂给模型的上下文：整场讨论实录 + 本轮指令
+function buildContext(id, hint) {
+  const char = CHARACTERS[id];
+  let log = transcript.map(m => `${m.name}：${m.text}`).join('\n\n');
+  if (log.length > MAX_CONTEXT_CHARS) {
+    log = '……（更早的发言略）\n\n' + log.slice(-MAX_CONTEXT_CHARS);
+  }
+  let instr = `这是一场跨时空圆桌讨论。以下是到目前为止的完整实录：\n\n${log}\n\n`;
+  if (hint) {
+    instr += `${hint}\n现在轮到你（${char.name}）回应。结合上面的实录，针对点你名或反驳你的人开火，被你针对的人请用「@某人」点名。直接说话，不要以"作为XX"开头。100-250字。`;
+  } else {
+    instr += `现在轮到你（${char.name}）发言。结合上面的实录提出你的看法；如果想反驳或回应某个人，用「@某人」的格式点名。直接说话，不要以"作为XX"开头。200-350字。`;
+  }
+  return instr;
+}
+
+// @互怼：扫描上一批发言里的 @mention，触发被点名的人（含已发言者）再次开口
+async function runDebate(selected, prevMsgs) {
+  let batch = prevMsgs;
+  for (let r = 0; r < MAX_DEBATE_ROUNDS; r++) {
+    const targets = collectMentions(batch).filter(tid => selected.includes(tid));
+    if (targets.length === 0) break;
+
+    addSysMsg('💬 有人被 @ 了，追加交锋……');
+    const newBatch = [];
+    for (const id of targets) {
+      const entry = await speak(id, '群里有人在上面的发言中 @ 了你或针对了你。');
+      if (entry) newBatch.push(entry);
+    }
+    batch = newBatch;
+  }
+}
+
+// 从一批发言中收集被 @ 的人（排除自己 @ 自己）
+function collectMentions(msgs) {
+  const nameToId = {};
+  for (const [id, c] of Object.entries(CHARACTERS)) nameToId[c.name] = id;
+  const targets = new Set();
+  for (const m of msgs) {
+    const re = /@(马克思|王阳明|庄子|福柯|巴菲特|鲁迅|教育研究者|所有人)/g;
+    let mm;
+    while ((mm = re.exec(m.text)) !== null) {
+      if (mm[1] === '所有人') {
+        for (const id of Object.keys(CHARACTERS)) if (id !== m.id) targets.add(id);
+      } else {
+        const tid = nameToId[mm[1]];
+        if (tid && tid !== m.id) targets.add(tid);
+      }
+    }
+  }
+  return [...targets];
+}
+
+// ═══════ 流式请求（走自己的后端，key 在服务端，永不下发）═══════
+async function streamChat(messages, opts, onChunk) {
+  const resp = await fetch('/api/roundtable/speak', {
+    method: 'POST',
+    headers: authHeaders(true),
+    body: JSON.stringify({
+      generation_id: currentGenId,
+      messages,
+      temperature: opts.temperature,
+      max_tokens: opts.max_tokens
+    })
+  });
+
+  if (!resp.ok) {
+    let detail = '';
+    try { const j = await resp.json(); detail = j.error || ''; } catch (e) {}
+    if (resp.status === 401) { clearToken(); showAuth(); }
+    throw new Error(detail || apiErrMsg(resp.status));
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '', full = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, idx).trim();
+      buf = buf.slice(idx + 1);
+      if (!line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (payload === '[DONE]') continue;
+      let j;
+      try { j = JSON.parse(payload); } catch (e) { continue; /* 不完整分片 */ }
+      if (j.error) throw new Error(j.error); // 后端透传的错误
+      const delta = j.choices?.[0]?.delta?.content || '';
+      if (delta) { full += delta; onChunk(full); }
+    }
+  }
+  return full;
+}
+
+function apiErrMsg(status) {
+  if (status === 401) return '登录已过期，请重新登录。';
+  if (status === 402) return '师行积分不足，请充值后再试。';
+  if (status === 429) return '本话题发言太频繁，请开一个新话题。';
+  if (status >= 500) return `服务暂时出错（${status}），稍后重试。`;
+  return `请求失败（${status}）`;
+}
+
+function scrollToBottom() {
+  const c = document.getElementById('messages');
+  c.scrollTop = c.scrollHeight;
+}
+
+function addMessage(senderId, senderName, content, color, isPlaceholder) {
+  const container = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg' + (senderId === 'user' ? ' user-msg' : '');
+  div.innerHTML = `
+    <div class="avatar-sm" style="background:${color}">${senderName[0]}</div>
+    <div>
+      <div class="sender" style="color:${color}">${senderName}</div>
+      <div class="bubble">${content}</div>
+    </div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function addSysMsg(text) {
+  const container = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'sys-msg';
+  div.textContent = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function formatReply(text) {
+  // 先转义 HTML，防止模型输出的尖括号破坏页面
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // 加粗 **xxx**
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // 高亮 @mention
+  text = text.replace(/@(马克思|王阳明|庄子|福柯|巴菲特|鲁迅|教育研究者|所有人)/g, '<span class="at-mention">@$1</span>');
+  // 按行分段
+  return text.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '').join('');
+}
+
+function updateCount() {
+  const count = document.querySelectorAll('.msg').length;
+  document.getElementById('msg-count').textContent = count + ' 条消息';
+}
+
+// 侧边栏点击快速切换@
+document.querySelectorAll('.char-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const id = card.dataset.id;
+    const chip = document.querySelector(`.at-chip[data-at="${id}"]`);
+    if (chip) toggleAt(chip, id);
+  });
+});
+
+// 移动端显示折叠按钮
+function checkMobile() {
+  const btn = document.querySelector('.sidebar .toggle-btn');
+  if (btn) btn.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+}
+window.addEventListener('resize', checkMobile);
+checkMobile();
+
+// 统一邀请归因：旧产品链接先进入师行邀请落地页，新链接通过父域 Cookie 识别。
+(function loadReferralContext(){
+  const ref = new URLSearchParams(location.search).get('ref');
+  if (ref) { location.replace('https://shixing.yingyuzuowen.asia/invite/' + encodeURIComponent(ref.trim().toUpperCase()) + '?source=roundtable'); return; }
+  fetch('/api/referral/context').then(r => r.json()).then(d => {
+    if (!d.valid) return;
+    const el = document.getElementById('roundtableInviteContext');
+    el.innerHTML = `<strong>${d.inviter_name} 老师邀请你体验师行</strong><br>注册得 1625 积分和广播 3 天体验；首次使用后双方各得 500 积分。`;
+    el.style.display = 'block';
+  }).catch(() => {});
+})();
+
+// 启动：校验登录态、拉取余额
+bootstrap();
+</script>
+<script src="/analytics.js"></script>
+</body>
+</html>

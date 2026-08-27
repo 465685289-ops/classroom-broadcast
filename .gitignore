@@ -5,6 +5,7 @@ node_modules/
 data.json
 broadcast.db
 broadcast.db-*
+backups/
 *.sqlite
 *.sqlite3
 
@@ -13,6 +14,8 @@ broadcast.db-*
 .env.*
 !.env.example
 payment-config.json
+mail-config.json
+comment-config.json
 
 # macOS / logs
 .DS_Store

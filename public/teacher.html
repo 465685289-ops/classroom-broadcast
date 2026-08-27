@@ -11,10 +11,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 .page.active{display:block}
 
 /* Auth Page */
-.auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;gap:14px}
 .auth-box{background:#fff;border-radius:16px;padding:40px 30px;width:100%;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
 .auth-box h1{font-size:22px;text-align:center;margin-bottom:4px}
 .auth-box .subtitle{color:#888;font-size:14px;text-align:center;margin-bottom:28px}
+.auth-sibling-card{width:100%;max-width:380px;background:#fff;border:1px solid var(--v-line,#e8e8e8);border-radius:14px;padding:16px 18px;box-shadow:0 4px 18px rgba(0,0,0,.06)}
+.auth-sibling-card strong{display:block;font-size:15px;color:var(--v-brass-deep,#333);margin-bottom:6px}
+.auth-sibling-card p{font-size:13px;color:var(--v-ink-soft,#666);line-height:1.7;margin-bottom:12px}
+.auth-sibling-card a{display:inline-flex;padding:8px 12px;border:1px solid var(--v-brass,#4f8cff);border-radius:9px;color:var(--v-brass-deep,#4f8cff);text-decoration:none;font-size:13px;font-weight:700;background:var(--v-card,#fff)}
 .auth-tabs{display:flex;margin-bottom:24px;border-bottom:2px solid #f0f0f0}
 .auth-tabs button{flex:1;padding:10px;border:none;background:none;font-size:15px;color:#999;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
 .auth-tabs button.active{color:#4f8cff;border-bottom-color:#4f8cff;font-weight:600}
@@ -26,6 +30,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 .form-group input:focus{border-color:#4f8cff}
 .remember-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:14px;color:#666}
 .remember-row input{width:auto}
+.auth-link{margin-top:12px;text-align:center;font-size:13px;color:#4f8cff;cursor:pointer}
+.auth-note{font-size:12px;color:#999;line-height:1.7;margin-top:10px;text-align:center}
 .auth-btn{width:100%;padding:14px;background:#4f8cff;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
 .auth-btn:active{background:#3a6fdb}
 .auth-error{color:#ff4d4f;font-size:14px;margin-top:12px;text-align:center}
@@ -35,7 +41,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 .header{display:flex;align-items:center;justify-content:space-between;padding:12px 0;margin-bottom:12px}
 .header h1{font-size:20px}
 .header .right{display:flex;align-items:center;gap:12px}
-.header .plan-badge{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500}
+.header .plan-badge{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500;white-space:nowrap}
 .header .plan-badge.trial{background:#e6f7ff;color:#1890ff}
 .header .plan-badge.yearly{background:#f6ffed;color:#52c41a}
 .header .plan-badge.expired{background:#fff1f0;color:#ff4d4f}
@@ -184,7 +190,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 .tab-bar{display:flex;gap:0;margin-bottom:14px;background:#fff;border-radius:12px;overflow-x:auto;box-shadow:0 2px 10px rgba(0,0,0,.05)}
 .tab-bar button{flex:1;min-width:72px;padding:12px 8px;border:none;background:#fff;font-size:14px;color:#888;cursor:pointer;transition:all .2s;white-space:nowrap;position:relative}
 .tab-bar button.active{background:#4f8cff;color:#fff;font-weight:600}
-.msg-badge{position:absolute;top:5px;right:8px;min-width:16px;height:16px;line-height:16px;border-radius:8px;background:#ff4d4f;color:#fff;font-size:10px;text-align:center;font-weight:700;display:none}
+.sub-tab-bar{display:flex;gap:8px;margin-bottom:14px;background:#eef2f8;border-radius:12px;padding:6px}
+.sub-tab-bar button{flex:1;padding:10px 8px;border:none;border-radius:9px;background:transparent;font-size:14px;color:#667085;cursor:pointer;white-space:nowrap}
+.sub-tab-bar button.active{background:#fff;color:#4f8cff;font-weight:700;box-shadow:0 2px 8px rgba(15,23,42,.08)}
+.header-icon-btn{width:38px;height:38px;border:none;border-radius:50%;background:#fff;color:#4f5663;font-size:20px;line-height:38px;text-align:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.06);position:relative}
+.header-icon-btn.active{background:#4f8cff;color:#fff}
+.comment-header-link{padding:7px 10px;border:1px solid var(--v-line,#e0d4bd);border-radius:999px;background:var(--v-card,#fbf6ec);color:var(--v-brass-deep,#7c5722);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.msg-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;line-height:16px;border-radius:8px;background:#ff4d4f;color:#fff;font-size:10px;text-align:center;font-weight:700;display:none}
 
 .message-item{padding:14px 0;border-bottom:1px solid #f0f0f0}
 .message-item:last-child{border:none}
@@ -210,20 +222,179 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 .toast.error{background:#ff4d4f}
 
 #replyToast{position:fixed;top:60px;right:20px;padding:14px 20px;background:#222;color:#fff;border-radius:12px;font-size:15px;z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.3);border-left:4px solid #52c41a;max-width:320px}
+
+.modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:998;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-box{width:100%;max-width:380px;background:#fff;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(15,23,42,.24)}
+.modal-box h3{font-size:19px;color:#222;margin-bottom:10px}
+.modal-box p{font-size:14px;color:#666;line-height:1.8;margin-bottom:16px}
+.modal-box input{width:100%;padding:13px 15px;border:1.5px solid #e0e0e0;border-radius:12px;font-size:15px;outline:none;margin-bottom:10px}
+.modal-box input:focus{border-color:#4f8cff}
+.modal-actions{display:flex;gap:10px;margin-top:10px}
+.modal-actions button{flex:1;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer}
+.modal-actions .primary{background:#4f8cff;color:#fff}
+.modal-actions .secondary{background:#f2f4f7;color:#666}
+.modal-error{min-height:20px;font-size:13px;color:#ff4d4f;line-height:1.5}
+
+.letter-card{background:#342f2b;color:#eee;border-radius:14px;padding:24px;box-shadow:0 8px 28px rgba(30,24,18,.18)}
+.letter-card h3{font-size:22px;color:#fff;margin-bottom:14px}
+.letter-card p{font-size:15px;color:rgba(255,255,255,.74);line-height:2;margin-bottom:16px}
+.letter-card .sign{text-align:right;color:rgba(255,255,255,.56);font-size:14px;margin-top:8px}
+.time-bank{background:linear-gradient(135deg,#fff8ed,#fff);border:1px solid #ffe3bd}
+.time-main{font-size:38px;font-weight:800;color:#2f2a25;margin:6px 0}
+.time-main span{font-size:18px;font-weight:500;margin-left:4px}
+.time-sub{font-size:14px;color:#9a7b50;line-height:1.7}
+.time-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.time-mini{background:#fff;border:1px solid #f3e4cf;border-radius:12px;padding:12px;text-align:center}
+.time-mini .num{font-size:22px;font-weight:700;color:#333}
+.time-mini .label{font-size:12px;color:#999;margin-top:4px}
+.roadmap-group{margin-bottom:16px}
+.roadmap-title{font-size:14px;font-weight:700;color:#333;margin-bottom:8px}
+.feature-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f2f2f2}
+.feature-item:last-child{border-bottom:none}
+.feature-icon{width:34px;height:34px;border-radius:10px;background:#f6f7fb;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.feature-copy{flex:1;min-width:0}
+.feature-name{font-size:15px;font-weight:700;color:#333;margin-bottom:3px}
+.feature-desc{font-size:13px;color:#999;line-height:1.55}
+.feature-status{font-size:12px;color:#52c41a;white-space:nowrap;padding-top:2px}
+.feature-action{flex-shrink:0;align-self:center}
+.subscribe-btn{padding:6px 12px;border:1px solid #d7e5ff;border-radius:999px;background:#f4f8ff;color:#4f8cff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.subscribe-btn.subscribed{border-color:#e8e8e8;background:#f5f5f5;color:#999;cursor:default}
+.subscribe-btn:disabled{opacity:.72;cursor:default}
+.feedback-area{width:100%;min-height:110px;padding:14px;border:1.5px solid #e8e8e8;border-radius:12px;font-size:14px;line-height:1.7;resize:vertical;outline:none;font-family:inherit;background:#fafbfc}
+.feedback-area:focus{border-color:#4f8cff;background:#fff}
+.feedback-btn{width:100%;padding:13px;border:none;border-radius:12px;background:#333;color:#fff;font-size:15px;font-weight:700;margin-top:10px;cursor:pointer}
+.feedback-note{font-size:12px;color:#999;line-height:1.7;margin-top:8px}
+.brand-kicker{text-align:center;font-size:12px;color:var(--v-brass-deep,#7c5722);letter-spacing:3px;margin-bottom:10px}
+.sibling-tool-card{background:#efe7d6;border:1px solid #ddcba9;border-radius:14px;padding:20px;margin-bottom:14px;box-shadow:0 1px 0 #fffaf2 inset, 0 14px 30px -24px rgba(58,48,38,.5)}
+.sibling-tool-card h3{font-size:16px;color:var(--v-brass-deep,#7c5722);margin-bottom:8px}
+.sibling-tool-card p{font-size:14px;color:var(--v-ink-soft,#6f6354);line-height:1.8;margin-bottom:14px}
+.sibling-tool-link{display:inline-flex;padding:9px 14px;border:1px solid #8a6228;border-radius:9px;color:var(--v-brass-deep,#7c5722);text-decoration:none;font-size:13px;font-weight:700;background:#fbf6ec}
+.app-footer{text-align:center;font-size:12px;color:var(--v-ink-faint,#9a8a72);line-height:1.8;margin:22px 0 0}
+.app-footer a{color:var(--v-brass-deep,#7c5722);text-decoration:none}
 </style>
+<style>
+/* ============ 复古主题皮肤（仅覆盖视觉，不动结构与 JS 钩子） ============ */
+:root{
+  --v-paper:#f4ece0; --v-card:#fbf6ec; --v-ink:#3a3026; --v-ink-soft:#6f6354;
+  --v-ink-faint:#9a8a72; --v-line:#e0d4bd; --v-line-soft:#e6dcc9;
+  --v-brass:#9a6f2e; --v-brass-deep:#7c5722; --v-wine:#7d3a3a; --v-forest:#4a5d44;
+  --v-gold:#efe1c4; --v-input:#faf4e8;
+}
+body{
+  font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif !important;
+  color:var(--v-ink);
+  background:radial-gradient(1100px 520px at 85% -6%, #f8f1e4 0%, transparent 55%), var(--v-paper);
+}
+h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
+  font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;letter-spacing:.3px;
+}
+/* 卡片与面板 */
+.auth-box,.card,.profile-sidebar-card,.profile-menu,.modal-box,.pay-steps{
+  background:var(--v-card);border:1px solid var(--v-line);
+  box-shadow:0 1px 0 #fffaf2 inset, 0 14px 30px -24px rgba(58,48,38,.5);
+}
+.auth-box .subtitle,.auth-note,.pay-note,.feedback-note,.feature-desc,
+.profile-username,.profile-stat .stat-label,.time-mini .label{color:var(--v-ink-faint)}
+.card h3{color:var(--v-brass-deep)}
+/* 输入框 */
+.form-group input,.form-row input,.form-row select,.form-row textarea,
+.edit-name-row input,.add-class input,.modal-box input,.feedback-area{
+  background:var(--v-input);border:1.5px solid var(--v-line);color:var(--v-ink);
+}
+.form-group input:focus,.form-row input:focus,.form-row select:focus,.form-row textarea:focus,
+.modal-box input:focus,.feedback-area:focus{border-color:var(--v-brass);background:#fffaf0}
+/* 主操作按钮 → 黄铜 */
+.auth-btn,.add-class button,.edit-name-row button,.modal-actions .primary{
+  background:linear-gradient(180deg,#a9793a,#8a6228);color:#fdf6e7;border:1px solid #8a6228;
+}
+.auth-btn:active,.modal-actions .primary:active{background:#7c5722}
+.modal-actions .secondary{background:var(--v-gold);color:var(--v-brass-deep)}
+/* 发送按钮 → 酒红黄铜 */
+.btn-send{background:linear-gradient(180deg,#9a5a3c,#7d3a3a);color:#fdf6e7}
+.btn-send:active{background:#6a3030}
+.btn-clear{background:transparent;color:var(--v-ink-faint);border:1.5px solid var(--v-line)}
+/* 链接/强调文字 */
+.auth-link,.auth-tabs button.active,.sub-tab-bar button.active,
+.history-item .actions button,.message-tools button,.bulletin-tools button,
+.preview .label,.profile-menu-item.active{color:var(--v-brass-deep)}
+.auth-tabs button.active{border-bottom-color:var(--v-brass)}
+.auth-tabs{border-bottom-color:var(--v-line)}
+/* 主标签栏 */
+.tab-bar{background:var(--v-card);border:1px solid var(--v-line);box-shadow:0 14px 30px -26px rgba(58,48,38,.5)}
+.tab-bar button{background:transparent;color:var(--v-ink-soft)}
+.tab-bar button.active{background:linear-gradient(180deg,#a9793a,#8a6228);color:#fdf6e7}
+.sub-tab-bar{background:#efe7d6}
+.sub-tab-bar button{color:var(--v-ink-soft)}
+.sub-tab-bar button.active{background:var(--v-card);color:var(--v-brass-deep)}
+.header-icon-btn{background:var(--v-card);color:var(--v-ink-soft);box-shadow:0 2px 10px rgba(58,48,38,.12)}
+.header-icon-btn.active{background:linear-gradient(180deg,#a9793a,#8a6228);color:#fdf6e7}
+/* 个人中心菜单 */
+.profile-menu-item{color:var(--v-ink-soft)}
+.profile-menu-item:hover{background:var(--v-gold)}
+.profile-menu-item.active{background:var(--v-gold);border-left-color:var(--v-brass)}
+.profile-stat .stat-value{color:var(--v-ink)}
+.profile-row .value{color:var(--v-ink)}
+.profile-row{border-bottom-color:var(--v-line-soft)}
+/* 模板/快捷按钮 */
+.templates button{background:var(--v-card);border:1.5px solid var(--v-line);color:var(--v-ink-soft)}
+.templates button:active{background:var(--v-brass);color:#fff;border-color:var(--v-brass)}
+.preview{background:var(--v-gold)}
+/* 套餐徽章 → 复古语义色 */
+.header .plan-badge.trial{background:var(--v-gold);color:var(--v-brass-deep)}
+.header .plan-badge.yearly{background:#e4ebe1;color:var(--v-forest)}
+.header .plan-badge.expired{background:#f3e3e3;color:var(--v-wine)}
+/* 班级在线点 */
+.class-item .online-dot.on{background:var(--v-forest)}
+.class-item,.history-item,.message-item,.bulletin-list-item,.profile-stats{border-color:var(--v-line-soft)}
+/* 升级卡片 */
+.plan-upgrade-card{background:#f6efe1;border:2px solid var(--v-line)}
+.plan-upgrade-card.hot{border-color:var(--v-brass)}
+.plan-upgrade-tag,.expired-banner .price-card .amount{color:var(--v-wine)}
+.plan-upgrade-tag{background:var(--v-wine)}
+/* 过期横幅 */
+.expired-banner{background:linear-gradient(135deg,#f3e3e3,#efe7d6);border:1px solid #e3cdcd}
+.expired-banner h3{color:var(--v-wine)}
+.expired-banner .price-card{background:var(--v-card);border:2px solid var(--v-line)}
+/* 订阅按钮 */
+.subscribe-btn{background:var(--v-gold);border:1px solid #e2cfa6;color:var(--v-brass-deep)}
+.subscribe-btn.subscribed{background:#efe7d6;border-color:var(--v-line);color:var(--v-ink-faint)}
+.feature-icon{background:var(--v-gold)}
+.feature-status{color:var(--v-forest)}
+.feedback-btn{background:var(--v-ink)}
+.toast.success{background:var(--v-forest)}
+.toast.error{background:var(--v-wine)}
+.toast{background:var(--v-ink)}
+#replyToast{background:#342f2b;border-left-color:var(--v-forest)}
+/* 时间银行 / 信笺卡片本就偏暖，微调描边 */
+.time-bank{background:linear-gradient(135deg,#fff8ed,#fbf6ec);border:1px solid #ecd9b6}
+.time-mini{background:var(--v-card);border:1px solid #efdcbf}
+.card.letter-card{
+  background:#fffaf0;
+  border:1px solid #dcc7a0;
+  color:var(--v-ink);
+}
+.letter-card h3{color:var(--v-brass-deep)}
+.letter-card p{color:var(--v-ink-soft)}
+.letter-card .sign{color:var(--v-ink-faint)}
+</style>
+<link rel="stylesheet" href="/classroom-points-teacher.css">
+<link rel="stylesheet" href="/classroom-teacher-premium.css">
 </head>
 <body>
+<a href="https://shixing.yingyuzuowen.asia/invite.html?center=1" title="师行邀请中心" style="position:fixed;bottom:18px;right:18px;z-index:99998;padding:9px 14px;border-radius:20px;background:#fffaf1;border:1px solid #e0d4bd;color:#7c5722;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 5px 18px rgba(58,48,38,.14)">🎁 邀请有礼</a>
 
 <!-- Auth Page -->
 <div class="page active" id="authPage">
   <div class="auth-wrap">
     <div class="auth-box">
+      <div class="brand-kicker">师行出品</div>
       <h1>班级广播系统</h1>
       <p class="subtitle">老师端 · 随时随地发通知到教室</p>
       <div class="auth-tabs">
         <button class="active" onclick="switchAuth('login')">登录</button>
         <button onclick="switchAuth('register')">注册</button>
       </div>
+      <div class="auth-note" id="broadcastInviteContext" style="display:none;padding:9px 12px;margin:0 0 12px;background:#fff8ed;border:1px solid #ecd9b6;border-radius:8px"></div>
       <!-- Login Form -->
       <div class="auth-form active" id="loginForm">
         <div class="form-group">
@@ -239,6 +410,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
           <label for="rememberMe">记住密码</label>
         </div>
         <button class="auth-btn" onclick="doLogin()">登录</button>
+        <div class="auth-link" onclick="switchAuth('forgot')">忘记密码？邮箱验证码找回</div>
         <div class="auth-error" id="loginError"></div>
       </div>
       <!-- Register Form -->
@@ -246,6 +418,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
         <div class="form-group">
           <label>用户名</label>
           <input type="text" id="regUser" placeholder="2-20个字符" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="regEmail" placeholder="用于接收注册验证码" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>邮箱验证码</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="regCode" placeholder="请输入6位验证码" inputmode="numeric" autocomplete="one-time-code">
+            <button type="button" class="auth-btn" id="sendRegisterCodeBtn" onclick="sendRegisterCode()" style="width:auto;padding:0 14px;white-space:nowrap">获取验证码</button>
+          </div>
         </div>
         <div class="form-group">
           <label>密码</label>
@@ -266,6 +449,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
         <button class="auth-btn" onclick="doRegister()">注册</button>
         <div class="auth-error" id="regError"></div>
       </div>
+      <!-- Forgot Password Form -->
+      <div class="auth-form" id="forgotForm">
+        <div id="forgotStep1">
+          <div class="form-group">
+            <label>用户名</label>
+            <input type="text" id="forgotUser" placeholder="输入要找回的用户名" autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label>注册时填写的邮箱</label>
+            <input type="text" id="forgotEmail" placeholder="用于接收验证码" autocomplete="email">
+          </div>
+          <button class="auth-btn" id="sendResetCodeBtn" onclick="sendResetCode()">发送验证码</button>
+        </div>
+        <div id="forgotStep2" style="display:none">
+          <div class="form-group">
+            <label>邮箱验证码</label>
+            <input type="text" id="forgotCode" placeholder="输入6位验证码" inputmode="numeric" autocomplete="one-time-code">
+          </div>
+          <button class="auth-btn" onclick="verifyResetCode()">下一步</button>
+          <div class="auth-link" onclick="sendResetCode()">没有收到？重新发送</div>
+        </div>
+        <div id="forgotStep3" style="display:none">
+          <div class="form-group">
+            <label>新密码</label>
+            <input type="password" id="forgotNewPass" placeholder="至少4位" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label>确认新密码</label>
+            <input type="password" id="forgotNewPass2" placeholder="再次输入新密码" autocomplete="new-password">
+          </div>
+          <button class="auth-btn" onclick="confirmPasswordReset()">重置密码</button>
+        </div>
+        <div class="auth-note">验证码10分钟内有效。若注册时填的是手机号，请联系管理员重置。</div>
+        <div class="auth-link" onclick="switchAuth('login')">返回登录</div>
+        <div class="auth-error" id="forgotError"></div>
+      </div>
+    </div>
+    <div class="auth-sibling-card">
+      <strong>期末了？试试评语生成</strong>
+      <p>同属师行教师工具，复用班级广播账号。适合批量生成、编辑和导出期末评语。</p>
+      <a href="comment.html" data-comment-link target="_blank" rel="noopener">打开 AI 评语生成助手</a>
     </div>
   </div>
 </div>
@@ -275,10 +499,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
   <div class="app">
     <div class="header">
       <div style="display:flex;align-items:center;gap:10px">
-        <div class="avatar-circle" id="headerAvatar" onclick="switchTab('profile',document.querySelectorAll('.tab-bar button')[5])"></div>
+        <div class="avatar-circle" id="headerAvatar" onclick="switchTab('profile')"></div>
+        <button class="header-icon-btn" id="messageIconBtn" onclick="switchTab('messages')" title="消息中心">💬<span class="msg-badge" id="messageBadge"></span></button>
         <h1>班级广播</h1>
       </div>
       <div class="right">
+        <a class="comment-header-link" href="comment.html" data-comment-link target="_blank" rel="noopener">评语生成</a>
         <span class="plan-badge" id="planBadge"></span>
         <span class="logout" onclick="logout()">退出</span>
       </div>
@@ -291,27 +517,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
       <div class="price-cards">
         <div class="price-card">
                     <div class="amount">9.9 元</div>
-          <div class="label">年费版 · 365天</div>
+          <div class="label">半年会员 · 180天</div>
         </div>
       </div>
       <div class="contact">
-        <button class="pay-btn" onclick="startYearlyPayment(this)">微信支付开通年费</button>
-        <div class="pay-note">支付成功后自动开通 365 天，无需等待人工处理</div>
+        <button class="pay-btn" onclick="startYearlyPayment(this)">微信支付开通半年会员</button>
+        <div class="pay-note">支付成功后自动开通 180 天，无需等待人工处理</div>
         <div class="pay-status" id="expiredPaymentStatus"></div>
       </div>
     </div>
 
     <div class="tab-bar">
-      <button class="active" onclick="switchTab('send',this)">发通知</button>
-      <button onclick="switchTab('bulletin',this)">告示栏</button>
-      <button onclick="switchTab('messages',this)">消息<span class="msg-badge" id="messageBadge"></span></button>
-      <button onclick="switchTab('history',this)">发布记录</button>
-      <button onclick="switchTab('manage',this)">班级管理</button>
-      <button onclick="switchTab('profile',this)">个人中心</button>
+      <button class="active" data-tab="publish" onclick="switchTab('publish',this)">发布</button>
+      <button data-tab="discover" onclick="switchTab('discover',this)">发现</button>
+      <button data-tab="manage" onclick="switchTab('manage',this)">班级管理</button>
+      <button data-tab="points" onclick="switchTab('points',this)">积分管理</button>
+      <button data-tab="profile" onclick="switchTab('profile',this)">个人中心</button>
     </div>
 
-    <!-- Tab: Send -->
-    <div id="tab-send">
+    <!-- Tab: Publish -->
+    <div id="tab-publish">
+      <div class="sub-tab-bar">
+        <button class="active" onclick="switchPublishSection('send',this)">即时通知</button>
+        <button onclick="switchPublishSection('bulletin',this)">班级告示</button>
+        <button onclick="switchPublishSection('history',this)">发布记录</button>
+      </div>
+
+    <!-- Publish: Send -->
+    <div id="publish-send">
       <div class="card">
         <div class="form-row">
           <label>班级</label>
@@ -360,8 +593,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
       </div>
     </div>
 
-    <!-- Tab: Bulletin -->
-    <div id="tab-bulletin" style="display:none">
+    <!-- Publish: Bulletin -->
+    <div id="publish-bulletin" style="display:none">
       <div class="card">
         <h3>发布班级告示</h3>
         <div class="form-row">
@@ -395,19 +628,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
       </div>
     </div>
 
-    <!-- Tab: Messages -->
-    <div id="tab-messages" style="display:none">
-      <div class="card">
-        <div class="message-tools">
-          <h3 style="margin:0">消息中心</h3>
-          <button onclick="markMessagesRead()">全部已读</button>
-        </div>
-        <div id="messageList"></div>
-      </div>
-    </div>
-
-    <!-- Tab: History -->
-    <div id="tab-history" style="display:none">
+    <!-- Publish: History -->
+    <div id="publish-history" style="display:none">
       <div class="card">
         <div class="form-row">
           <label>选择班级查看记录</label>
@@ -416,6 +638,73 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
           </select>
         </div>
         <div id="historyList"></div>
+      </div>
+    </div>
+    </div>
+
+    <!-- Tab: Discover -->
+    <div id="tab-discover" style="display:none">
+      <div class="card time-bank">
+        <h3>时间银行</h3>
+        <div class="time-sub">按你设置的单次节省时间估算，看看班级广播把多少时间还给了你。</div>
+        <div class="time-main" id="timeBankTotal">0<span>分钟</span></div>
+        <div class="time-sub" id="timeBankSentence">少跑了 0 趟楼梯</div>
+        <div class="time-grid">
+          <div class="time-mini"><div class="num" id="timeBankNotices">0</div><div class="label">已发通知</div></div>
+          <div class="time-mini"><div class="num" id="timeBankTrips">0</div><div class="label">少跑楼梯</div></div>
+        </div>
+        <div class="edit-name-row" style="margin-top:14px">
+          <input type="number" id="minutesPerNotice" min="1" max="10" placeholder="每条通知节省几分钟">
+          <button onclick="updateMinutesPerNotice()">保存</button>
+        </div>
+        <div class="feedback-note">默认每条通知节省 3 分钟，可按你们办公室到教室的距离改成 1-10 分钟。</div>
+      </div>
+
+      <div class="sibling-tool-card">
+        <h3>期末了？试试评语生成</h3>
+        <p>AI 评语生成助手同属师行教师工具，适合按学生画像批量生成、编辑和打印期末评语。</p>
+        <a class="sibling-tool-link" href="comment.html" data-comment-link target="_blank" rel="noopener">打开评语生成助手</a>
+      </div>
+
+      <div class="card">
+        <h3>即将上线功能</h3>
+        <div class="roadmap-group">
+          <div class="roadmap-title">已上线</div>
+          <div class="feature-item"><div class="feature-icon">📢</div><div class="feature-copy"><div class="feature-name">告示栏</div><div class="feature-desc">大屏常驻通知，作业、值日、提醒一直显示。</div></div><div class="feature-status">已上线</div></div>
+          <div class="feature-item"><div class="feature-icon">💬</div><div class="feature-copy"><div class="feature-name">消息中心</div><div class="feature-desc">班级邀请、教室回复统一查看。</div></div><div class="feature-status">已上线</div></div>
+          <div class="feature-item"><div class="feature-icon">👥</div><div class="feature-copy"><div class="feature-name">多老师协作优化</div><div class="feature-desc">同一个班，班主任和科任老师都能往同一块大屏发通知。</div></div><div class="feature-status">已上线</div></div>
+          <div class="feature-item"><div class="feature-icon">⏱</div><div class="feature-copy"><div class="feature-name">时间银行</div><div class="feature-desc">累计统计你用广播省下的跑腿时间。</div></div><div class="feature-status">已上线</div></div>
+        </div>
+        <div class="roadmap-group">
+          <div class="roadmap-title">即将上线</div>
+          <div class="feature-item"><div class="feature-icon">📅</div><div class="feature-copy"><div class="feature-name">定时广播</div><div class="feature-desc">提前设置好，到点自动发，适合早读、值日、每周提醒。</div></div><div class="feature-action"><button class="subscribe-btn" data-feature-key="scheduled_broadcast" data-feature-name="定时广播" onclick="subscribeFeature(this)">订阅</button></div></div>
+          <div class="feature-item"><div class="feature-icon">🎨</div><div class="feature-copy"><div class="feature-name">大屏主题切换</div><div class="feature-desc">节日、季节、班级风格，都可以换换大屏样式。</div></div><div class="feature-action"><button class="subscribe-btn" data-feature-key="screen_themes" data-feature-name="大屏主题切换" onclick="subscribeFeature(this)">订阅</button></div></div>
+        </div>
+        <div class="roadmap-group">
+          <div class="roadmap-title">规划中</div>
+          <div class="feature-item"><div class="feature-icon">📱</div><div class="feature-copy"><div class="feature-name">微信小程序 / 手机 APP</div><div class="feature-desc">让老师端体验更流畅。</div></div><div class="feature-action"><button class="subscribe-btn" data-feature-key="mini_app" data-feature-name="微信小程序 / 手机 APP" onclick="subscribeFeature(this)">订阅</button></div></div>
+          <div class="feature-item"><div class="feature-icon">🏫</div><div class="feature-copy"><div class="feature-name">年级 / 全校广播</div><div class="feature-desc">年级组长、教务处可向多个班级同时发布。</div></div><div class="feature-action"><button class="subscribe-btn" data-feature-key="school_broadcast" data-feature-name="年级 / 全校广播" onclick="subscribeFeature(this)">订阅</button></div></div>
+          <div class="feature-item"><div class="feature-icon">🤖</div><div class="feature-copy"><div class="feature-name">AI 写通知</div><div class="feature-desc">说个大概意思，AI 帮你润色成完整通知。</div></div><div class="feature-action"><button class="subscribe-btn" data-feature-key="ai_notice" data-feature-name="AI 写通知" onclick="subscribeFeature(this)">订阅</button></div></div>
+          <div class="feature-item"><div class="feature-icon">🔊</div><div class="feature-copy"><div class="feature-name">自定义播报声音</div><div class="feature-desc">可以选择不同音色，甚至使用老师自己的录音。</div></div><div class="feature-action"><button class="subscribe-btn" data-feature-key="custom_voice" data-feature-name="自定义播报声音" onclick="subscribeFeature(this)">订阅</button></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>没有想要的功能？告诉我们</h3>
+        <textarea class="feedback-area" id="feedbackContent" placeholder="说说你的想法，比如希望增加某个功能，或者哪里用起来不顺手。"></textarea>
+        <button class="feedback-btn" onclick="submitFeedback()">寄出这封信</button>
+        <div class="feedback-note">你的反馈只给开发者可见，不会公开展示。</div>
+      </div>
+    </div>
+
+    <!-- Tab: Messages -->
+    <div id="tab-messages" style="display:none">
+      <div class="card">
+        <div class="message-tools">
+          <h3 style="margin:0">消息中心</h3>
+          <button onclick="markMessagesRead()">全部已读</button>
+        </div>
+        <div id="messageList"></div>
       </div>
     </div>
 
@@ -447,6 +736,110 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
       </div>
     </div>
 
+    <!-- Tab: Classroom Points -->
+    <div id="tab-points" style="display:none">
+      <div class="ctp-shell" id="pointsTeacherShell">
+        <section class="ctp-hero">
+          <div>
+            <div class="ctp-kicker">CLASSROOM POINTS</div>
+            <h2>班级积分工作台</h2>
+            <p>教师端和教室大屏共用一份学生名单、规则、排行榜与流水。</p>
+          </div>
+          <div class="ctp-class-picker">
+            <label for="pointsTeacherClassSelect">当前班级</label>
+            <select id="pointsTeacherClassSelect" onchange="ClassroomPointsTeacher.openClass(this.value)">
+              <option value="">选择要管理的班级</option>
+            </select>
+          </div>
+        </section>
+
+        <div id="pointsTeacherNoClasses" class="ctp-enable-panel" hidden>
+          <div class="ctp-empty-state"><strong>还没有班级</strong><span>先到“班级管理”新建班级，再回来开启积分管理。</span></div>
+        </div>
+        <section class="ctp-enable-panel" id="pointsTeacherEnablePanel">
+          <div class="ctp-empty-state"><strong>选择一个班级</strong><span>班级管理按班级单独开启，不需要的班级仍保持纯广播。</span></div>
+        </section>
+
+        <div class="ctp-workspace" id="pointsTeacherWorkspace" hidden>
+          <div class="ctp-overview-bar">
+            <span>当前周期：<strong id="pointsTeacherCurrentPeriod">当前学期</strong> · 包含在班级广播订阅中，不消耗师行积分</span>
+            <label class="ctp-sound"><input id="pointsTeacherSoundToggle" type="checkbox" onchange="ClassroomPointsTeacher.toggleSound(this.checked)"> 教室端登记提示音</label>
+          </div>
+
+          <div class="ctp-grid">
+            <div class="ctp-column">
+              <section class="ctp-card">
+                <div class="ctp-card-head"><div><h3>快捷加扣分</h3><p>可连续选择多名学生，再点一条规则批量登记</p></div></div>
+                <div id="pointsTeacherQuickScore"></div>
+              </section>
+
+              <section class="ctp-card">
+                <div class="ctp-card-head"><div><h3>学生与座位</h3><p>学生使用稳定身份，改名不会弄乱历史数据</p></div></div>
+                <div class="ctp-inline-form">
+                  <input id="pointsTeacherStudentName" type="text" placeholder="学生姓名">
+                  <input id="pointsTeacherStudentNo" type="text" placeholder="学号（可选）">
+                  <input id="pointsTeacherSeatRow" type="number" min="1" max="30" placeholder="排">
+                  <input id="pointsTeacherSeatCol" type="number" min="1" max="30" placeholder="列">
+                  <button type="button" onclick="ClassroomPointsTeacher.addStudent()">添加</button>
+                </div>
+                <div class="ctp-scroll-list" id="pointsTeacherStudents"></div>
+              </section>
+
+              <section class="ctp-card">
+                <div class="ctp-card-head">
+                  <div><h3>积分流水</h3><p>原记录不可改写；撤销会生成一笔相反分值</p></div>
+                  <div class="ctp-tabs">
+                    <button type="button" onclick="ClassroomPointsTeacher.setLedgerScope('today')">今日</button>
+                    <button type="button" onclick="ClassroomPointsTeacher.setLedgerScope('week')">本周</button>
+                    <button type="button" onclick="ClassroomPointsTeacher.setLedgerScope('month')">本月</button>
+                    <button type="button" onclick="ClassroomPointsTeacher.setLedgerScope('term')">本学期</button>
+                  </div>
+                </div>
+                <div class="ctp-ledger-tools">
+                  <select id="pointsTeacherLedgerStudent"><option value="">全部学生</option></select>
+                  <select id="pointsTeacherLedgerSource"><option value="">全部来源</option><option value="screen">教室端登记</option><option value="teacher">教师端登记</option></select>
+                  <select id="pointsTeacherLedgerDirection"><option value="">全部方向</option><option value="positive">只看加分</option><option value="negative">只看扣分</option></select>
+                  <select aria-label="流水说明"><option>最近 200 条</option></select>
+                  <button type="button" onclick="ClassroomPointsTeacher.applyLedgerFilters()">筛选</button>
+                </div>
+                <div class="ctp-scroll-list" id="pointsTeacherLedger"></div>
+              </section>
+            </div>
+
+            <aside class="ctp-column">
+              <section class="ctp-card">
+                <div class="ctp-card-head"><div><h3>积分规则</h3><p>规则修改不影响旧流水中的名称与分值</p></div></div>
+                <div class="ctp-inline-form rules">
+                  <input id="pointsTeacherRuleName" type="text" placeholder="例如：课堂发言">
+                  <input id="pointsTeacherRuleDelta" type="number" min="-100" max="100" placeholder="如 +2 / -1">
+                  <button type="button" onclick="ClassroomPointsTeacher.addRule()">添加</button>
+                </div>
+                <div class="ctp-scroll-list" id="pointsTeacherRules"></div>
+              </section>
+
+              <section class="ctp-card">
+                <div class="ctp-card-head"><div><h3>学期与周期</h3><p>新学期重新计榜，旧学期数据继续保留</p></div><button id="pointsTeacherNewPeriod" type="button" onclick="ClassroomPointsTeacher.startNewPeriod()">开始新学期</button></div>
+                <div id="pointsTeacherPeriods"></div>
+              </section>
+
+              <section class="ctp-card">
+                <div class="ctp-card-head">
+                  <div><h3>排行榜</h3><p>按所选时间范围实时汇总</p></div>
+                  <div class="ctp-tabs">
+                    <button type="button" data-ctp-rank-scope="today" onclick="ClassroomPointsTeacher.setRankingScope('today')">今日</button>
+                    <button type="button" data-ctp-rank-scope="week" onclick="ClassroomPointsTeacher.setRankingScope('week')">本周</button>
+                    <button type="button" data-ctp-rank-scope="month" onclick="ClassroomPointsTeacher.setRankingScope('month')">本月</button>
+                    <button type="button" data-ctp-rank-scope="term" onclick="ClassroomPointsTeacher.setRankingScope('term')">学期</button>
+                  </div>
+                </div>
+                <div class="ctp-scroll-list" id="pointsTeacherRanking"></div>
+              </section>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Tab: Profile -->
     <div id="tab-profile" style="display:none">
       <div class="profile-layout">
@@ -470,8 +863,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
           </div>
           <div class="profile-menu">
             <div class="profile-menu-item active" onclick="switchProfileSection('edit',this)">&#9998; 编辑资料</div>
-            <div class="profile-menu-item" onclick="switchProfileSection('plan',this)">&#165; 我的套餐</div>
-            <div class="profile-menu-item" onclick="switchProfileSection('contact',this)">&#9742; 联系客服</div>
+            <div class="profile-menu-item" onclick="switchProfileSection('plan',this)">&#165; 账户充值</div>
+            <div class="profile-menu-item" onclick="switchProfileSection('referral',this)">🎁 邀请有礼</div>
+            <div class="profile-menu-item" onclick="switchProfileSection('contact',this)">&#9742; 联系我们</div>
             <div class="profile-menu-item logout-item" onclick="logout()">&#10005; 退出登录</div>
           </div>
         </div>
@@ -494,26 +888,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
           <!-- Section: My Plan -->
           <div class="profile-section" id="profileSec-plan" style="display:none">
             <div class="card">
-              <h3>套餐信息</h3>
+              <h3>账户充值</h3>
               <div class="profile-info">
                 <div class="profile-row"><span class="label">账号</span><span class="value" id="profileUser2"></span></div>
                 <div class="profile-row"><span class="label">教师码</span><span class="value"><span id="profileTeacherCode"></span> <button onclick="copyTeacherCode()" style="padding:2px 8px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:12px;color:#4f8cff;cursor:pointer">复制</button></span></div>
+                <div class="profile-row"><span class="label">找回密码联系方式</span><span class="value" id="profileContact"></span></div>
                 <div class="profile-row"><span class="label">当前套餐</span><span class="value" id="profilePlan"></span></div>
                 <div class="profile-row"><span class="label">到期时间</span><span class="value" id="profileExpires"></span></div>
                 <div class="profile-row"><span class="label">注册时间</span><span class="value" id="profileCreated"></span></div>
               </div>
             </div>
             <div class="card">
-              <h3>套餐升级</h3>
+              <h3>广播账户充值</h3>
               <div class="plan-upgrade-cards">
                 <div class="plan-upgrade-card">
                             <div class="plan-upgrade-price">9.9<span>元</span></div>
-                  <div class="plan-upgrade-label">年费版 · 365天</div>
+                  <div class="plan-upgrade-label">半年会员 · 180天</div>
                 </div>
               </div>
               <div style="text-align:center;margin-top:20px">
-                <button class="pay-btn" onclick="startYearlyPayment(this)">微信支付开通年费</button>
-                <p class="pay-note">新用户自动赠送 3 天体验，支付成功后自动开通 365 天</p>
+                <button class="pay-btn" onclick="startYearlyPayment(this)">微信支付开通半年会员</button>
+                <p class="pay-note">新用户自动赠送 3 天体验，支付成功后自动开通 180 天</p>
                 <div class="pay-status" id="paymentStatusText"></div>
               </div>
               <div style="text-align:center;margin-top:16px">
@@ -522,28 +917,80 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
             </div>
           </div>
           <!-- Section: Contact -->
+          <!-- Section: Referral -->
+          <div class="profile-section" id="profileSec-referral" style="display:none">
+            <div class="card">
+              <h3>🎁 师行邀请有礼</h3>
+              <div style="background:#f7f8fa;border-radius:10px;padding:12px 14px;margin:12px 0;font-size:13px;color:#555;line-height:1.9">
+                <div>1️⃣ 同事注册后首次使用任一师行工具 → <strong style="color:#4f8cff">双方各得 500 积分</strong></div>
+                <div>2️⃣ 同事首次购买积分包 → 你得 1500 积分；首次开通广播 → 你得 <strong style="color:#e67e22">30 天</strong></div>
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:10px">
+                <input type="text" id="refLink" readonly style="flex:1;padding:10px 12px;border:1px solid #e8e8e8;border-radius:8px;font-size:12px;color:#4f8cff;background:#f7f8fa">
+                <button onclick="copyBroadcastRefLink()" style="padding:10px 18px;border:none;border-radius:8px;background:#4f8cff;color:#fff;font-size:13px;cursor:pointer;flex-shrink:0">复制链接</button>
+              </div>
+              <div id="refStats" style="font-size:13px;color:#888;margin-bottom:8px"></div>
+              <div id="refCapNote" style="display:none;font-size:12px;color:#b8860b;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.7"></div>
+              <div id="refList"></div>
+            </div>
+          </div>
           <div class="profile-section" id="profileSec-contact" style="display:none">
+            <div class="card letter-card">
+              <h3>你好，同路人。</h3>
+              <p>做这个东西，源于一个很具体的画面：我爱人是初三班主任，经常为了喊一个学生，从办公室跑到三楼，结果学生在二楼。</p>
+              <p>我自己也是老师。我太知道一线的日子是怎么过的了：上课、批改、开会、值班、收材料、写材料、交材料、回家长消息，时间被切得很碎，人被一点点磨掉。</p>
+              <p>所以我想做一个小工具：老师发一条消息，教室大屏自动播报。喊学生、发通知、提醒作业，坐在办公室一步不用挪。</p>
+              <p>它省下的，不只是几趟楼梯。是本该属于你自己的时间，可以给自己泡杯茶，可以不那么匆忙地去上个洗手间，或者早一点回家。</p>
+              <p>它还很粗糙，我也只是个一边教书一边瞎折腾的文科生。但你的每一条反馈，都让我知道，这件事值得做下去。</p>
+              <div class="sign">师行 · 一个和你一样的老师</div>
+            </div>
+
             <div class="card" style="text-align:center;padding:40px 24px">
               <div style="font-size:48px;margin-bottom:16px">&#128172;</div>
-              <h3 style="font-size:18px;margin-bottom:20px">联系客服</h3>
-              <div style="font-size:28px;font-weight:700;color:#333;letter-spacing:2px;margin-bottom:16px">htttttt_219</div>
-              <button onclick="copyWx()" style="padding:10px 24px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:14px;color:#4f8cff;cursor:pointer">复制微信号</button>
+              <h3 style="font-size:18px;margin-bottom:20px">联系开发者</h3>
+              <div style="font-size:24px;font-weight:700;color:#333;letter-spacing:.5px;margin-bottom:16px;word-break:break-all">465685289@qq.com</div>
+              <button onclick="copyDeveloperEmail()" style="padding:10px 24px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:14px;color:#4f8cff;cursor:pointer">复制邮箱</button>
               <p style="font-size:13px;color:#999;margin-top:20px;line-height:1.8">
-                工作时间：每天 8:00 - 22:00<br>
-                添加时请备注「班级广播」
+                功能建议、问题反馈、商务合作都可以发到这个邮箱。<br>
+                邮件标题建议注明「班级广播」。班级广播由师行出品。
               </p>
+            </div>
+            <div class="card">
+              <h3>找回密码联系方式</h3>
+              <p style="font-size:13px;color:#999;line-height:1.8;margin-bottom:12px">忘记密码时，用这个邮箱或手机号提交重置申请。邮箱可以直接接收验证码。</p>
+              <div class="edit-name-row">
+                <input type="text" id="editContact" placeholder="邮箱或手机号码">
+                <button onclick="updateContact()">保存</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+    <div class="app-footer">
+      <p>师行出品 · 为一线老师做实用的小工具</p>
+      <p><a href="comment.html" data-comment-link target="_blank" rel="noopener">AI 评语生成助手</a></p>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 <div id="replyToast"><div id="replyToastText"></div></div>
+<div class="modal-mask" id="emailReminderModal">
+  <div class="modal-box">
+    <h3>请补全邮箱信息</h3>
+    <p>以后忘记密码时，可以用邮箱验证码自己找回密码。建议现在就补上，避免账号进不去。</p>
+    <input type="text" id="emailReminderInput" placeholder="请输入常用邮箱" autocomplete="email">
+    <div class="modal-error" id="emailReminderError"></div>
+    <div class="modal-actions">
+      <button class="secondary" onclick="hideEmailReminder()">稍后再说</button>
+      <button class="primary" onclick="saveEmailReminder()">保存邮箱</button>
+    </div>
+  </div>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="/classroom-points-teacher.js"></script>
 <script>
 var API = '';
 var token = '';
@@ -554,6 +1001,9 @@ var currentAvatar = 'a1';
 var currentProfile = {};
 var paymentPollTimer = null;
 var paymentReturnHandled = false;
+var forgotResetToken = '';
+var forgotCooldownTimer = null;
+var emailReminderShownForUser = '';
 
 // ========== Avatar System ==========
 var avatarIds = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14','a15','a16'];
@@ -590,6 +1040,130 @@ function toast(msg, type) {
 
 function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
+function isEmailValue(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+function profileHasEmail(profile) {
+  return !!(profile && (profile.contact_type === 'email' || isEmailValue(profile.contact_value)));
+}
+
+function maybeShowEmailReminder(profile) {
+  if (!profile || profileHasEmail(profile)) return;
+  if (emailReminderShownForUser === profile.id) return;
+  emailReminderShownForUser = profile.id;
+  var input = document.getElementById('emailReminderInput');
+  input.value = isEmailValue(profile.contact_value) ? profile.contact_value : '';
+  document.getElementById('emailReminderError').textContent = '';
+  document.getElementById('emailReminderModal').style.display = 'flex';
+  setTimeout(function() { input.focus(); }, 80);
+}
+
+function hideEmailReminder() {
+  document.getElementById('emailReminderModal').style.display = 'none';
+}
+
+function saveEmailReminder() {
+  var input = document.getElementById('emailReminderInput');
+  var email = input.value.trim();
+  var error = document.getElementById('emailReminderError');
+  if (!isEmailValue(email)) {
+    error.textContent = '请填写有效邮箱，例如：name@qq.com';
+    return;
+  }
+  error.textContent = '';
+  fetch(API + '/api/profile', { method:'POST', headers:headers(), body:JSON.stringify({contact:email}) })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { error.textContent = r.data.error || '保存失败'; return; }
+    currentProfile.contact_type = 'email';
+    currentProfile.contact_value = r.data.contact_value || email;
+    document.getElementById('profileContact').textContent = currentProfile.contact_value;
+    document.getElementById('editContact').value = currentProfile.contact_value;
+    hideEmailReminder();
+    toast('邮箱已保存','success');
+  })
+  .catch(function() { error.textContent = '网络错误，请稍后再试'; });
+}
+
+function getMinutesPerNotice(profile) {
+  var n = Number(profile && profile.minutes_per_notice);
+  if (!n || n < 1 || n > 10) n = 3;
+  return Math.round(n);
+}
+
+function formatSavedMinutes(total) {
+  total = Math.max(0, Math.round(Number(total) || 0));
+  if (total < 60) return total + '<span>分钟</span>';
+  var hours = Math.floor(total / 60);
+  var minutes = total % 60;
+  if (!minutes) return hours + '<span>小时</span>';
+  return hours + '<span>小时</span>' + minutes + '<span>分钟</span>';
+}
+
+function renderTimeBank(profile) {
+  var count = Number(profile && profile.notif_count) || 0;
+  var minutes = getMinutesPerNotice(profile);
+  var total = count * minutes;
+  var totalEl = document.getElementById('timeBankTotal');
+  if (!totalEl) return;
+  totalEl.innerHTML = formatSavedMinutes(total);
+  document.getElementById('timeBankSentence').textContent = '少跑了 ' + count + ' 趟楼梯';
+  document.getElementById('timeBankNotices').textContent = count;
+  document.getElementById('timeBankTrips').textContent = count;
+  document.getElementById('minutesPerNotice').value = minutes;
+}
+
+function getSubscribedFeatureKeys(profile) {
+  var list = profile && profile.feature_subscriptions;
+  if (!list || !list.length) return [];
+  return list;
+}
+
+function renderFeatureSubscriptions(profile) {
+  var keys = getSubscribedFeatureKeys(profile);
+  var buttons = document.querySelectorAll('.subscribe-btn');
+  for (var i = 0; i < buttons.length; i++) {
+    var btn = buttons[i];
+    var key = btn.getAttribute('data-feature-key');
+    var subscribed = keys.indexOf(key) !== -1;
+    btn.textContent = subscribed ? '已订阅' : '订阅';
+    btn.className = 'subscribe-btn' + (subscribed ? ' subscribed' : '');
+    btn.disabled = subscribed;
+  }
+}
+
+function subscribeFeature(btn) {
+  if (!btn || btn.disabled) return;
+  var key = btn.getAttribute('data-feature-key');
+  var name = btn.getAttribute('data-feature-name') || '这个功能';
+  btn.disabled = true;
+  btn.textContent = '提交中';
+  fetch(API + '/api/feature-subscriptions', {
+    method:'POST',
+    headers:headers(),
+    body:JSON.stringify({feature_key:key})
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) {
+      btn.disabled = false;
+      btn.textContent = '订阅';
+      toast(r.data.error || '订阅失败','error');
+      return;
+    }
+    if (!currentProfile.feature_subscriptions) currentProfile.feature_subscriptions = [];
+    if (currentProfile.feature_subscriptions.indexOf(key) === -1) currentProfile.feature_subscriptions.push(key);
+    renderFeatureSubscriptions(currentProfile);
+    toast('已订阅「' + name + '」','success');
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = '订阅';
+    toast('网络错误','error');
+  });
+}
+
 // ========== Auth ==========
 function switchAuth(tab) {
   var tabs = document.querySelectorAll('.auth-tabs button');
@@ -597,6 +1171,8 @@ function switchAuth(tab) {
   tabs[1].className = tab === 'register' ? 'active' : '';
   document.getElementById('loginForm').className = 'auth-form' + (tab === 'login' ? ' active' : '');
   document.getElementById('registerForm').className = 'auth-form' + (tab === 'register' ? ' active' : '');
+  document.getElementById('forgotForm').className = 'auth-form' + (tab === 'forgot' ? ' active' : '');
+  if (tab === 'forgot') showForgotStep(1);
 }
 
 function doLogin() {
@@ -626,21 +1202,42 @@ function doLogin() {
   .catch(function() { document.getElementById('loginError').textContent = '网络连接失败'; });
 }
 
+function sendRegisterCode() {
+  var email = document.getElementById('regEmail').value.trim();
+  var button = document.getElementById('sendRegisterCodeBtn');
+  if (!email) { document.getElementById('regError').textContent = '请填写邮箱'; return; }
+  document.getElementById('regError').textContent = '';
+  button.disabled = true;
+  button.textContent = '发送中...';
+  fetch(API + '/api/register/send-code', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ email: email })
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+  .then(function(r) { document.getElementById('regError').textContent = r.ok ? '验证码已发送，请查看邮箱' : (r.data.error || '验证码发送失败'); })
+  .catch(function() { document.getElementById('regError').textContent = '网络连接失败'; })
+  .finally(function() { button.disabled = false; button.textContent = '获取验证码'; });
+}
+
 function doRegister() {
   var username = document.getElementById('regUser').value.trim();
+  var email = document.getElementById('regEmail').value.trim();
+  var code = document.getElementById('regCode').value.trim();
   var password = document.getElementById('regPass').value;
   var password2 = document.getElementById('regPass2').value;
   var display_name = document.getElementById('regName').value.trim();
   var remember = document.getElementById('regRemember').checked;
 
   if (!username || !password) { document.getElementById('regError').textContent = '请填写用户名和密码'; return; }
+  if (!email || !code) { document.getElementById('regError').textContent = '请填写邮箱和验证码'; return; }
   if (password !== password2) { document.getElementById('regError').textContent = '两次密码不一致'; return; }
   document.getElementById('regError').textContent = '';
 
   fetch(API + '/api/register', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ username: username, password: password, display_name: display_name || username })
+    body: JSON.stringify({ username: username, password: password, display_name: display_name || username, email: email, code: code })
   })
   .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
   .then(function(r) {
@@ -658,8 +1255,120 @@ function doRegister() {
   .catch(function() { document.getElementById('regError').textContent = '网络连接失败'; });
 }
 
+function showForgotStep(step) {
+  document.getElementById('forgotStep1').style.display = step === 1 ? 'block' : 'none';
+  document.getElementById('forgotStep2').style.display = step === 2 ? 'block' : 'none';
+  document.getElementById('forgotStep3').style.display = step === 3 ? 'block' : 'none';
+  if (step === 1) forgotResetToken = '';
+}
+
+function setForgotMessage(text, ok) {
+  var el = document.getElementById('forgotError');
+  el.style.color = ok ? '#52c41a' : '#ff4d4f';
+  el.textContent = text || '';
+}
+
+function getForgotIdentity() {
+  return {
+    username: document.getElementById('forgotUser').value.trim(),
+    email: document.getElementById('forgotEmail').value.trim()
+  };
+}
+
+function startForgotCooldown(seconds) {
+  var btn = document.getElementById('sendResetCodeBtn');
+  if (!btn) return;
+  if (forgotCooldownTimer) clearInterval(forgotCooldownTimer);
+  var left = seconds;
+  btn.disabled = true;
+  btn.textContent = left + '秒后可重发';
+  forgotCooldownTimer = setInterval(function() {
+    left--;
+    if (left <= 0) {
+      clearInterval(forgotCooldownTimer);
+      forgotCooldownTimer = null;
+      btn.disabled = false;
+      btn.textContent = '发送验证码';
+      return;
+    }
+    btn.textContent = left + '秒后可重发';
+  }, 1000);
+}
+
+function sendResetCode() {
+  var identity = getForgotIdentity();
+  if (!identity.username || !identity.email) {
+    setForgotMessage('请填写用户名和注册时填写的邮箱', false);
+    return;
+  }
+  setForgotMessage('', false);
+  fetch(API + '/api/password-reset/send-code', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ username: identity.username, email: identity.email })
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { setForgotMessage(r.data.error || '验证码发送失败', false); return; }
+    showForgotStep(2);
+    startForgotCooldown(60);
+    setForgotMessage(r.data.message || '验证码已发送，请查看邮箱', true);
+  })
+  .catch(function() { setForgotMessage('网络连接失败', false); });
+}
+
+function verifyResetCode() {
+  var identity = getForgotIdentity();
+  var code = document.getElementById('forgotCode').value.trim();
+  if (!identity.username || !identity.email || !code) {
+    setForgotMessage('请输入用户名、邮箱和验证码', false);
+    return;
+  }
+  fetch(API + '/api/password-reset/verify-code', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ username: identity.username, email: identity.email, code: code })
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { setForgotMessage(r.data.error || '验证码不正确', false); return; }
+    forgotResetToken = r.data.reset_token || '';
+    showForgotStep(3);
+    setForgotMessage(r.data.message || '验证通过，请设置新密码', true);
+  })
+  .catch(function() { setForgotMessage('网络连接失败', false); });
+}
+
+function confirmPasswordReset() {
+  var identity = getForgotIdentity();
+  var password = document.getElementById('forgotNewPass').value;
+  var password2 = document.getElementById('forgotNewPass2').value;
+  if (!forgotResetToken) { setForgotMessage('请先完成验证码验证', false); return; }
+  if (!password || password.length < 4) { setForgotMessage('新密码至少4位', false); return; }
+  if (password !== password2) { setForgotMessage('两次密码不一致', false); return; }
+  fetch(API + '/api/password-reset/confirm', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ username: identity.username, email: identity.email, reset_token: forgotResetToken, password: password })
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { setForgotMessage(r.data.error || '重置失败', false); return; }
+    setForgotMessage(r.data.message || '密码已重置，请登录', true);
+    document.getElementById('loginUser').value = identity.username;
+    document.getElementById('loginPass').value = '';
+    setTimeout(function() { switchAuth('login'); }, 900);
+  })
+  .catch(function() { setForgotMessage('网络连接失败', false); });
+}
+
+function requestPasswordReset() {
+  sendResetCode();
+}
+
 function logout() {
   if (socket2) socket2.emit('teacher-logout');
+  fetch(API + '/api/logout', { method:'POST', headers:headers() }).catch(function(){});
   token = '';
   localStorage.removeItem('broadcast_token');
   localStorage.removeItem('broadcast_user');
@@ -673,6 +1382,13 @@ function enterApp(planStatus) {
   document.getElementById('appPage').className = 'page active';
   updatePlanBadge(planStatus);
   authTeacherSocket();
+  ClassroomPointsTeacher.boot({
+    getToken: function() { return token; },
+    getClasses: function() { return classes; },
+    isPlanActive: function() { return planActive; },
+    reloadClasses: loadClasses,
+    toast: toast
+  });
   loadClasses();
   loadProfile();
   loadMessages();
@@ -693,14 +1409,33 @@ function updatePlanBadge(status) {
   }
   banner.style.display = 'none';
   if (status.plan === 'trial') {
-    var exp = new Date(status.expires);
-    var days = Math.ceil((exp - new Date()) / 86400000);
-    badge.textContent = '试用' + days + '天';
+    badge.textContent = formatTrialBadge(status.expires);
     badge.className = 'plan-badge trial';
   } else if (status.plan === 'yearly') {
-    badge.textContent = '年费版';
+    badge.textContent = formatYearlyBadge(status.expires);
     badge.className = 'plan-badge yearly';
   }
+}
+
+function formatTrialBadge(expires) {
+  var exp = new Date(expires);
+  var ms = exp - new Date();
+  if (!exp.getTime() || ms <= 0) return '免费体验即将到期';
+  var days = Math.floor(ms / 86400000);
+  var hours = Math.floor((ms % 86400000) / 3600000);
+  var minutes = Math.ceil((ms % 3600000) / 60000);
+  if (days > 0) return '免费体验还剩' + days + '天' + hours + '小时';
+  if (hours > 0) return '免费体验还剩' + hours + '小时';
+  return '免费体验还剩' + minutes + '分钟';
+}
+
+function formatYearlyBadge(expires) {
+  var exp = new Date(expires);
+  if (!exp.getTime()) return '会员';
+  var year = exp.getFullYear();
+  var month = exp.getMonth() + 1;
+  var day = exp.getDate();
+  return '会员至' + year + '年' + month + '月' + day + '日';
 }
 
 // ========== Classes ==========
@@ -709,8 +1444,10 @@ function loadClasses() {
   .then(function(r) { if (r.status === 401) { logout(); throw 'auth'; } return r.json(); })
   .then(function(data) {
     classes = data;
+    authTeacherSocket();
     renderClassSelects();
     renderClassList();
+    ClassroomPointsTeacher.setClasses(classes);
   })
   .catch(function(e) { if (e !== 'auth') toast('加载班级失败','error'); });
 }
@@ -736,7 +1473,10 @@ function renderClassList() {
     var memberNames = (c.members || []).map(function(m) { return esc(m.display_name || m.username); }).join('、');
     var actions = c.is_owner ? '<span class="del" onclick="delClass(\'' + c.id + '\')">删除</span>' : '';
     var invite = c.is_owner ? '<div style="margin-top:10px;display:flex;gap:8px;align-items:center"><input id="invite_' + c.id + '" type="text" placeholder="输入对方教师码" style="flex:1;padding:8px 10px;border:1px solid #e8e8e8;border-radius:8px;font-size:13px;text-transform:uppercase"><button onclick="inviteTeacher(\'' + c.id + '\')" style="padding:8px 12px;border:none;border-radius:8px;background:#4f8cff;color:#fff;font-size:13px;cursor:pointer">邀请老师</button></div>' : '';
-    return '<div class="class-item"><div class="info"><div class="name"><span class="online-dot ' + (c.online ? 'on' : 'off') + '"></span>' + esc(c.name) + ' <span style="font-size:11px;color:#999;font-weight:400;background:#f5f5f5;padding:1px 6px;border-radius:4px">' + gl + '</span> <span style="font-size:11px;color:#4f8cff;font-weight:400;background:#eef4ff;padding:1px 6px;border-radius:4px">' + role + '</span></div><div class="code">绑定码：' + c.bind_code + '　' + (c.online ? '在线 ' + c.online + ' 台' : '离线') + '</div><div class="code">老师：' + (memberNames || '-') + '</div>' + invite + '</div>' + actions + '</div>';
+    var pointsControl = c.is_owner
+      ? '<div class="ctp-class-switch"><span class="' + (c.management_enabled ? 'enabled' : '') + '">' + (c.management_enabled ? '班级管理已开启' : '仅广播') + '</span><button type="button" onclick="ClassroomPointsTeacher.toggleFromClassList(\'' + c.id + '\',' + (!c.management_enabled) + ')">' + (c.management_enabled ? '关闭' : '开启班级管理') + '</button></div>'
+      : '<div class="ctp-class-switch"><span class="collaborator">' + (c.management_enabled ? '班级管理已开启' : '当前仅广播') + '</span></div>';
+    return '<div class="class-item"><div class="info"><div class="name"><span class="online-dot ' + (c.online ? 'on' : 'off') + '"></span>' + esc(c.name) + ' <span style="font-size:11px;color:#999;font-weight:400;background:#f5f5f5;padding:1px 6px;border-radius:4px">' + gl + '</span> <span style="font-size:11px;color:#4f8cff;font-weight:400;background:#eef4ff;padding:1px 6px;border-radius:4px">' + role + '</span></div><div class="code">绑定码：' + c.bind_code + '　' + (c.online ? '在线 ' + c.online + ' 台' : '离线') + '</div><div class="code">老师：' + (memberNames || '-') + '</div>' + pointsControl + invite + '</div>' + actions + '</div>';
   }).join('');
 }
 
@@ -767,9 +1507,15 @@ function delClass(id) {
       break;
     }
   }
-  if (!confirm('确定删除「' + name + '」？所有通知记录也会一起删除。')) return;
+  if (!confirm('确定删除「' + name + '」？\n\n已使用过班级管理的班级会转为归档，积分流水会完整保留。')) return;
   fetch(API + '/api/classes/' + id, { method:'DELETE', headers:headers() })
-  .then(function() { loadClasses(); toast('已删除','success'); });
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { toast(r.data.error || '删除失败','error'); return; }
+    loadClasses();
+    toast(r.data.archived ? '班级已归档，积分流水已保留' : '已删除','success');
+  })
+  .catch(function() { toast('网络错误','error'); });
 }
 
 function inviteTeacher(classId) {
@@ -1013,16 +1759,38 @@ function markMessagesRead() {
 
 // ========== Tabs ==========
 function switchTab(name, btn) {
+  var appShell = document.querySelector('.app');
+  if (appShell) appShell.classList.toggle('points-wide', name === 'points');
   document.querySelectorAll('.tab-bar button').forEach(function(b) { b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  ['send','bulletin','messages','history','manage','profile'].forEach(function(t) {
+  var messageBtn = document.getElementById('messageIconBtn');
+  if (messageBtn) messageBtn.classList.remove('active');
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    var tabBtn = document.querySelector('.tab-bar button[data-tab="' + name + '"]');
+    if (tabBtn) tabBtn.classList.add('active');
+  }
+  ['publish','discover','messages','manage','points','profile'].forEach(function(t) {
     document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
   });
-  if (name === 'bulletin') { ensureBulletinClass(); loadBulletins(); }
-  if (name === 'messages') loadMessages();
-  if (name === 'history') loadHistory();
+  if (name === 'messages') {
+    if (messageBtn) messageBtn.classList.add('active');
+    loadMessages();
+  }
+  if (name === 'discover') loadProfile();
   if (name === 'manage') loadClasses();
+  if (name === 'points') ClassroomPointsTeacher.openClass(document.getElementById('pointsTeacherClassSelect').value);
   if (name === 'profile') loadProfile();
+}
+
+function switchPublishSection(name, btn) {
+  document.querySelectorAll('.sub-tab-bar button').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  ['send','bulletin','history'].forEach(function(t) {
+    document.getElementById('publish-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  if (name === 'bulletin') { ensureBulletinClass(); loadBulletins(); }
+  if (name === 'history') loadHistory();
 }
 
 // ========== Profile ==========
@@ -1032,11 +1800,55 @@ function switchProfileSection(name, btn) {
     if (!items[i].classList.contains('logout-item')) items[i].classList.remove('active');
   }
   if (btn) btn.classList.add('active');
-  var sections = ['edit','plan','contact'];
+  var sections = ['edit','plan','contact','referral'];
   for (var j = 0; j < sections.length; j++) {
     var el = document.getElementById('profileSec-' + sections[j]);
     if (el) el.style.display = sections[j] === name ? 'block' : 'none';
   }
+  if (name === 'referral') loadBroadcastReferral();
+}
+
+function loadBroadcastReferral() {
+  fetch(API + '/api/referral', { headers: headers() })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (!d.ok) return;
+    document.getElementById('refLink').value = d.link;
+    document.getElementById('refStats').textContent = '已邀请 ' + d.invited_count + ' 人 · 已获得 ' + (d.earned_points || 0) + ' 师行积分 · ' + (d.earned_days || 0) + ' 天广播时长';
+    var capNote = document.getElementById('refCapNote');
+    capNote.textContent = '首次使用奖励每月自动发放前 ' + d.activation_monthly_limit + ' 笔；超出部分进入人工审核。';
+    capNote.style.display = 'block';
+    var list = document.getElementById('refList');
+    list.innerHTML = '';
+    (d.invitees || []).forEach(function(iv){
+      var div = document.createElement('div');
+      div.style.cssText = 'display:flex;justify-content:space-between;padding:6px 10px;font-size:12px;color:#666;background:#f7f8fa;border-radius:6px;margin-bottom:4px';
+      var s1 = document.createElement('span'); s1.textContent = iv.invitee_username;
+      var label = {approved:'✅已到账',pending:'审核中',waiting:'⏳待完成',reversed:'已撤回',rejected:'未通过'};
+      var s2 = document.createElement('span'); s2.textContent = '首次使用：' + (label[iv.activation_status] || iv.activation_status) + ' · 首次付费：' + (label[iv.purchase_status] || iv.purchase_status);
+      div.appendChild(s1); div.appendChild(s2);
+      list.appendChild(div);
+    });
+  })
+  .catch(function(){});
+}
+
+function copyBroadcastRefLink() {
+  var link = document.getElementById('refLink').value;
+  if (!link) return;
+  var text = '推荐一个班级通知工具「班级广播」：手机发通知，教室大屏实时显示还能语音播报，注册送3天体验：' + link;
+  function done(){ toast('已复制，发给同事吧','success'); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function(){ fallbackCopyRef(text, done); });
+  } else { fallbackCopyRef(text, done); }
+}
+
+function fallbackCopyRef(text, done) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { toast('复制失败，请手动复制','error'); }
+  document.body.removeChild(ta);
 }
 
 function loadProfile() {
@@ -1051,10 +1863,12 @@ function loadProfile() {
     document.getElementById('profileUsername').textContent = '@' + data.username;
     document.getElementById('profileUser2').textContent = data.username;
     document.getElementById('profileTeacherCode').textContent = data.teacher_code || '-';
+    document.getElementById('profileContact').textContent = data.contact_value || '未填写';
+    document.getElementById('editContact').value = data.contact_value || '';
     document.getElementById('editDisplayName').value = data.display_name;
 
     var planText = '免费试用';
-    if (data.plan === 'yearly') planText = '年费版';
+    if (data.plan === 'yearly') planText = '会员';
     if (data.plan_status && !data.plan_status.active) planText = '已到期';
     document.getElementById('profilePlan').textContent = planText;
 
@@ -1062,7 +1876,7 @@ function loadProfile() {
     if (data.plan_status) {
       if (!data.plan_status.active) { badge2.textContent = '已到期'; badge2.className = 'plan-badge expired'; }
       else if (data.plan === 'trial') { badge2.textContent = '试用中'; badge2.className = 'plan-badge trial'; }
-      else if (data.plan === 'yearly') { badge2.textContent = '年费版'; badge2.className = 'plan-badge yearly'; }
+      else if (data.plan === 'yearly') { badge2.textContent = '会员'; badge2.className = 'plan-badge yearly'; }
     }
 
     var expires = '无';
@@ -1074,6 +1888,9 @@ function loadProfile() {
     document.getElementById('profileNotifCount').textContent = (data.notif_count || 0);
 
     renderAvatarGrid();
+    renderTimeBank(data);
+    renderFeatureSubscriptions(data);
+    maybeShowEmailReminder(data);
   });
 }
 
@@ -1107,6 +1924,52 @@ function updateDisplayName() {
     document.getElementById('profileName').textContent = name;
     toast('称呼已更新','success');
   });
+}
+
+function updateContact() {
+  var contact = document.getElementById('editContact').value.trim();
+  if (!contact) { toast('请输入邮箱或手机号码','error'); return; }
+  fetch(API + '/api/profile', { method:'POST', headers:headers(), body:JSON.stringify({contact:contact}) })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { toast(r.data.error || '保存失败','error'); return; }
+    document.getElementById('profileContact').textContent = r.data.contact_value || contact;
+    currentProfile.contact_value = r.data.contact_value || contact;
+    toast('联系方式已保存','success');
+  })
+  .catch(function() { toast('网络错误','error'); });
+}
+
+function updateMinutesPerNotice() {
+  var minutes = parseInt(document.getElementById('minutesPerNotice').value, 10);
+  if (!minutes || minutes < 1 || minutes > 10) { toast('请输入1-10分钟','error'); return; }
+  fetch(API + '/api/profile', { method:'POST', headers:headers(), body:JSON.stringify({minutes_per_notice:minutes}) })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { toast(r.data.error || '保存失败','error'); return; }
+    currentProfile.minutes_per_notice = r.data.minutes_per_notice || minutes;
+    renderTimeBank(currentProfile);
+    toast('时间银行设置已保存','success');
+  })
+  .catch(function() { toast('网络错误','error'); });
+}
+
+function submitFeedback() {
+  var el = document.getElementById('feedbackContent');
+  var content = el.value.trim();
+  if (content.length < 2) { toast('请至少写两个字','error'); return; }
+  fetch(API + '/api/feedback', {
+    method:'POST',
+    headers:headers(),
+    body:JSON.stringify({category:'功能建议', content:content})
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
+  .then(function(r) {
+    if (!r.ok) { toast(r.data.error || '提交失败','error'); return; }
+    el.value = '';
+    toast('已收到，谢谢你的反馈','success');
+  })
+  .catch(function() { toast('网络错误','error'); });
 }
 
 // ========== Payment ==========
@@ -1190,8 +2053,8 @@ function pollPaymentStatus(orderNo, count) {
     }
     if (r.data.status === 'paid') {
       localStorage.removeItem('broadcast_pay_order');
-      setPaymentStatus('支付成功，年费版已开通', 'success');
-      toast('年费版已开通','success');
+      setPaymentStatus('支付成功，半年会员已开通', 'success');
+      toast('半年会员已开通','success');
       if (r.data.plan_status) updatePlanBadge(r.data.plan_status);
       loadProfile();
       return;
@@ -1211,7 +2074,7 @@ function pollPaymentStatus(orderNo, count) {
 var socket2 = null;
 try { socket2 = io(); } catch(e) {}
 function authTeacherSocket() {
-  if (socket2 && token) socket2.emit('teacher-auth', token);
+  if (socket2) socket2.emit('teacher-auth', token || '');
 }
 if (socket2) {
   socket2.on('connect', function() { authTeacherSocket(); });
@@ -1228,38 +2091,70 @@ if (socket2) {
   socket2.on('teacher-message', function() {
     loadMessages();
   });
+  ['class-management-update', 'class-roster-update', 'class-score-rules-update', 'class-score-entry', 'class-score-reversal'].forEach(function(eventName) {
+    socket2.on(eventName, function(payload) { ClassroomPointsTeacher.handleSocketEvent(eventName, payload || {}); });
+  });
 }
 
 // ========== Auto Login ==========
 document.getElementById('loginUser').addEventListener('keydown', function(e) { if(e.key==='Enter') document.getElementById('loginPass').focus(); });
 document.getElementById('loginPass').addEventListener('keydown', function(e) { if(e.key==='Enter') doLogin(); });
 document.getElementById('regPass2').addEventListener('keydown', function(e) { if(e.key==='Enter') doRegister(); });
+document.getElementById('forgotEmail').addEventListener('keydown', function(e) { if(e.key==='Enter') sendResetCode(); });
+document.getElementById('forgotCode').addEventListener('keydown', function(e) { if(e.key==='Enter') verifyResetCode(); });
+document.getElementById('forgotNewPass2').addEventListener('keydown', function(e) { if(e.key==='Enter') confirmPasswordReset(); });
+
+function resolveCommentUrl() {
+  if (location.protocol === 'file:') return 'comment.html';
+  if (/^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(location.hostname)) {
+    return location.origin + '/comment.html';
+  }
+  return 'https://comment.yingyuzuowen.asia/';
+}
+
+document.querySelectorAll('[data-comment-link]').forEach(function(link) {
+  link.href = resolveCommentUrl();
+});
 
 // Try saved token
+(function(){
+  try {
+    var refParam = new URLSearchParams(window.location.search).get('ref');
+    if (refParam) {
+      location.replace('https://shixing.yingyuzuowen.asia/invite/' + encodeURIComponent(refParam.trim().toUpperCase()) + '?source=broadcast');
+      return;
+    }
+  } catch (e) {}
+  fetch(API + '/api/referral/context').then(function(r){ return r.json(); }).then(function(d){
+    if (!d.valid) return;
+    var el = document.getElementById('broadcastInviteContext');
+    el.innerHTML = '<strong>' + d.inviter_name + ' 老师邀请你体验师行</strong><br>注册得 1625 积分和广播 3 天体验；首次使用后双方各得 500 积分。';
+    el.style.display = 'block';
+  }).catch(function(){});
+})();
+
 var savedToken = localStorage.getItem('broadcast_token') || sessionStorage.getItem('broadcast_token');
 var savedUser = localStorage.getItem('broadcast_user');
 if (savedUser) document.getElementById('loginUser').value = savedUser;
 
-if (savedToken) {
-  token = savedToken;
-  fetch(API + '/api/profile', { headers: headers() })
-  .then(function(r) { if (r.ok) return r.json(); throw 'auth'; })
-  .then(function(data) { enterApp(data.plan_status); })
-  .catch(function() { token = ''; });
-}
+token = savedToken || '';
+fetch(API + '/api/profile', { headers: headers() })
+.then(function(r) { if (r.ok) return r.json(); throw 'auth'; })
+.then(function(data) { enterApp(data.plan_status); })
+.catch(function() { token = ''; });
 
-function copyWx() {
-  var wx = 'htttttt_219';
+function copyDeveloperEmail() {
+  var email = '465685289@qq.com';
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(wx).then(function() { toast('已复制微信号','success'); });
+    navigator.clipboard.writeText(email).then(function() { toast('已复制邮箱','success'); });
   } else {
     var inp = document.createElement('input');
-    inp.value = wx;
+    inp.value = email;
     document.body.appendChild(inp);
     inp.select();
     document.execCommand('copy');
     document.body.removeChild(inp);
-    toast('已复制微信号','success');
+    toast('已复制邮箱','success');
   }
 }
 
@@ -1284,5 +2179,6 @@ function copyTeacherCode() {
   }
 }
 </script>
+<script src="/analytics.js"></script>
 </body>
 </html>

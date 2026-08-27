@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>师行邀请有礼</title>
+  <style>
+    :root{--paper:#f6f0e7;--card:#fffaf1;--ink:#3f3428;--muted:#81715e;--gold:#9b6d2b;--line:#e6d8c0;--green:#4f8a52}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#fffaf1 0,var(--paper) 48%,#eee5d9 100%);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
+    a{color:inherit}.page{width:min(1040px,calc(100% - 32px));margin:auto;padding:28px 0 54px}.nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.brand{font-family:"Songti SC",STSong,serif;font-size:20px;font-weight:700;letter-spacing:2px}.home{font-size:13px;text-decoration:none;color:var(--muted)}
+    .hero,.center{background:rgba(255,250,241,.92);border:1px solid var(--line);border-radius:24px;box-shadow:0 18px 50px rgba(79,61,36,.11)}.hero{padding:42px;text-align:center}.eyebrow{color:var(--gold);font-size:13px;font-weight:700;letter-spacing:4px}.hero h1{font:700 clamp(32px,5vw,54px)/1.2 "Songti SC",STSong,serif;margin:14px 0}.lead{color:var(--muted);font-size:17px;line-height:1.8}.inviter{display:none;margin:18px auto 0;padding:9px 16px;width:max-content;max-width:100%;border-radius:999px;background:#f4ead8;color:#765627;font-size:14px}
+    .benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}.benefit{padding:18px 12px;border:1px solid var(--line);border-radius:16px;background:#fffdf8}.benefit strong{display:block;color:var(--gold);font-size:25px;margin:4px}.benefit span{font-size:13px;color:var(--muted);line-height:1.6}
+    h2{font:700 28px/1.3 "Songti SC",STSong,serif;margin:0 0 8px}.section-head{text-align:center;margin:38px 0 18px}.section-head p{margin:0;color:var(--muted);font-size:14px}.products{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}.product{display:block;padding:20px 14px;background:var(--card);border:1px solid var(--line);border-radius:16px;text-decoration:none;transition:.18s}.product:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(79,61,36,.1)}.product b{display:block;margin:9px 0 5px}.product small{color:var(--muted);line-height:1.5}.icon{font-size:25px}
+    .center{display:none;margin-top:28px;padding:28px}.center.show{display:block}.center-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:16px}.share{display:flex;gap:8px;margin-top:15px}.share input{min-width:0;flex:1;padding:12px;border:1px solid var(--line);border-radius:10px;background:white;color:#6d522b}.share button{border:0;border-radius:10px;padding:0 18px;background:var(--gold);color:#fff;cursor:pointer}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{text-align:center;padding:13px 8px;background:#f7efe2;border-radius:12px}.stat strong{display:block;font-size:22px;color:var(--gold)}.stat span{font-size:12px;color:var(--muted)}.invitees{margin-top:16px}.invitee{display:flex;justify-content:space-between;gap:12px;padding:10px 4px;border-top:1px dashed var(--line);font-size:13px}.invitee span:last-child{color:var(--muted);text-align:right}.login-note{padding:20px;background:#f7efe2;border-radius:14px;color:var(--muted);line-height:1.8;text-align:center}.login-note a{color:var(--gold);font-weight:700}
+    .foot{text-align:center;color:#a0917f;font-size:12px;margin-top:34px}@media(max-width:780px){.hero{padding:30px 18px}.benefits{grid-template-columns:1fr}.products{grid-template-columns:repeat(2,1fr)}.center-grid{grid-template-columns:1fr}.page{width:min(100% - 20px,1040px)}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <nav class="nav"><div class="brand">师 行</div><a class="home" href="https://shixing.yingyuzuowen.asia/">返回师行首页</a></nav>
+    <section class="hero">
+      <div class="eyebrow">一套账号 · 六个工具</div>
+      <h1>老师之间的好工具，值得互相分享</h1>
+      <p class="lead">通过邀请注册，新用户立即获得 <strong>1625 师行积分</strong>和<strong>广播 3 天体验</strong>。</p>
+      <div class="inviter" id="inviter"></div>
+      <div class="benefits">
+        <div class="benefit"><strong>1625 积分</strong><span>注册即到账，六个师行产品共享</span></div>
+        <div class="benefit"><strong>各得 500</strong><span>好友首次成功使用任一工具，邀请双方各得 500 积分</span></div>
+        <div class="benefit"><strong>1500 / 30 天</strong><span>好友首次购买积分，邀请人得 1500 积分；首次开通广播，得 30 天</span></div>
+      </div>
+    </section>
+
+    <section id="center" class="center">
+      <div class="center-grid">
+        <div>
+          <h2>我的邀请</h2>
+          <p style="margin:0;color:var(--muted);font-size:14px">复制这一条师行链接，分享任何一个产品都用它。</p>
+          <div id="centerContent" class="login-note">正在读取邀请信息…</div>
+        </div>
+        <div class="stats" id="stats" style="display:none">
+          <div class="stat"><strong id="invitedCount">0</strong><span>已邀请</span></div>
+          <div class="stat"><strong id="earnedPoints">0</strong><span>已得积分</span></div>
+          <div class="stat"><strong id="earnedDays">0</strong><span>已得天数</span></div>
+        </div>
+      </div>
+      <div class="invitees" id="invitees"></div>
+    </section>
+
+    <div class="section-head"><h2>先选一个你想用的工具</h2><p>账号、积分和邀请关系全平台通用</p></div>
+    <section class="products">
+      <a class="product" href="https://notice.yingyuzuowen.asia/" data-analytics-product="broadcast"><span class="icon">📢</span><b>教室广播</b><small>手机发通知，教室大屏播报</small></a>
+      <a class="product" href="https://comment.yingyuzuowen.asia/" data-analytics-product="comment"><span class="icon">💬</span><b>期末评语</b><small>根据学生画像批量生成评语</small></a>
+      <a class="product" href="https://zuowen.yingyuzuowen.asia/" data-analytics-product="essay"><span class="icon">📝</span><b>作文批改</b><small>旁批、尾批和整班批改</small></a>
+      <a class="product" href="https://notice.yingyuzuowen.asia/english.html" data-analytics-product="english"><span class="icon">🇬🇧</span><b>英语批改</b><small>分题型评分、教师审核与学生返修</small></a>
+      <a class="product" href="https://notice.yingyuzuowen.asia/roundtable/" data-analytics-product="roundtable"><span class="icon">💡</span><b>思想圆桌</b><small>把一节课的想法推演完整</small></a>
+      <a class="product" href="https://notice.yingyuzuowen.asia/edulab/pro.html" data-analytics-product="edulab"><span class="icon">📐</span><b>数学课件</b><small>拍题生成可交互讲解课件</small></a>
+    </section>
+    <div class="foot">师行 · 为一线老师做的实用工具</div>
+  </main>
+  <script>
+  (function(){
+    var params = new URLSearchParams(location.search);
+    var pathCode = location.pathname.match(/\/invite\/([^/]+)/);
+    var code = pathCode ? decodeURIComponent(pathCode[1]) : (params.get('code') || '');
+    var centerMode = params.get('center') === '1' || /\/invite\.html$/.test(location.pathname);
+    if (centerMode) document.getElementById('center').classList.add('show');
+    var contextUrl = '/api/referral/context' + (code ? '?code=' + encodeURIComponent(code) : '');
+    fetch(contextUrl).then(function(r){ return r.json(); }).then(function(d){
+      if (!d.valid) return;
+      var el = document.getElementById('inviter');
+      el.textContent = d.inviter_name + ' 老师邀请你体验师行'; el.style.display = 'block';
+    }).catch(function(){});
+    if (!centerMode) return;
+    var token = localStorage.getItem('broadcast_token') || localStorage.getItem('comment_token') || localStorage.getItem('zuowen_token') || '';
+    fetch('/api/referral', {headers: token ? {'X-Token':token} : {}}).then(function(r){
+      if (!r.ok) throw new Error('login'); return r.json();
+    }).then(function(d){
+      document.getElementById('centerContent').className = '';
+      document.getElementById('centerContent').innerHTML = '<div class="share"><input id="shareLink" readonly><button id="copyLink">复制链接</button></div>';
+      document.getElementById('shareLink').value = d.link;
+      document.getElementById('copyLink').onclick = function(){
+        var text = '我在用师行的教师工具，一套账号六个平台通用：' + d.link;
+        if (navigator.clipboard) navigator.clipboard.writeText(text); else { var i=document.getElementById('shareLink');i.select();document.execCommand('copy'); }
+        this.textContent='已复制';
+      };
+      document.getElementById('stats').style.display='grid';
+      document.getElementById('invitedCount').textContent=d.invited_count||0;
+      document.getElementById('earnedPoints').textContent=d.earned_points||0;
+      document.getElementById('earnedDays').textContent=d.earned_days||0;
+      var labels={approved:'已到账',pending:'审核中',waiting:'待完成',reversed:'已撤回',rejected:'未通过'};
+      document.getElementById('invitees').innerHTML=(d.invitees||[]).map(function(x){return '<div class="invitee"><span>'+escapeHtml(x.invitee_username||'新老师')+'</span><span>首次使用：'+(labels[x.activation_status]||x.activation_status)+' · 首次付费：'+(labels[x.purchase_status]||x.purchase_status)+'</span></div>';}).join('');
+    }).catch(function(){
+      document.getElementById('centerContent').innerHTML='登录任一师行产品后，可在这里查看专属链接和奖励进度。<br><a href="https://notice.yingyuzuowen.asia/teacher.html">去登录</a>';
+    });
+    function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  })();
+  </script>
+  <script src="/analytics.js"></script>
+</body>
+</html>

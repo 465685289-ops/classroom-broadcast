@@ -3,28 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="班级广播系统支持老师手机发送通知、教室大屏显示和语音自动播报。">
+<link rel="canonical" href="https://notice.yingyuzuowen.asia/">
 <title>班级广播系统</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",sans-serif;background:#f5f7fa;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-.wrap{text-align:center;max-width:400px;width:100%}
-h1{font-size:28px;color:#333;margin-bottom:4px}
-.sub{color:#999;font-size:13px;margin-bottom:36px}
-a{display:block;padding:22px;margin-bottom:16px;background:#fff;border-radius:14px;text-decoration:none;color:#333;font-size:17px;font-weight:500;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:transform .15s,box-shadow .15s}
-a:active{transform:scale(.98);box-shadow:0 1px 6px rgba(0,0,0,.1)}
-a .desc{font-size:13px;color:#999;margin-top:4px;font-weight:400}
-.t{border-left:4px solid #4f8cff}
-.s{border-left:4px solid #ff6b35}
-.features{margin-top:32px;text-align:left;background:#fff;border-radius:14px;padding:20px 24px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-.features h3{font-size:15px;color:#666;margin-bottom:12px}
-.features li{font-size:14px;color:#888;line-height:2;list-style:none;padding-left:20px;position:relative}
-.features li:before{content:"✓";position:absolute;left:0;color:#52c41a}
+body{
+  font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;
+  color:#3a3026;
+  background:
+    radial-gradient(1100px 520px at 80% -8%, #f8f1e4 0%, transparent 60%),
+    #f4ece0;
+  display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{text-align:center;max-width:420px;width:100%}
+.brand-kicker{font-size:12px;color:#7c5722;letter-spacing:3px;margin-bottom:10px}
+.crest{
+  width:58px;height:58px;margin:0 auto 16px;border-radius:50%;
+  border:1.5px solid #9a6f2e;color:#7c5722;
+  display:grid;place-items:center;
+  font-family:"Songti SC","STSong","SimSun",serif;font-size:30px;font-weight:600;
+  background:radial-gradient(circle at 30% 25%,#fbf3e2,#efe1c4);
+}
+h1{font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;font-size:32px;color:#3a3026;margin-bottom:6px;font-weight:600;letter-spacing:.5px}
+.sub{color:#9a8a72;font-size:13px;margin-bottom:14px;letter-spacing:2px}
+.rule{width:64px;height:1px;background:#cdbb9c;margin:0 auto 34px;position:relative}
+.rule::before,.rule::after{content:"";position:absolute;top:-2px;width:5px;height:5px;border-radius:50%;background:#9a6f2e}
+.rule::before{left:-9px}.rule::after{right:-9px}
+a{
+  display:block;padding:22px 24px;margin-bottom:16px;
+  background:#fbf6ec;border:1px solid #e0d4bd;border-radius:12px;
+  text-decoration:none;color:#3a3026;font-size:18px;font-weight:500;text-align:left;
+  box-shadow:0 1px 0 #fffaf2 inset, 0 12px 28px -20px rgba(58,48,38,.5);
+  transition:transform .15s, box-shadow .15s, border-color .15s;
+}
+a:hover{border-color:#9a6f2e}
+a:active{transform:scale(.985);box-shadow:0 1px 6px rgba(58,48,38,.12)}
+a .desc{font-size:13px;color:#9a8a72;margin-top:5px;font-weight:400}
+.t{border-left:3px solid #9a6f2e}
+.s{border-left:3px solid #7d3a3a}
+.features{margin-top:30px;text-align:left;background:#fbf6ec;border:1px solid #e0d4bd;border-radius:12px;padding:22px 26px;box-shadow:0 12px 28px -22px rgba(58,48,38,.5)}
+.features h3{font-family:"Songti SC","STSong","SimSun","Microsoft YaHei",serif;font-size:18px;color:#7c5722;margin-bottom:14px;font-weight:600;letter-spacing:.5px}
+.features li{font-size:14px;color:#6f6354;line-height:2.1;list-style:none;padding-left:22px;position:relative}
+.features li:before{content:"❧";position:absolute;left:0;color:#9a6f2e;font-size:13px}
+.family{margin-top:18px;text-align:left;background:#efe7d6;border:1px solid #ddcba9;border-radius:12px;padding:18px 20px;color:#6f6354}
+.family strong{display:block;color:#3a3026;font-size:15px;margin-bottom:6px}
+.family p{font-size:13px;line-height:1.8}
+.family a{display:inline-flex;margin:12px 0 0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;color:#7c5722;font-size:14px;font-weight:600;text-align:left;text-decoration:none}
+.footer{margin-top:22px;font-size:12px;color:#9a8a72;line-height:1.8}
+.footer a{display:inline;margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;color:#7c5722;font-size:12px;font-weight:400;text-decoration:none}
 </style>
 </head>
 <body>
+<a href="https://shixing.yingyuzuowen.asia/" title="返回师行首页" style="position:fixed;top:12px;left:14px;z-index:99999;display:inline-flex;align-items:center;gap:7px;padding:6px 14px 6px 7px;background:rgba(252,247,238,.94);color:#7c5722;font:600 13px/1 -apple-system,'PingFang SC','Microsoft YaHei',sans-serif;text-decoration:none;border:1px solid #e7dcc6;border-radius:20px;box-shadow:0 4px 14px rgba(90,70,40,.18);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)"><span style="width:21px;height:21px;border-radius:50%;border:1.2px solid #9a6f2e;display:grid;place-items:center;font-family:'Songti SC','STSong',serif;font-weight:600;font-size:12px;color:#7c5722">师</span>师行首页</a>
+
 <div class="wrap">
+  <div class="brand-kicker">师行出品</div>
+  <div class="crest">广</div>
   <h1>班级广播系统</h1>
   <p class="sub">手机发通知 · 教室大屏显示 · 语音播报</p>
+  <div class="rule"></div>
   <a href="/teacher.html" class="t">
     老师端 · 发送通知
     <div class="desc">在手机或电脑上发通知到教室</div>
@@ -33,7 +72,7 @@ a .desc{font-size:13px;color:#999;margin-top:4px;font-weight:400}
     教室端 · 接收通知
     <div class="desc">在教室电脑上打开，全屏显示通知</div>
   </a>
-  <a href="/teacher.html" style="border-left:4px solid #52c41a">
+  <a href="/teacher.html" style="border-left:3px solid #4a5d44">
     免费注册体验
     <div class="desc">新用户免费体验3天，全部功能不限制</div>
   </a>
@@ -47,6 +86,16 @@ a .desc{font-size:13px;color:#999;margin-top:4px;font-weight:400}
       <li>新用户免费体验3天</li>
     </ul>
   </div>
+  <div class="family">
+    <strong>师行教师工具</strong>
+    <p>班级广播专注日常通知。期末要批量写学生评语时，可以试试同属师行的 AI 评语生成助手。</p>
+    <a href="https://comment.yingyuzuowen.asia/" target="_blank" rel="noopener">期末了？试试评语生成</a>
+  </div>
+  <div class="footer">
+    <p>师行出品 · 为一线老师做实用的小工具</p>
+    <p><a href="https://comment.yingyuzuowen.asia/" target="_blank" rel="noopener">AI 评语生成助手</a></p>
+  </div>
 </div>
+<script src="/analytics.js"></script>
 </body>
 </html>

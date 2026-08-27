@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>作文修改 - 师行</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3eadc;color:#3f3529;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.wrap{max-width:980px;margin:auto;padding:28px 18px 70px}.head,.card{background:#fff;border:1px solid #e7dcc6;border-radius:18px;box-shadow:0 10px 35px rgba(83,61,30,.1)}.head{padding:24px 28px;margin-bottom:18px}.head h1{margin:0;color:#7c5722}.meta{color:#8a7559;margin-top:8px}.card{padding:24px;margin-bottom:16px}h2{font-family:"Songti SC","STSong",serif;color:#7c5722;margin:0 0 14px}.task{white-space:pre-wrap;line-height:1.9;background:#fbf5ea;border-radius:12px;padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.draft{white-space:pre-wrap;line-height:1.9;min-height:220px;border:1px solid #eadfc9;border-radius:12px;padding:16px;background:#fffdf8}.feedback{line-height:1.9}.note{background:#fff8e1;border-left:4px solid #c68b2d;border-radius:8px;padding:10px 12px;margin:10px 0}textarea{width:100%;min-height:320px;padding:16px;border:2px solid #dfcfb2;border-radius:12px;font:15px/1.9 inherit;resize:vertical}textarea:focus,button:focus-visible{outline:3px solid rgba(154,111,46,.32);outline-offset:2px}button{display:block;margin:16px auto 0;border:0;border-radius:10px;padding:13px 34px;background:#926523;color:#fff;font-weight:700;font-size:16px;cursor:pointer}.status{text-align:center;padding:35px;color:#8a7559}.success{background:#edf8ec;color:#2f6b35;padding:14px;border-radius:10px;text-align:center;margin-top:14px}@media(max-width:680px){.wrap{padding:16px 12px 50px}.head,.card{padding:18px}.grid{grid-template-columns:1fr}.draft{min-height:160px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section class="head"><h1>作文修改</h1><div class="meta" id="meta">正在加载作文任务…</div></section>
+  <div id="loading" class="card status">正在打开老师发来的批改结果…</div>
+  <div id="content" hidden>
+    <section class="card"><h2>作文任务</h2><div class="task" id="task"></div></section>
+    <section class="card"><h2>教师反馈</h2><div class="feedback" id="feedback"></div></section>
+    <section class="card"><h2>原稿与修改稿</h2><div class="grid"><div><h3>原稿</h3><div class="draft" id="original"></div></div><div><h3>修改稿</h3><div class="draft" id="latest"></div></div></div></section>
+    <section class="card"><h2>提交修改稿</h2><p>根据老师的反馈完善作文。提交后老师会在工作台看到“已返修”，并可进行二次批改。</p><textarea id="revision" aria-label="作文修改稿" placeholder="在这里粘贴或输入修改后的完整作文"></textarea><button id="submit" type="button">提交修改稿</button><div id="message" aria-live="polite"></div></section>
+  </div>
+</main>
+<script>
+(function(){
+  const token=location.pathname.split('/').filter(Boolean).pop();
+  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let data=null;
+  async function load(){
+    try{const r=await fetch('/api/essay/public/'+encodeURIComponent(token));const d=await r.json();if(!r.ok)throw new Error(d.error||'链接无效');data=d;
+      document.getElementById('meta').textContent=(d.student&&d.student.name?d.student.name+' · ':'')+d.assignment.title;
+      document.getElementById('task').textContent='题目：'+d.assignment.title+'\n材料：'+(d.assignment.material||'无')+'\n要求：'+(d.assignment.requirements||'按老师要求完成')+'\n字数：'+(d.assignment.min_words||0)+'—'+(d.assignment.max_words||0)+'字';
+      const revisions=d.revisions||[];document.getElementById('original').textContent=revisions[0]?revisions[0].essay_text:'';document.getElementById('latest').textContent=revisions.length>1?revisions[revisions.length-1].essay_text:'尚未提交修改稿';
+      const review=d.review||{};let html='';if(review.score_override)html+='<p><strong>教师定稿分数：</strong>'+esc(review.score_override)+'</p>';if(review.summary_override)html+='<div class="note">'+esc(review.summary_override)+'</div>';(review.annotations||[]).filter(a=>a.status!=='deleted').forEach((a,i)=>{html+='<div class="note"><strong>第'+(i+1)+'段：</strong>'+esc(a.comment||'')+'</div>'});document.getElementById('feedback').innerHTML=html||'<p>老师尚未完成定稿，请稍后再打开。</p>';
+      document.getElementById('loading').hidden=true;document.getElementById('content').hidden=false;
+    }catch(e){document.getElementById('loading').textContent=e.message||'链接无效或已失效';}
+  }
+  document.getElementById('submit').addEventListener('click',async()=>{const text=document.getElementById('revision').value.trim();const msg=document.getElementById('message');if(text.length<20){msg.textContent='请填写完整的修改稿（至少20字）';return;}const btn=document.getElementById('submit');btn.disabled=true;try{const r=await fetch('/api/essay/public/'+encodeURIComponent(token)+'/revisions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({essay_text:text})});const d=await r.json();if(!r.ok)throw new Error(d.error||'提交失败');msg.className='success';msg.textContent='修改稿已提交，老师的工作台会显示“已返修”。';document.getElementById('latest').textContent=text;}catch(e){msg.textContent=e.message||'提交失败，请重试';}finally{btn.disabled=false;}});
+  load();
+})();
+</script>
+</body>
+</html>

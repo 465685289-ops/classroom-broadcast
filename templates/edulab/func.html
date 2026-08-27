@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>函数互动学习</title>
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+:root{
+  --primary:#7c5722;--primary-dark:#5f4119;--bg:#f5f0eb;--card:#fffef9;--text:#2c2416;--muted:#8b7e6a;--border:#ddd4c6;
+  --curve:#2b4a6f;--curve2:#b5651d;--zero:#b03a2e;--extremum:#bf8a2e;--asymptote:#b8a888;--point:#1d9e75;
+  --canvas:#fbf8f1;--grid:#e7ddcc;--axis:#6b5e4a;--shadow:0 8px 28px rgba(44,36,22,.07);
+  --serif:"Songti SC","STSong","SimSun",serif;
+  --font:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;padding:12px;-webkit-tap-highlight-color:transparent;}
+button,input{font:inherit;}
+.workspace{
+  width:100%;height:calc(100dvh - 24px);display:grid;gap:12px;
+  grid-template-columns:minmax(280px,23vw) minmax(320px,25vw) minmax(480px,1fr);
+  grid-template-areas:"left analysis plot";
+}
+.left-column{grid-area:left;display:grid;grid-template-rows:minmax(260px,1.15fr) minmax(185px,.85fr);gap:12px;min-width:0;min-height:0;}
+.left-column.no-console{grid-template-rows:minmax(0,1fr);}
+.left-column.no-console .console-card{display:none;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);min-width:0;min-height:0;overflow:hidden;}
+.problem-card,.console-card,.analysis-card,.plot-card{display:flex;flex-direction:column;}
+.problem-card{padding:18px 18px 12px;}
+.eyebrow,.panel-title{display:flex;align-items:center;gap:9px;color:var(--primary-dark);font-size:13px;font-weight:750;letter-spacing:.04em;}
+.eyebrow::before,.panel-title::before{content:"";width:8px;height:8px;border-radius:50%;background:#a77931;box-shadow:0 0 0 4px #f3ece0;flex:0 0 auto;}
+h1{font-family:var(--serif);font-size:20px;line-height:1.35;color:var(--primary-dark);margin:13px 0 10px;letter-spacing:.02em;}
+.problem-scroll{overflow:auto;padding-right:7px;min-height:0;scrollbar-width:thin;scrollbar-color:#b8a888 transparent;}
+.problem{font-size:14px;line-height:1.75;color:#4a4030;}
+.problem p{margin:6px 0;}
+.console-card{padding:16px 18px;}
+.console{overflow:auto;margin-top:14px;padding-right:5px;min-height:0;}
+.param-bar{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:650;color:#4a4030;margin-bottom:8px;}
+.param-bar .val{margin-left:auto;background:#f3ece0;color:var(--primary-dark);border:1px solid #e0d8cc;border-radius:8px;padding:4px 10px;font-weight:750;font-variant-numeric:tabular-nums;}
+.console input[type=range]{width:100%;accent-color:#9a6f2e;cursor:pointer;}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:3px;}
+.readouts{margin-top:12px;background:#faf6ee;border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+.readout{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--border);}
+.readout:last-child{border-bottom:none;}
+.readout .rv{font-weight:750;font-variant-numeric:tabular-nums;}
+.readout.hl .rv{color:#0f6e56;background:#e1f5ee;border:1px solid #9fe1cb;border-radius:6px;padding:2px 8px;}
+.analysis-card{grid-area:analysis;padding:16px 18px;}
+.analysis-head,.plot-head{display:flex;align-items:center;gap:10px;flex:0 0 auto;padding-bottom:12px;border-bottom:1px solid #eee7dc;}
+.analysis-scroll{overflow:auto;padding:2px 8px 12px 0;min-height:0;scrollbar-width:thin;scrollbar-color:#b8a888 transparent;}
+.step{padding:16px 0;border-bottom:1px solid #eee7dc;}
+.step:last-child{border-bottom:none;}
+.step-title{font-size:15px;font-weight:750;color:var(--primary-dark);display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.step-no{display:inline-flex;width:30px;height:30px;border-radius:50%;background:#f0e7d5;color:#8b6328;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:0 0 auto;}
+.step-body{font-size:14px;line-height:1.82;color:#4a4030;}
+.step-body p{margin:7px 0;}
+.answer{margin-top:15px;background:#e9f5ef;border:1px solid #b8dfce;border-radius:10px;padding:11px 13px;font-size:14px;line-height:1.65;color:#0f6e56;}
+.answer b{color:#0a5a44;}
+.plot-card{grid-area:plot;padding:16px;}
+.plot-head{justify-content:space-between;}
+.plot-head .panel-title{margin-right:auto;}
+.reset-btn{border:1px solid var(--border);background:#fffaf0;color:var(--primary);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;}
+.reset-btn:hover{background:#f3ece0;}
+.canvas-box{position:relative;flex:1;min-height:0;margin-top:12px;background:var(--canvas);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+canvas{position:absolute;inset:0;width:100%;height:100%;}
+.legend{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;max-width:calc(100% - 24px);pointer-events:none;}
+.legend-item{display:inline-flex;align-items:center;gap:6px;background:rgba(255,254,249,.9);border:1px solid var(--border);border-radius:8px;padding:5px 9px;color:#5f5547;font-size:11px;box-shadow:0 3px 10px rgba(44,36,22,.06);}
+.legend-line{width:14px;height:3px;border-radius:2px;background:var(--curve);}
+.katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;}
+::-webkit-scrollbar{width:7px;height:7px;}
+::-webkit-scrollbar-thumb{background:#c8baa4;border-radius:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+@media(max-width:1100px){
+  body{overflow:auto;}
+  .workspace{height:auto;min-height:calc(100dvh - 24px);grid-template-columns:minmax(280px,340px) minmax(0,1fr);grid-template-areas:"left plot" "analysis analysis";align-items:stretch;}
+  .left-column{height:720px;}
+  .plot-card{height:720px;}
+  .analysis-card{max-height:680px;}
+}
+@media(max-width:760px){
+  body{padding:10px;overflow:auto;}
+  .workspace{height:auto;display:grid;grid-template-columns:1fr;grid-template-areas:"left" "plot" "analysis";gap:10px;}
+  .left-column{height:auto;display:flex;flex-direction:column;}
+  .problem-card{max-height:none;}
+  .problem-scroll{overflow:visible;}
+  .console-card{max-height:none;}
+  .console{overflow:visible;}
+  .plot-card{height:68dvh;min-height:430px;padding:12px;}
+  .analysis-card{max-height:none;padding:14px;}
+  .analysis-scroll{overflow:visible;}
+  .card{border-radius:14px;}
+  h1{font-size:19px;}
+  .problem,.step-body{font-size:14px;line-height:1.72;}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;}}
+</style>
+</head>
+<body>
+<main class="workspace">
+  <div class="left-column" id="left-column">
+    <section class="card problem-card" aria-labelledby="title">
+      <div class="eyebrow">题目</div>
+      <h1 id="title"></h1>
+      <div class="problem-scroll"><div class="problem" id="problem"></div></div>
+    </section>
+    <section class="card console-card" aria-labelledby="console-title">
+      <div class="panel-title" id="console-title">动态控制台</div>
+      <div class="console" id="console"></div>
+    </section>
+  </div>
+  <section class="card analysis-card" aria-labelledby="analysis-title">
+    <header class="analysis-head"><div class="panel-title" id="analysis-title">详细解析</div></header>
+    <div class="analysis-scroll">
+      <div id="steps"></div>
+      <div class="answer" id="answer" style="display:none"></div>
+    </div>
+  </section>
+  <section class="card plot-card" aria-labelledby="plot-title">
+    <header class="plot-head">
+      <div class="panel-title" id="plot-title">函数图像 · 动态观察</div>
+      <button class="reset-btn" id="reset" type="button">重置</button>
+    </header>
+    <div class="canvas-box"><canvas id="plot" aria-label="函数图像"></canvas><div class="legend" id="legend"></div></div>
+  </section>
+</main>
+<script id="lesson-data" type="application/json">__LESSON_DATA__</script>
+<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>
+const DATA = JSON.parse(document.getElementById('lesson-data').textContent);
+const B = DATA.board || {};
+const COLORS = {curve:'#2b4a6f',curve2:'#b5651d',param:'#b5651d',zero:'#b03a2e',extremum:'#bf8a2e',asymptote:'#b8a888',point:'#1d9e75',given:'#7c5722'};
+function col(c){ return COLORS[c]||c||'#2b4a6f'; }
+
+function compileExpr(expr, pname){
+  let s = String(expr||'').replace(/\^/g,'**');
+  if(/[;{}\[\]`]|=>|function|while|for|new\s|import|window|document|this/.test(s)) return null;
+  const S = {sin:Math.sin,cos:Math.cos,tan:Math.tan,asin:Math.asin,acos:Math.acos,atan:Math.atan,
+    exp:Math.exp,sqrt:Math.sqrt,abs:Math.abs,pow:Math.pow,floor:Math.floor,ceil:Math.ceil,
+    min:Math.min,max:Math.max,log:Math.log,ln:Math.log,lg:v=>Math.log(v)/Math.LN10,e:Math.E,pi:Math.PI,PI:Math.PI};
+  try{
+    const f = new Function('x', pname||'__p', 'S', 'with(S){ return ('+s+'); }');
+    f(1,1,S);
+    return (x,p)=>{ try{ const v=f(x,p,S); return (typeof v==='number'&&isFinite(v))?v:NaN; }catch(e){ return NaN; } };
+  }catch(e){ return null; }
+}
+const PNAME = B.param ? B.param.name : null;
+let pval = B.param ? B.param.value : 0;
+const FUNCS = (B.functions||[]).map(fn=>({...fn,f:compileExpr(fn.expr,PNAME)})).filter(fn=>fn.f);
+
+function findZeros(f,x0,x1){
+  const out=[]; const N=2000; const h=(x1-x0)/N; let prev=f(x0,pval),px=x0;
+  for(let i=1;i<=N;i++){ const x=x0+i*h,y=f(x,pval);
+    if(isFinite(prev)&&isFinite(y)&&prev===0) out.push(px);
+    if(isFinite(prev)&&isFinite(y)&&prev*y<0){ let a=px,b=x; for(let k=0;k<40;k++){const m=(a+b)/2,fm=f(m,pval);if(f(a,pval)*fm<=0)b=m;else a=m;} out.push((a+b)/2); }
+    prev=y;px=x;
+  }
+  return out;
+}
+function findExtrema(f,x0,x1){
+  const d=x=>{const h=1e-4,a=f(x-h,pval),b=f(x+h,pval);return(isFinite(a)&&isFinite(b))?(b-a)/(2*h):NaN;};
+  const out=[]; const N=1500,h=(x1-x0)/N; let prev=d(x0+1e-3),px=x0+1e-3;
+  for(let i=1;i<=N;i++){const x=x0+i*h,dy=d(x);if(isFinite(prev)&&isFinite(dy)&&prev*dy<0){let a=px,b=x;for(let k=0;k<40;k++){const m=(a+b)/2,dm=d(m);if(d(a)*dm<=0)b=m;else a=m;}const xx=(a+b)/2;out.push({x:xx,y:f(xx,pval)});}prev=dy;px=x;}
+  return out;
+}
+
+const cv=document.getElementById('plot'); const ctx=cv.getContext('2d');
+let W=0,H=0,xmin,xmax,ymin,ymax;
+function autoY(){
+  if(B.yRange) return B.yRange;
+  const ys=[],N=400;
+  for(const fn of FUNCS){for(let i=0;i<=N;i++){const x=xmin+(xmax-xmin)*i/N,y=fn.f(x,pval);if(isFinite(y))ys.push(y);}}
+  if(!ys.length)return[-5,5];
+  ys.sort((a,b)=>a-b);const lo=ys[Math.floor(ys.length*.03)],hi=ys[Math.floor(ys.length*.97)],pad=(hi-lo)*.18||1;return[lo-pad,hi+pad];
+}
+function X(x){return(x-xmin)/(xmax-xmin)*W;}
+function Y(y){return H-(y-ymin)/(ymax-ymin)*H;}
+function resize(){const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=r.width*dpr;cv.height=r.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);W=r.width;H=r.height;}
+function niceStep(span){const raw=span/8,p=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/p;return(m<1.5?1:m<3?2:m<7?5:10)*p;}
+function grid(){
+  ctx.strokeStyle='#e7ddcc';ctx.lineWidth=1;ctx.fillStyle='#a89a82';ctx.font='11px PingFang SC, sans-serif';
+  const sx=niceStep(xmax-xmin),sy=niceStep(ymax-ymin);
+  for(let x=Math.ceil(xmin/sx)*sx;x<=xmax;x+=sx){ctx.beginPath();ctx.moveTo(X(x),0);ctx.lineTo(X(x),H);ctx.stroke();}
+  for(let y=Math.ceil(ymin/sy)*sy;y<=ymax;y+=sy){ctx.beginPath();ctx.moveTo(0,Y(y));ctx.lineTo(W,Y(y));ctx.stroke();}
+  ctx.strokeStyle='#6b5e4a';ctx.lineWidth=1.5;const yx=Y(0),xx=X(0);
+  if(ymin<0&&ymax>0){ctx.beginPath();ctx.moveTo(0,yx);ctx.lineTo(W,yx);ctx.stroke();}
+  if(xmin<0&&xmax>0){ctx.beginPath();ctx.moveTo(xx,0);ctx.lineTo(xx,H);ctx.stroke();}
+  ctx.fillStyle='#6b5e4a';for(let x=Math.ceil(xmin/sx)*sx;x<=xmax;x+=sx){if(Math.abs(x)<1e-9)continue;ctx.fillText(+x.toFixed(2),X(x)+2,(ymin<0&&ymax>0?yx:H)-3);}
+}
+function drawCurves(){
+  for(const fn of FUNCS){ctx.strokeStyle=col(fn.color||'curve');ctx.lineWidth=2.5;ctx.setLineDash(fn.dashed?[6,5]:[]);ctx.beginPath();let pen=false;const N=Math.max(700,W*2);
+    for(let i=0;i<=N;i++){const x=xmin+(xmax-xmin)*i/N,y=fn.f(x,pval);if(!isFinite(y)||y<ymin-(ymax-ymin)*3||y>ymax+(ymax-ymin)*3){pen=false;continue;}const px=X(x),py=Y(y);if(!pen){ctx.moveTo(px,py);pen=true;}else ctx.lineTo(px,py);}ctx.stroke();ctx.setLineDash([]);}
+}
+function dot(x,y,c,label,up){ctx.fillStyle=col(c);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(x),Y(y),5,0,7);ctx.fill();ctx.stroke();if(label){ctx.fillStyle='#3a3226';ctx.font='12px PingFang SC, sans-serif';ctx.fillText(label,X(x)+8,Y(y)+(up?-8:16));}}
+function drawMarks(){
+  const f0=FUNCS[0]&&FUNCS[0].f;
+  if(f0&&B.markZeros)for(const z of findZeros(f0,xmin,xmax))dot(z,0,'zero','('+z.toFixed(2)+',0)',true);
+  if(f0&&B.markExtrema)for(const e of findExtrema(f0,xmin,xmax))dot(e.x,e.y,'extremum',null,e.y>0);
+  for(const p of(B.points||[])){const x=p.x,y=p.y!==undefined?p.y:(f0?f0(x,pval):0);dot(x,y,p.color||'point',p.label||'',true);}
+  for(const v of(B.vlines||[])){ctx.strokeStyle=col('asymptote');ctx.setLineDash([6,5]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(X(v.x),0);ctx.lineTo(X(v.x),H);ctx.stroke();ctx.setLineDash([]);if(v.label){ctx.fillStyle='#a89a82';ctx.font='11px PingFang SC, sans-serif';ctx.fillText(v.label,X(v.x)+3,14);}}
+  for(const hl of(B.hlines||[])){ctx.strokeStyle=col('asymptote');ctx.setLineDash([6,5]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,Y(hl.y));ctx.lineTo(W,Y(hl.y));ctx.stroke();ctx.setLineDash([]);}
+}
+function render(){resize();[xmin,xmax]=B.xRange||[-5,5];[ymin,ymax]=autoY();ctx.clearRect(0,0,W,H);grid();drawCurves();drawMarks();updateReadouts();}
+
+function readoutVal(r){const f0=FUNCS[0]&&FUNCS[0].f;if(r.type==='zeros_count'){const d=r.domain||B.xRange,lo=d[0]==null?xmin:d[0],hi=d[1]==null?xmax:d[1];return f0?findZeros(f0,lo,hi).length:0;}if(r.type==='extrema_count')return f0?findExtrema(f0,xmin,xmax).length:0;if(r.type==='expr'){const fn=compileExpr(r.expr,PNAME),v=fn?fn(0,pval):NaN;return isFinite(v)?(+v).toFixed(r.digits!=null?r.digits:2):'—';}if(r.type==='param')return(+pval).toFixed(2);return'';}
+function updateReadouts(){for(const r of(B.readouts||[])){const el=document.getElementById('ro-'+r.id);if(el)el.textContent=readoutVal(r);}}
+function buildConsole(){
+  const c=document.getElementById('console');let html='';
+  if(B.param){const p=B.param;html+='<div class="param-bar"><span>'+(p.label||p.name)+'</span><span class="val" id="pv">'+(+p.value).toFixed(2)+(p.unit||'')+'</span></div><input type="range" id="slider" aria-label="'+(p.name||'参数')+'" min="'+p.min+'" max="'+p.max+'" step="'+(p.step||.1)+'" value="'+p.value+'">';if(p.ticks)html+='<div class="ticks">'+p.ticks.map(t=>'<span>'+t+'</span>').join('')+'</div>';}
+  if((B.readouts||[]).length)html+='<div class="readouts">'+B.readouts.map(r=>'<div class="readout'+(r.highlight?' hl':'')+'"><span>'+r.label+'</span><span class="rv" id="ro-'+r.id+'"></span></div>').join('')+'</div>';
+  c.innerHTML=html;
+  if(!html)document.getElementById('left-column').classList.add('no-console');
+  const sl=document.getElementById('slider');if(sl)sl.addEventListener('input',()=>{pval=parseFloat(sl.value);const pv=document.getElementById('pv');if(pv)pv.textContent=(+pval).toFixed(2)+(B.param.unit||'');render();});
+}
+function buildLegend(){const box=document.getElementById('legend');box.innerHTML=FUNCS.map(fn=>'<span class="legend-item"><i class="legend-line" style="background:'+col(fn.color||'curve')+'"></i>'+(fn.label||fn.expr||'函数')+'</span>').join('');}
+function renderContent(){
+  document.getElementById('title').textContent=DATA.lesson.title||'';document.getElementById('problem').innerHTML=DATA.lesson.problem||'';
+  document.getElementById('steps').innerHTML=(DATA.steps||[]).map((s,i)=>'<article class="step"><h2 class="step-title"><span class="step-no">'+String(i+1).padStart(2,'0')+'</span><span>'+(s.title||'')+'</span></h2><div class="step-body">'+(s.content||'')+'</div></article>').join('');
+  const ans=document.getElementById('answer');if(DATA.lesson.answer){ans.style.display='block';ans.innerHTML='<b>'+(DATA.lesson.answerLabel||'答案')+'：</b> '+DATA.lesson.answer;}
+}
+function resetView(){if(B.param){pval=B.param.standard!=null?B.param.standard:B.param.value;const sl=document.getElementById('slider'),pv=document.getElementById('pv');if(sl)sl.value=pval;if(pv)pv.textContent=(+pval).toFixed(2)+(B.param.unit||'');}render();}
+function typeset(){if(window.renderMathInElement)renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});}
+let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,80);});
+document.getElementById('reset').addEventListener('click',resetView);
+buildConsole();buildLegend();renderContent();render();typeset();
+</script>
+</body>
+</html>

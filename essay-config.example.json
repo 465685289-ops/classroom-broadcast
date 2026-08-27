@@ -1,0 +1,9 @@
+{
+  "essay_base_url": "https://zuowen.yingyuzuowen.asia",
+  "english_base_url": "https://notice.yingyuzuowen.asia",
+  "learning_base_url": "https://xiezuo.yingyuzuowen.asia",
+  "qwen_api_key": "",
+  "qwen_ocr_model": "qwen-vl-max",
+  "minimax_api_keys": "key1,key2",
+  "minimax_model": "MiniMax-M2.7"
+}
