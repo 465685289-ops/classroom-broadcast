@@ -749,6 +749,53 @@ app.post('/api/password-reset/request', (req, res) => {
   });
 });
 
+// ── 工作台会话换广播令牌（同域统一账号 SSO 的最后一环）──
+
+const WORKBENCH_SSO_URL = (process.env.WORKBENCH_SSO_URL || 'http://127.0.0.1:8788').replace(/\/+$/, '')
+
+app.post('/api/sso/from-workbench', async (req, res) => {
+  const bearer = String(req.headers.authorization || '')
+  const workbenchToken = bearer.startsWith('Bearer ') ? bearer.slice(7) : ''
+  if (!workbenchToken) return res.status(401).json({ error: '缺少工作台会话' })
+  let me
+  try {
+    const resp = await fetch(`${WORKBENCH_SSO_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${workbenchToken}` },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!resp.ok) return res.status(401).json({ error: '工作台会话已过期，请重新登录工作台' })
+    me = await resp.json()
+  } catch {
+    return res.status(503).json({ error: '工作台账号服务暂时不可用' })
+  }
+  if (!me?.id) return res.status(401).json({ error: '工作台会话已过期，请重新登录工作台' })
+  const state = store
+  const shixingSuffix = String(me.shixingUserId || '').startsWith('shixing:')
+    ? String(me.shixingUserId).slice('shixing:'.length)
+    : ''
+  const workbenchLink = `workbench:${me.id}`
+  const email = String(me.email || '').trim().toLowerCase()
+  let user
+  if (shixingSuffix) user = state.users.find((item) => item.id === shixingSuffix)
+  if (!user && email) {
+    user = state.users.find((item) => item.contact_type === 'email'
+      && String(item.contact_value || '').trim().toLowerCase() === email)
+  }
+  if (!user) {
+    return res.status(404).json({ error: '未找到同名广播账号，请直接用广播账号登录一次' })
+  }
+  user.workbenchUserId = workbenchLink
+  let token = user.token
+  if (!(token && user.token_expires && Date.parse(user.token_expires) > Date.now())) {
+    token = genToken()
+    user.token = token
+    user.token_expires = new Date(Date.now() + AUTH_TOKEN_TTL_MS).toISOString()
+  }
+  saveDB(state)
+  res.set('Cache-Control', 'no-store')
+  res.json({ token, username: user.username, display_name: user.display_name, plan_status: getUserPlanStatus(user) })
+})
+
 app.get('/api/profile', userAuth, (req, res) => {
   const u = req.user;
   const classCount = getVisibleClasses(u.id).length;

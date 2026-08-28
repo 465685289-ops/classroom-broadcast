@@ -2138,7 +2138,17 @@ var savedUser = localStorage.getItem('broadcast_user');
 if (savedUser) document.getElementById('loginUser').value = savedUser;
 
 token = savedToken || '';
-fetch(API + '/api/profile', { headers: headers() })
+var bootPromise = token
+  ? fetch(API + '/api/profile', { headers: headers() })
+  : fetch(API + '/api/sso/from-workbench', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      .then(function(r) { if (!r.ok) throw 'sso'; return r.json(); })
+      .then(function(d) {
+        token = d.token;
+        localStorage.setItem('broadcast_token', d.token);
+        if (d.username) localStorage.setItem('broadcast_user', d.username);
+        return fetch(API + '/api/profile', { headers: headers() });
+      });
+bootPromise
 .then(function(r) { if (r.ok) return r.json(); throw 'auth'; })
 .then(function(data) { enterApp(data.plan_status); })
 .catch(function() { token = ''; });
