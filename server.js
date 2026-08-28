@@ -759,7 +759,7 @@ app.post('/api/sso/from-workbench', async (req, res) => {
   if (!workbenchToken) return res.status(401).json({ error: '缺少工作台会话' })
   let me
   try {
-    const resp = await fetch(`${WORKBENCH_SSO_URL}/api/auth/me`, {
+    const resp = await fetch(`${WORKBENCH_SSO_URL}/api/auth/sso-identity`, {
       headers: { Authorization: `Bearer ${workbenchToken}` },
       signal: AbortSignal.timeout(5000),
     })

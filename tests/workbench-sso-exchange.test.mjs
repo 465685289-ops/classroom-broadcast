@@ -20,7 +20,7 @@ const BROADCAST_USER_ID = 'shixing-user-1'
 
 // 模拟工作台 /api/auth/me
 const workbench = createServer((req, res) => {
-  if (req.url === '/api/auth/me' && req.headers.authorization === 'Bearer wb-token-1') {
+  if (req.url === '/api/auth/sso-identity' && req.headers.authorization === 'Bearer wb-token-1') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({
       id: WORKBENCH_USER_ID,
