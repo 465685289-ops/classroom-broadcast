@@ -103,7 +103,8 @@ const ANALYTICS_PRODUCTS = new Set([
   'english',
   'roundtable',
   'edulab',
-  'learning'
+  'learning',
+  'workbench'
 ]);
 const analyticsRateLimits = new Map();
 
