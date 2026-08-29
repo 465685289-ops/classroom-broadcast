@@ -770,54 +770,66 @@ function workbenchUsername(me, users) {
 app.post('/api/sso/from-workbench', async (req, res) => {
   const bearer = String(req.headers.authorization || '')
   const workbenchToken = bearer.startsWith('Bearer ') ? bearer.slice(7) : ''
-  if (!workbenchToken) return res.status(401).json({ error: '缺少工作台会话' })
-  let me
-  try {
-    const resp = await fetch(`${WORKBENCH_SSO_URL}/api/auth/sso-identity`, {
-      headers: { Authorization: `Bearer ${workbenchToken}` },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (!resp.ok) return res.status(401).json({ error: '工作台会话已过期，请重新登录工作台' })
-    me = await resp.json()
-  } catch {
-    return res.status(503).json({ error: '工作台账号服务暂时不可用' })
-  }
-  if (!me?.id) return res.status(401).json({ error: '工作台会话已过期，请重新登录工作台' })
+  const cookieToken = workbenchToken
+    ? ''
+    : (parseCookieHeader(req.headers.cookie || '').shixing_auth || '')
+  if (!workbenchToken && !cookieToken) return res.status(401).json({ error: '缺少工作台会话' })
   const state = store
-  const shixingSuffix = String(me.shixingUserId || '').startsWith('shixing:')
-    ? String(me.shixingUserId).slice('shixing:'.length)
-    : ''
-  const workbenchLink = `workbench:${me.id}`
-  const email = String(me.email || '').trim().toLowerCase()
-  let user
-  if (shixingSuffix) user = state.users.find((item) => item.id === shixingSuffix)
-  if (!user && email) {
-    user = state.users.find((item) => item.contact_type === 'email'
-      && String(item.contact_value || '').trim().toLowerCase() === email)
-  }
-  if (!user) {
-    if (!email) return res.status(400).json({ error: '工作台账号缺少邮箱，暂时无法开通广播身份' })
-    const password = hashPassword(crypto.randomBytes(32).toString('base64url'))
-    user = {
-      id: crypto.randomUUID(),
-      username: workbenchUsername(me, state.users),
-      display_name: String(me.name || '老师').trim().slice(0, 20) || '老师',
-      teacher_code: genUniqueTeacherCode(),
-      contact_type: 'email',
-      contact_value: email,
-      registration_email: email,
-      password_hash: password.hash,
-      password_salt: password.salt,
-      plan: 'trial',
-      plan_expires: null,
-      token: '',
-      token_expires: null,
-      workbenchUserId: workbenchLink,
-      created_at: new Date().toISOString()
+  let user = null
+  let workbenchLink = ''
+  if (workbenchToken) {
+    let me
+    try {
+      const resp = await fetch(`${WORKBENCH_SSO_URL}/api/auth/sso-identity`, {
+        headers: { Authorization: `Bearer ${workbenchToken}` },
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!resp.ok) return res.status(401).json({ error: '工作台会话已过期，请重新登录工作台' })
+      me = await resp.json()
+    } catch {
+      return res.status(503).json({ error: '工作台账号服务暂时不可用' })
     }
-    state.users.push(user)
+    if (!me?.id) return res.status(401).json({ error: '工作台会话已过期，请重新登录工作台' })
+    workbenchLink = `workbench:${me.id}`
+    const shixingSuffix = String(me.shixingUserId || '').startsWith('shixing:')
+      ? String(me.shixingUserId).slice('shixing:'.length)
+      : ''
+    const email = String(me.email || '').trim().toLowerCase()
+    if (shixingSuffix) user = state.users.find((item) => item.id === shixingSuffix)
+    if (!user && email) {
+      user = state.users.find((item) => item.contact_type === 'email'
+        && String(item.contact_value || '').trim().toLowerCase() === email)
+    }
+    if (!user) {
+      if (!email) return res.status(400).json({ error: '工作台账号缺少邮箱，暂时无法开通广播身份' })
+      const password = hashPassword(crypto.randomBytes(32).toString('base64url'))
+      user = {
+        id: crypto.randomUUID(),
+        username: workbenchUsername(me, state.users),
+        display_name: String(me.name || '老师').trim().slice(0, 20) || '老师',
+        teacher_code: genUniqueTeacherCode(),
+        contact_type: 'email',
+        contact_value: email,
+        registration_email: email,
+        password_hash: password.hash,
+        password_salt: password.salt,
+        plan: 'trial',
+        plan_expires: null,
+        token: '',
+        token_expires: null,
+        workbenchUserId: workbenchLink,
+        created_at: new Date().toISOString()
+      }
+      state.users.push(user)
+    }
+    user.workbenchUserId = workbenchLink
+  } else {
+    // 跨标签页：新标签拿不到工作台 sessionStorage，改凭师行登录 Cookie 定位广播账号
+    user = findUserByToken(cookieToken)
+    if (!user || user.status !== 'active') {
+      return res.status(401).json({ error: '登录已过期，请重新登录' })
+    }
   }
-  user.workbenchUserId = workbenchLink
   let token = user.token
   if (!(token && user.token_expires && Date.parse(user.token_expires) > Date.now())) {
     token = genToken()
@@ -825,6 +837,7 @@ app.post('/api/sso/from-workbench', async (req, res) => {
     user.token_expires = new Date(Date.now() + AUTH_TOKEN_TTL_MS).toISOString()
   }
   saveDB(state)
+  setAuthCookie(req, res, token)
   res.set('Cache-Control', 'no-store')
   res.json({ token, username: user.username, display_name: user.display_name, plan_status: getUserPlanStatus(user) })
 })

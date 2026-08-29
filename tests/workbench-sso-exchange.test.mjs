@@ -54,6 +54,8 @@ dbStore.upsertUser({
   password_salt: 'test-salt',
   contact_type: 'email',
   contact_value: 'hetao@example.test',
+  token: 'cookie-path-token',
+  token_expires: new Date(Date.now() + 86400000).toISOString(),
   plan: 'yearly',
   plan_expires: new Date(Date.now() + 86400000 * 30).toISOString(),
   created_at: new Date().toISOString(),
@@ -90,6 +92,17 @@ test('工作台令牌无效时拒绝', async () => {
   assert.equal(r.status, 401)
   const b = await r.json()
   assert.match(b.error, /过期/)
+})
+
+test('跨标签页：师行 Cookie 兜底换票（无 Bearer）', async () => {
+  const r = await fetch(`http://127.0.0.1:${port}/api/sso/from-workbench`, {
+    method: 'POST',
+    headers: { Cookie: 'shixing_auth=cookie-path-token' },
+  })
+  assert.equal(r.status, 200)
+  const body = await r.json()
+  assert.equal(body.token, 'cookie-path-token', 'Cookie 路径应返回用户现行令牌')
+  assert.match(String(r.headers.get('set-cookie') || ''), /shixing_auth=cookie-path-token/)
 })
 
 test('有效工作台会话换发广播令牌并可调用 profile', async () => {
