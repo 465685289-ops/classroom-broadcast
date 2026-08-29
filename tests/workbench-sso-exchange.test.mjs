@@ -118,6 +118,7 @@ test('有效工作台会话换发广播令牌并可调用 profile', async () => 
   assert.equal(body.username, 'hetao')
   assert.ok(body.token)
   assert.equal(body.plan_status.active, true)
+  assert.match(r.headers.get('set-cookie') || '', /shixing_auth=/, '换票后应写入同域安全 Cookie，供高级设置新窗口复用')
 
   const profile = await fetch(`http://127.0.0.1:${port}/api/profile`, {
     headers: { 'X-Token': body.token },

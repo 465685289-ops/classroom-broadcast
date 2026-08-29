@@ -826,7 +826,7 @@ app.post('/api/sso/from-workbench', async (req, res) => {
   } else {
     // 跨标签页：新标签拿不到工作台 sessionStorage，改凭师行登录 Cookie 定位广播账号
     user = findUserByToken(cookieToken)
-    if (!user || user.status !== 'active') {
+    if (!user) {
       return res.status(401).json({ error: '登录已过期，请重新登录' })
     }
   }

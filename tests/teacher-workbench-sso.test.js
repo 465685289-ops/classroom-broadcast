@@ -15,4 +15,9 @@ test('teacher page exchanges the active workbench session instead of falling bac
     teacherPage,
     /fetch\(API \+ '\/api\/sso\/from-workbench',\s*\{\s*method:\s*'POST',\s*headers:\s*\{\s*'Content-Type':\s*'application\/json'\s*\}\s*\}\)/,
   );
+  assert.match(
+    teacherPage,
+    /headers:\s*workbenchToken[\s\S]*?Authorization:\s*'Bearer '\s*\+\s*workbenchToken[\s\S]*?:\s*\{\s*'Content-Type':\s*'application\/json'\s*\}/,
+    '高级设置新窗口应能在没有 sessionStorage 时使用同域 Cookie 换票',
+  );
 });
