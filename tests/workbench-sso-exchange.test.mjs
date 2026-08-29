@@ -30,6 +30,15 @@ const workbench = createServer((req, res) => {
     }))
     return
   }
+  if (req.url === '/api/auth/sso-identity' && req.headers.authorization === 'Bearer wb-token-new') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({
+      id: 'wb-user-new',
+      name: '新老师',
+      email: 'new-teacher@example.test',
+    }))
+    return
+  }
   res.writeHead(401, { 'Content-Type': 'application/json' })
   res.end(JSON.stringify({ error: '未登录' }))
 })
@@ -103,6 +112,21 @@ test('有效工作台会话换发广播令牌并可调用 profile', async () => 
   assert.equal(profile.status, 200)
   const me = await profile.json()
   assert.equal(me.username, 'hetao', '广播 profile 为扁平结构')
+})
+
+test('只有工作台账号的新老师会自动获得广播身份，无需再次注册登录', async () => {
+  const response = await post({ Authorization: 'Bearer wb-token-new' })
+  assert.equal(response.status, 200)
+  const body = await response.json()
+  assert.equal(body.display_name, '新老师')
+  assert.ok(body.token)
+
+  const profile = await fetch(`http://127.0.0.1:${port}/api/profile`, {
+    headers: { 'X-Token': body.token },
+  })
+  assert.equal(profile.status, 200)
+  const me = await profile.json()
+  assert.equal(me.contact_value, 'new-teacher@example.test')
 })
 
 test.after(async () => {

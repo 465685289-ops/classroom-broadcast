@@ -753,6 +753,20 @@ app.post('/api/password-reset/request', (req, res) => {
 
 const WORKBENCH_SSO_URL = (process.env.WORKBENCH_SSO_URL || 'http://127.0.0.1:8788').replace(/\/+$/, '')
 
+function workbenchUsername(me, users) {
+  const emailPrefix = String(me.email || '').split('@')[0]
+  let base = emailPrefix.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 16)
+  if (base.length < 2) base = `teacher${String(me.id || '').replace(/[^A-Za-z0-9]/g, '').slice(-6)}`
+  if (base.length < 2) base = 'teacher'
+  let candidate = base
+  let suffix = 2
+  while (users.some((item) => item.username === candidate)) {
+    candidate = `${base.slice(0, 16 - String(suffix).length)}${suffix}`
+    suffix += 1
+  }
+  return candidate
+}
+
 app.post('/api/sso/from-workbench', async (req, res) => {
   const bearer = String(req.headers.authorization || '')
   const workbenchToken = bearer.startsWith('Bearer ') ? bearer.slice(7) : ''
@@ -782,7 +796,26 @@ app.post('/api/sso/from-workbench', async (req, res) => {
       && String(item.contact_value || '').trim().toLowerCase() === email)
   }
   if (!user) {
-    return res.status(404).json({ error: '未找到同名广播账号，请直接用广播账号登录一次' })
+    if (!email) return res.status(400).json({ error: '工作台账号缺少邮箱，暂时无法开通广播身份' })
+    const password = hashPassword(crypto.randomBytes(32).toString('base64url'))
+    user = {
+      id: crypto.randomUUID(),
+      username: workbenchUsername(me, state.users),
+      display_name: String(me.name || '老师').trim().slice(0, 20) || '老师',
+      teacher_code: genUniqueTeacherCode(),
+      contact_type: 'email',
+      contact_value: email,
+      registration_email: email,
+      password_hash: password.hash,
+      password_salt: password.salt,
+      plan: 'trial',
+      plan_expires: null,
+      token: '',
+      token_expires: null,
+      workbenchUserId: workbenchLink,
+      created_at: new Date().toISOString()
+    }
+    state.users.push(user)
   }
   user.workbenchUserId = workbenchLink
   let token = user.token

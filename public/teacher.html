@@ -2133,21 +2133,30 @@ document.querySelectorAll('[data-comment-link]').forEach(function(link) {
   }).catch(function(){});
 })();
 
-var savedToken = localStorage.getItem('broadcast_token') || sessionStorage.getItem('broadcast_token');
+var savedToken = sessionStorage.getItem('broadcast_token') || localStorage.getItem('broadcast_token');
+var workbenchToken = sessionStorage.getItem('sgp_token') || '';
 var savedUser = localStorage.getItem('broadcast_user');
 if (savedUser) document.getElementById('loginUser').value = savedUser;
 
 token = savedToken || '';
 var bootPromise = token
   ? fetch(API + '/api/profile', { headers: headers() })
-  : fetch(API + '/api/sso/from-workbench', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+  : workbenchToken
+    ? fetch(API + '/api/sso/from-workbench', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + workbenchToken
+        }
+      })
       .then(function(r) { if (!r.ok) throw 'sso'; return r.json(); })
       .then(function(d) {
         token = d.token;
-        localStorage.setItem('broadcast_token', d.token);
+        sessionStorage.setItem('broadcast_token', d.token);
         if (d.username) localStorage.setItem('broadcast_user', d.username);
         return fetch(API + '/api/profile', { headers: headers() });
-      });
+      })
+    : Promise.reject('no-session');
 bootPromise
 .then(function(r) { if (r.ok) return r.json(); throw 'auth'; })
 .then(function(data) { enterApp(data.plan_status); })
