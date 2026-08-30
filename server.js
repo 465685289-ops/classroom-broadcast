@@ -5,7 +5,6 @@ const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 const { spawn } = require('child_process');
-const https = require('https');
 const nodemailer = require('nodemailer');
 const dbStore = require('./db');
 const { POINT_COSTS, POINT_PACKAGES } = require('./shixing-points');
@@ -77,38 +76,14 @@ const {
   installEssayRoutes
 } = require('./essay-routes.js');
 
-// 可选：从本机私有密钥文件加载环境变量（优先级低于真实环境变量，不覆盖已有值）。
-// 格式：每行 KEY=VALUE，# 开头为注释；路径可用 SECRETS_FILE 环境变量覆盖。
-// 文件不存在是常态（服务器上用 systemd/nginx 注入环境变量），静默跳过。
+const {
+  installTtsRoutes
+} = require('./tts-routes.js');
+
 // ---- 认证核心（自 auth-core.js 引入）----
 const {
   paidPlanExpiresFromNow, paidPlanExpiresForUser, activateYearlyPlan, genCode, genUniqueBindCode, genUniqueTeacherCode, hashPassword, verifyPassword, setUserPassword, genToken, safeEqual, issueUserToken, revokeUserToken, findUserByToken, refreshUserTokenExpiry, getUserPlanStatus
 } = require('./auth-core');
-
-(function loadSecretsFile() {
-  const secretsPath = process.env.SECRETS_FILE
-    || path.join(require('os').homedir(), '.config', 'classroom-broadcast', 'secrets.env');
-  try {
-    let loaded = 0;
-    for (const raw of fs.readFileSync(secretsPath, 'utf8').split(/\r?\n/)) {
-      const line = raw.trim();
-      if (!line || line.startsWith('#')) continue;
-      const eq = line.indexOf('=');
-      if (eq <= 0) continue;
-      const key = line.slice(0, eq).trim();
-      if (!/^[A-Z][A-Z0-9_]*$/.test(key) || process.env[key] !== undefined) continue;
-      let value = line.slice(eq + 1).trim();
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
-      }
-      process.env[key] = value;
-      loaded++;
-    }
-    console.log('[SECURITY] 已从私有密钥文件加载 ' + loaded + ' 个配置项');
-  } catch (e) {
-    // 密钥文件缺失时走配置文件/env 默认逻辑
-  }
-})();
 
 const app = express();
 const server = http.createServer(app);
@@ -415,6 +390,7 @@ installEnglishRoutes(app);
 installReferralRoutes(app);
 installRoundtableRoutes(app);
 installEssayRoutes(app);
+installTtsRoutes(app);
 
 app.post('/api/analytics/event', (req, res) => {
   if (!analyticsRequestAllowed(req)) return res.status(429).json({ error: '请求过于频繁' });
@@ -1698,61 +1674,6 @@ app.delete('/api/bulletins/:id', userAuth, (req, res) => {
   dbStore.deleteBulletin(bulletin.id);
   emitBulletins(cls.id);
   res.json({ ok: true });
-});
-
-// ---------- TTS ----------
-// TTS 限流：同一 IP 每分钟最多20次
-const ttsRateMap = new Map();
-const TTS_RATE_LIMIT = 20;
-const TTS_RATE_WINDOW_MS = 60 * 1000;
-
-function ttsRateLimited(ip) {
-  const now = Date.now();
-  const rec = ttsRateMap.get(ip);
-  if (!rec || now - rec.first >= TTS_RATE_WINDOW_MS) {
-    if (ttsRateMap.size > 5000) ttsRateMap.clear();
-    ttsRateMap.set(ip, { first: now, count: 1 });
-    return false;
-  }
-  rec.count++;
-  return rec.count > TTS_RATE_LIMIT;
-}
-
-app.post('/api/tts', (req, res) => {
-  if (ttsRateLimited(req.ip || 'unknown')) return res.status(429).end();
-  // 鉴权：教室端带绑定码，老师端带登录 token，二者必居其一
-  const bindCode = String(req.body.bind_code || '').trim().toUpperCase();
-  const boundClass = bindCode ? store.classes.find(c => c.bind_code === bindCode) : null;
-  const authedUser = findUserByToken(authTokenFromReq(req));
-  if (!boundClass && !authedUser) return res.status(401).end();
-  const text = String(req.body.text || '').slice(0, 500);
-  console.log('[TTS] text:', text ? text.slice(0, 30) : '(empty)', 'len:', text.length);
-  if (!text) return res.status(400).end();
-
-  const reqPath = '/text2audio?tex=' + encodeURIComponent(text) +
-    '&cuid=baidu_speech_demo&lan=zh&ctp=1&pdt=301&vol=15&rate=32&per=0&spd=4';
-  console.log('[TTS] path:', reqPath.slice(0, 200));
-
-  https.get({
-    hostname: 'tts.baidu.com',
-    path: reqPath,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Referer': 'https://www.baidu.com',
-      'Accept': '*/*'
-    }
-  }, (resp) => {
-    const ct = resp.headers['content-type'] || '';
-    console.log('[TTS] baidu resp:', resp.statusCode, ct);
-    if (resp.statusCode !== 200 || ct.indexOf('audio') === -1) {
-      let body = '';
-      resp.on('data', c => body += c);
-      resp.on('end', () => { console.log('[TTS] baidu body:', body.slice(0, 300)); });
-      return res.status(500).end();
-    }
-    res.set('Content-Type', ct);
-    resp.pipe(res);
-  }).on('error', (e) => { console.log('[TTS] error:', e.message); res.status(500).end(); });
 });
 
 // ---------- Admin API ----------

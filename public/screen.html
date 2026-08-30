@@ -1047,7 +1047,7 @@ function renderHistory() {
 }
 
 // ========== TTS via Web Audio API ==========
-// TTS: 浏览器直接请求百度TTS（绕过服务器IP限流）
+// TTS: 优先请求自有服务端的腾讯云精品语音，失败时使用浏览器本地语音。
 function finishTTS(runId, onDone) {
   if (runId !== ttsRunId) return;
   activeAudio = null;
@@ -1100,51 +1100,10 @@ function playAudioElement(audio, runId, onPlayError) {
 function speakText(text, repeatCount, onDone) {
   stopCurrentTTS();
   var runId = ++ttsRunId;
-  var url = 'https://tts.baidu.com/text2audio?tex=' + encodeURIComponent(text) +
-    '&cuid=baidu_speech_demo&lan=zh&ctp=1&pdt=301&vol=15&rate=32&per=0&spd=4';
-  var audio = document.createElement('audio');
-  audio.src = url;
-  // 不设crossOrigin，避免百度不返回CORS头导致音频被拦截
-  audio.volume = 1.0;
-  activeAudio = audio;
-  var count = 0;
-
-  audio.onended = function() {
-    if (runId !== ttsRunId) return;
-    count++;
-    if (count < repeatCount) {
-      activeReplayTimer = setTimeout(function() {
-        if (runId !== ttsRunId) return;
-        audio.currentTime = 0;
-        playAudioElement(audio, runId, function() {
-          audio.onended = null;
-          audio.onerror = null;
-          activeAudio = null;
-          speakTextFallback(text, repeatCount - count, onDone, runId);
-        });
-      }, 800);
-    } else {
-      finishTTS(runId, onDone);
-    }
-  };
-  audio.onerror = function() {
-    // 直连失败，回退到服务器代理
-    if (runId !== ttsRunId) return;
-    audio.onended = null;
-    audio.onerror = null;
-    activeAudio = null;
-    speakTextFallback(text, repeatCount, onDone, runId);
-  };
-
-  playAudioElement(audio, runId, function() {
-    audio.onended = null;
-    audio.onerror = null;
-    activeAudio = null;
-    speakTextFallback(text, repeatCount, onDone, runId);
-  });
+  speakTextFallback(text, repeatCount, onDone, runId);
 }
 
-// 服务器代理回退方案
+// 服务器精品语音方案
 function speakTextFallback(text, repeatCount, onDone, runId) {
   if (runId !== ttsRunId) return;
   if (!audioCtx) {
@@ -1211,7 +1170,7 @@ function playTTSBuffer(buffer, repeatCount, count, onDone, runId) {
   var gainNode = audioCtx.createGain();
   activeAudioSource = source;
   source.buffer = buffer;
-  gainNode.gain.value = 3.0;
+  gainNode.gain.value = 1.0;
   source.connect(gainNode);
   gainNode.connect(audioCtx.destination);
   source.onended = function() {

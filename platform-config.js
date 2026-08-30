@@ -2,8 +2,34 @@
 // 平台静态配置层：全部环境变量 / JSON 配置文件解析出的常量。
 // 优先级：真实环境变量 > secrets.env 注入的 env > 本地 JSON 配置 > 内置默认值。
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
+
+// 在任何配置常量求值前加载本机私有密钥；已有环境变量永远优先，不会被覆盖。
+function loadSecretsEnv() {
+  const secretsPath = process.env.SECRETS_FILE
+    || path.join(os.homedir(), '.config', 'classroom-broadcast', 'secrets.env');
+  try {
+    for (const raw of fs.readFileSync(secretsPath, 'utf8').split(/\r?\n/)) {
+      const line = raw.trim();
+      if (!line || line.startsWith('#')) continue;
+      const eq = line.indexOf('=');
+      if (eq <= 0) continue;
+      const key = line.slice(0, eq).trim();
+      if (!/^[A-Z][A-Z0-9_]*$/.test(key) || process.env[key] !== undefined) continue;
+      let value = line.slice(eq + 1).trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      process.env[key] = value;
+    }
+  } catch (e) {
+    // 文件不存在是常态；生产环境通常由 systemd 直接注入环境变量。
+  }
+}
+
+loadSecretsEnv();
 
 function loadPaymentConfig() {
   try {
@@ -80,6 +106,13 @@ const PUBLIC_BASE_URL = configValue('PUBLIC_BASE_URL', 'public_base_url', '').re
 const COMMENT_BASE_URL = commentConfigValue('COMMENT_BASE_URL', 'comment_base_url', '').replace(/\/+$/, '');
 const DEEPSEEK_API_KEY = commentConfigValue('DEEPSEEK_API_KEY', 'deepseek_api_key', '');
 const DEEPSEEK_MODEL = commentConfigValue('DEEPSEEK_MODEL', 'deepseek_model', 'deepseek-v4-flash') || 'deepseek-v4-flash';
+const TENCENT_TTS_SECRET_ID = String(process.env.TENCENT_TTS_SECRET_ID || process.env.TENCENTCLOUD_SECRET_ID || '').trim();
+const TENCENT_TTS_SECRET_KEY = String(process.env.TENCENT_TTS_SECRET_KEY || process.env.TENCENTCLOUD_SECRET_KEY || '').trim();
+const TENCENT_TTS_REGION = String(process.env.TENCENT_TTS_REGION || 'ap-guangzhou').trim() || 'ap-guangzhou';
+const configuredTtsVoiceType = parseInt(process.env.TENCENT_TTS_VOICE_TYPE || '101001', 10);
+const TENCENT_TTS_VOICE_TYPE = Number.isSafeInteger(configuredTtsVoiceType) && configuredTtsVoiceType > 0
+  ? configuredTtsVoiceType
+  : 101001;
 const YUNGOU_MCH_ID = configValue('YUNGOU_MCH_ID', 'yungou_mch_id', '');
 const YUNGOU_PAY_KEY = configValue('YUNGOU_PAY_KEY', 'yungou_pay_key', '');
 const YUNGOU_APP_ID = configValue('YUNGOU_APP_ID', 'yungou_app_id', '');
@@ -175,6 +208,7 @@ const ROADMAP_FEATURES = {
 };
 
 module.exports = {
+  loadSecretsEnv,
   loadPaymentConfig,
   loadMailConfig,
   loadCommentConfig,
@@ -197,6 +231,10 @@ module.exports = {
   COMMENT_BASE_URL,
   DEEPSEEK_API_KEY,
   DEEPSEEK_MODEL,
+  TENCENT_TTS_SECRET_ID,
+  TENCENT_TTS_SECRET_KEY,
+  TENCENT_TTS_REGION,
+  TENCENT_TTS_VOICE_TYPE,
   YUNGOU_MCH_ID,
   YUNGOU_PAY_KEY,
   YUNGOU_APP_ID,

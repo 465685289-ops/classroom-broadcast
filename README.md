@@ -52,6 +52,19 @@ YUNGOU_PAY_KEY=your_pay_key
 YEARLY_PLAN_PRICE=9.90
 ```
 
+### 腾讯云精品语音
+
+班级大屏通过服务端调用腾讯云“基础语音合成”接口，默认使用精品音色“智瑜”（VoiceType `101001`）。腾讯云密钥只能放在服务端，不能写进 `public/` 下的网页：
+
+```bash
+TENCENT_TTS_SECRET_ID=your_tencent_secret_id
+TENCENT_TTS_SECRET_KEY=your_tencent_secret_key
+TENCENT_TTS_REGION=ap-guangzhou
+TENCENT_TTS_VOICE_TYPE=101001
+```
+
+本机可把真实值写入 `~/.config/classroom-broadcast/secrets.env`；生产服务器使用同名 systemd 环境变量。未配置或腾讯云临时失败时，大屏会自动使用浏览器本地中文语音，不影响通知展示。
+
 ## 部署提示
 
 如果用 systemd 部署，建议把 `ADMIN_PASS`、`YUNGOU_MCH_ID`、`YUNGOU_PAY_KEY` 等放到 systemd 环境变量或服务器本地配置文件中，不要写进仓库。
@@ -82,11 +95,11 @@ ai-engines.js           评语(DeepSeek)、作文(Qwen·MiniMax)、学习助手�
 middleware.js           userAuth/adminAuth/screen 会话等中间件；installAdminSessionRoutes
 *-routes.js             路由域模块（installer 模式，server.js 启动时集中 install）：
                         comment-routes / learning-routes / english-routes /
-                        referral-routes / essay-routes / roundtable-routes
+                        referral-routes / essay-routes / roundtable-routes / tts-routes
+tencent-tts.js          腾讯云精品语音 SDK 适配、参数约束与 MP3 解码
 ```
 
 约定：
 - 模块经 `state` 容器访问共享运行态；互相之间只允许单向 require，禁止回环。
 - 本机私有密钥放 `~/.config/classroom-broadcast/secrets.env`（KEY=VALUE，服务器同名环境变量优先）。
 - 部分测试为源码守卫（直接读源文件做正则断言），迁移实现时需同步守卫目标文件。
-

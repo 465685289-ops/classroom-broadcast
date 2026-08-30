@@ -60,6 +60,28 @@ test('broadcast quick replies keep only useful acknowledgements', () => {
   assert.doesNotMatch(page, /请再发一次/);
 });
 
+test('classroom broadcast requests the server voice first and keeps browser speech as fallback', () => {
+  const speakBlock = page.match(/function\s+speakText\s*\([\s\S]*?(?=\/\/ 服务器精品语音方案)/);
+  assert.ok(speakBlock, '缺少 speakText 实现');
+  const calls = [];
+  const context = {
+    calls,
+    ttsRunId: 0,
+    stopCurrentTTS() {},
+    speakTextFallback(text, repeatCount, onDone, runId) {
+      calls.push({ text, repeatCount, onDone, runId });
+    }
+  };
+  vm.runInNewContext(`${speakBlock[0]}; speakText('请保持安静', 2, 'done')`, context);
+  assert.deepEqual(calls.map(call => ({ text: call.text, repeatCount: call.repeatCount })), [
+    { text: '请保持安静', repeatCount: 2 }
+  ]);
+  assert.match(page, /xhr\.open\('POST',\s*'\/api\/tts'/);
+  assert.match(page, /function\s+speakWithBrowserTTS\s*\(/);
+  assert.doesNotMatch(page, /tts\.baidu\.com/);
+  assert.doesNotMatch(page, /gainNode\.gain\.value\s*=\s*(?:[2-9]|[1-9]\d)/);
+});
+
 test('today count and classroom history survive reloads and reset by day', () => {
   assert.match(page, /function\s+loadScreenState\s*\(/);
   assert.match(page, /function\s+saveScreenState\s*\(/);
