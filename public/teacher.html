@@ -165,6 +165,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 .repeat-row{display:flex;align-items:center;gap:10px}
 .repeat-row input{width:70px;text-align:center}
 .repeat-row span{font-size:13px;color:#888}
+.broadcast-mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:5px;background:#efe7d6;border:1px solid var(--v-line,#e0d4bd);border-radius:12px}
+.broadcast-mode-toggle button{padding:11px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--v-ink-soft,#666);font-size:14px;font-weight:700;cursor:pointer}
+.broadcast-mode-toggle button.active{background:var(--v-card,#fff);border-color:var(--v-line,#e0d4bd);color:var(--v-brass-deep,#7c5722);box-shadow:0 3px 10px rgba(58,48,38,.1)}
+.broadcast-mode-hint{font-size:12px;color:var(--v-ink-faint,#999);line-height:1.6;margin-top:7px}
+
+.timetable-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
+.timetable-card-head h3{margin-bottom:4px}
+.timetable-card-head p{font-size:13px;color:var(--v-ink-faint,#999);line-height:1.6}
+.timetable-class-picker{min-width:190px}
+.timetable-class-picker label{display:block;font-size:12px;color:var(--v-ink-faint,#999);margin-bottom:5px}
+.timetable-class-picker select{width:100%;padding:10px 12px;border:1px solid var(--v-line,#e0d4bd);border-radius:9px;background:var(--v-input,#faf4e8);color:var(--v-ink,#333);font-size:14px}
+.timetable-status{min-height:22px;font-size:13px;color:var(--v-ink-soft,#666);line-height:1.6;margin-bottom:8px}
+.timetable-scroll{width:100%;overflow-x:auto;border:1px solid var(--v-line,#e0d4bd);border-radius:12px;background:#fffaf0;-webkit-overflow-scrolling:touch}
+.class-timetable-table{width:100%;min-width:760px;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.class-timetable-table th,.class-timetable-table td{border-right:1px solid var(--v-line-soft,#e6dcc9);border-bottom:1px solid var(--v-line-soft,#e6dcc9);padding:7px;text-align:center}
+.class-timetable-table th:last-child,.class-timetable-table td:last-child{border-right:none}
+.class-timetable-table tbody tr:last-child th,.class-timetable-table tbody tr:last-child td{border-bottom:none}
+.class-timetable-table thead th{background:#efe7d6;color:var(--v-brass-deep,#7c5722);font-size:13px;font-weight:700}
+.class-timetable-table .slot-head{width:96px;background:#f6efe1;color:var(--v-ink-soft,#666);font-size:13px;white-space:nowrap}
+.class-timetable-table input{width:100%;min-width:100px;padding:8px 7px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--v-ink,#333);font-size:14px;text-align:center;outline:none}
+.class-timetable-table input:focus{border-color:var(--v-brass,#9a6f2e);background:#fff}
+.class-timetable-table input[readonly]{color:var(--v-ink-soft,#666);cursor:default}
+.timetable-empty{padding:34px 18px;text-align:center;color:var(--v-ink-faint,#999);font-size:14px;line-height:1.8}
+.timetable-actions{display:flex;gap:10px;margin-top:14px}
+.timetable-actions button{padding:11px 18px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
+.timetable-actions .save{border:1px solid #8a6228;background:linear-gradient(180deg,#a9793a,#8a6228);color:#fffaf0}
+.timetable-actions .clear{border:1px solid var(--v-line,#e0d4bd);background:transparent;color:var(--v-ink-faint,#999)}
+@media(max-width:600px){
+  .timetable-card-head{display:block}
+  .timetable-class-picker{margin-top:12px;min-width:0}
+  .class-timetable-table{min-width:700px}
+  .timetable-actions button{flex:1}
+}
 
 .history-item{padding:12px 0;border-bottom:1px solid #f0f0f0}
 .history-item:last-child{border:none}
@@ -561,10 +594,19 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
           <input type="text" id="studentName" placeholder="例如：张三">
         </div>
         <div class="form-row">
+          <label>通知方式</label>
+          <input type="hidden" id="broadcastMode" value="voice">
+          <div class="broadcast-mode-toggle" role="group" aria-label="选择通知方式">
+            <button type="button" class="active" data-broadcast-mode="voice" onclick="setBroadcastMode('voice')">文字＋语音</button>
+            <button type="button" data-broadcast-mode="text" onclick="setBroadcastMode('text')">仅文字（静音）</button>
+          </div>
+          <div class="broadcast-mode-hint" id="broadcastModeHint">大屏显示文字并播放语音，可设置播报次数。</div>
+        </div>
+        <div class="form-row">
           <label>播报次数</label>
           <div class="repeat-row">
             <input type="number" id="repeatCount" value="2" min="1" max="10">
-            <span>可设置 1 到 10 次</span>
+            <span>语音模式可设置 1 到 10 次</span>
           </div>
         </div>
       </div>
@@ -733,6 +775,28 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
           4. 同一个班级可邀请多位老师协作，任课老师使用自己的账号即可发送到同一块屏幕<br>
           5. 建议将屏幕端设为浏览器全屏（按 F11）
         </p>
+      </div>
+      <div class="card" id="classTimetableCard">
+        <div class="timetable-card-head">
+          <div>
+            <h3>班级课程表</h3>
+            <p>按班级设置，教室大屏空闲时自动显示；不需要花名册。</p>
+          </div>
+          <div class="timetable-class-picker">
+            <label for="timetableClassSelect">选择班级</label>
+            <select id="timetableClassSelect" onchange="loadClassTimetable()">
+              <option value="">请选择班级</option>
+            </select>
+          </div>
+        </div>
+        <div class="timetable-status" id="classTimetableStatus">请选择一个班级设置课程表</div>
+        <div class="timetable-scroll">
+          <div id="classTimetableEditor" class="timetable-empty">选择班级后，可填写周一至周五的课程安排</div>
+        </div>
+        <div class="timetable-actions" id="classTimetableActions" style="display:none">
+          <button type="button" class="save" onclick="saveClassTimetable()">保存课程表</button>
+          <button type="button" class="clear" onclick="clearClassTimetable()">清空本班课表</button>
+        </div>
       </div>
     </div>
 
@@ -1004,6 +1068,8 @@ var paymentReturnHandled = false;
 var forgotResetToken = '';
 var forgotCooldownTimer = null;
 var emailReminderShownForUser = '';
+var currentTimetableOwner = false;
+var currentClassTimetable = null;
 
 // ========== Avatar System ==========
 var avatarIds = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14','a15','a16'];
@@ -1447,6 +1513,7 @@ function loadClasses() {
     authTeacherSocket();
     renderClassSelects();
     renderClassList();
+    renderTimetableClassSelect();
     ClassroomPointsTeacher.setClasses(classes);
   })
   .catch(function(e) { if (e !== 'auth') toast('加载班级失败','error'); });
@@ -1478,6 +1545,154 @@ function renderClassList() {
       : '<div class="ctp-class-switch"><span class="collaborator">' + (c.management_enabled ? '班级管理已开启' : '当前仅广播') + '</span></div>';
     return '<div class="class-item"><div class="info"><div class="name"><span class="online-dot ' + (c.online ? 'on' : 'off') + '"></span>' + esc(c.name) + ' <span style="font-size:11px;color:#999;font-weight:400;background:#f5f5f5;padding:1px 6px;border-radius:4px">' + gl + '</span> <span style="font-size:11px;color:#4f8cff;font-weight:400;background:#eef4ff;padding:1px 6px;border-radius:4px">' + role + '</span></div><div class="code">绑定码：' + c.bind_code + '　' + (c.online ? '在线 ' + c.online + ' 台' : '离线') + '</div><div class="code">老师：' + (memberNames || '-') + '</div>' + pointsControl + invite + '</div>' + actions + '</div>';
   }).join('');
+}
+
+var CLASS_TIMETABLE_DAYS = [
+  { key: 'mon', label: '周一' },
+  { key: 'tue', label: '周二' },
+  { key: 'wed', label: '周三' },
+  { key: 'thu', label: '周四' },
+  { key: 'fri', label: '周五' }
+];
+var CLASS_TIMETABLE_SLOTS = [
+  '早读', '第1节', '第2节', '第3节', '第4节', '第5节',
+  '第6节', '第7节', '第8节', '晚自习1', '晚自习2', '晚自习3'
+];
+
+function normalizeTimetableForEditor(timetable) {
+  var source = timetable && timetable.entries ? timetable.entries : {};
+  var entries = {};
+  CLASS_TIMETABLE_DAYS.forEach(function(day) {
+    var cells = Array.isArray(source[day.key]) ? source[day.key] : [];
+    entries[day.key] = CLASS_TIMETABLE_SLOTS.map(function(_, index) {
+      return String(cells[index] || '').slice(0, 30);
+    });
+  });
+  return { entries: entries };
+}
+
+function escapeTimetableAttribute(value) {
+  return esc(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function buildTimetableEditorHtml(timetable, isOwner) {
+  var normalized = normalizeTimetableForEditor(timetable);
+  var html = '<table class="class-timetable-table"><thead><tr><th class="slot-head">时段</th>';
+  CLASS_TIMETABLE_DAYS.forEach(function(day) {
+    html += '<th>' + day.label + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+  CLASS_TIMETABLE_SLOTS.forEach(function(slot, slotIndex) {
+    html += '<tr><th class="slot-head">' + slot + '</th>';
+    CLASS_TIMETABLE_DAYS.forEach(function(day) {
+      var value = normalized.entries[day.key][slotIndex];
+      html += '<td><input type="text" maxlength="30" data-day="' + day.key + '" data-slot="' + slotIndex + '" value="' + escapeTimetableAttribute(value) + '" aria-label="' + day.label + ' ' + slot + '"' + (isOwner ? '' : ' readonly') + '></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function renderTimetableClassSelect() {
+  var select = document.getElementById('timetableClassSelect');
+  if (!select) return;
+  var previous = select.value;
+  select.innerHTML = '<option value="">请选择班级</option>' + classes.map(function(cls) {
+    return '<option value="' + cls.id + '">' + esc(cls.name) + '</option>';
+  }).join('');
+  if (previous && classes.some(function(cls) { return cls.id === previous; })) select.value = previous;
+  else if (classes.length) select.value = classes[0].id;
+  loadClassTimetable();
+}
+
+function renderClassTimetable(payload) {
+  currentTimetableOwner = !!(payload && payload.is_owner);
+  currentClassTimetable = payload && payload.timetable ? payload.timetable : { entries: {} };
+  var editor = document.getElementById('classTimetableEditor');
+  var status = document.getElementById('classTimetableStatus');
+  var actions = document.getElementById('classTimetableActions');
+  editor.className = '';
+  editor.innerHTML = buildTimetableEditorHtml(currentClassTimetable, currentTimetableOwner);
+  status.textContent = currentTimetableOwner
+    ? '填写课程或安排后保存，空白单元格不会显示内容。'
+    : '只有班级创建者可以维护课程表；你目前可以查看。';
+  actions.style.display = currentTimetableOwner ? 'flex' : 'none';
+}
+
+function timetableEntriesFromEditor() {
+  var editor = document.getElementById('classTimetableEditor');
+  var entries = {};
+  CLASS_TIMETABLE_DAYS.forEach(function(day) {
+    entries[day.key] = CLASS_TIMETABLE_SLOTS.map(function(_, slotIndex) {
+      var input = editor.querySelector('[data-day="' + day.key + '"][data-slot="' + slotIndex + '"]');
+      return input ? input.value.trim().slice(0, 30) : '';
+    });
+  });
+  return entries;
+}
+
+function loadClassTimetable() {
+  var select = document.getElementById('timetableClassSelect');
+  var classId = select ? select.value : '';
+  var editor = document.getElementById('classTimetableEditor');
+  var status = document.getElementById('classTimetableStatus');
+  var actions = document.getElementById('classTimetableActions');
+  currentTimetableOwner = false;
+  currentClassTimetable = null;
+  actions.style.display = 'none';
+  if (!classId) {
+    editor.className = 'timetable-empty';
+    editor.textContent = classes.length ? '请选择一个班级' : '还没有班级，请先在上方新增班级';
+    status.textContent = classes.length ? '请选择一个班级设置课程表' : '新增班级后即可使用课程表';
+    return;
+  }
+  editor.className = 'timetable-empty';
+  editor.textContent = '正在加载课程表...';
+  status.textContent = '';
+  fetch(API + '/api/classes/' + classId + '/timetable', { headers: headers() })
+  .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+  .then(function(result) {
+    if (!result.ok) throw new Error(result.data.error || '课程表加载失败');
+    renderClassTimetable(result.data);
+  })
+  .catch(function(error) {
+    editor.className = 'timetable-empty';
+    editor.textContent = '课程表加载失败，请稍后重试';
+    status.textContent = error.message || '课程表加载失败';
+  });
+}
+
+function putClassTimetable(entries, successMessage) {
+  var classId = document.getElementById('timetableClassSelect').value;
+  if (!classId) return;
+  fetch(API + '/api/classes/' + classId + '/timetable', {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({ entries: entries })
+  })
+  .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+  .then(function(result) {
+    if (!result.ok) { toast(result.data.error || '课程表保存失败', 'error'); return; }
+    renderClassTimetable(result.data);
+    toast(successMessage, 'success');
+  })
+  .catch(function() { toast('网络错误，课程表保存失败', 'error'); });
+}
+
+function saveClassTimetable() {
+  if (!currentTimetableOwner) return;
+  putClassTimetable(timetableEntriesFromEditor(), '课程表已保存并同步到教室大屏');
+}
+
+function clearClassTimetable() {
+  if (!currentTimetableOwner) return;
+  if (!confirm('确定清空这个班级的全部课程安排吗？')) return;
+  var entries = {};
+  CLASS_TIMETABLE_DAYS.forEach(function(day) {
+    entries[day.key] = CLASS_TIMETABLE_SLOTS.map(function() { return ''; });
+  });
+  putClassTimetable(entries, '本班课程表已清空');
 }
 
 function addClass() {
@@ -1538,6 +1753,29 @@ function inviteTeacher(classId) {
 }
 
 // ========== Notify ==========
+function setBroadcastMode(mode) {
+  var normalized = mode === 'text' ? 'text' : 'voice';
+  var modeInput = document.getElementById('broadcastMode');
+  var repeatInput = document.getElementById('repeatCount');
+  var hint = document.getElementById('broadcastModeHint');
+  modeInput.value = normalized;
+  repeatInput.disabled = normalized === 'text';
+  hint.textContent = normalized === 'text'
+    ? '大屏只显示文字，不播放提示音和语音。'
+    : '大屏显示文字并播放语音，可设置播报次数。';
+  var buttons = document.querySelectorAll('[data-broadcast-mode]');
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].classList.toggle('active', buttons[i].dataset.broadcastMode === normalized);
+  }
+  if (typeof updatePreview === 'function') updatePreview();
+}
+
+function notificationModeLabel(notification) {
+  return notification && notification.broadcast_mode === 'text'
+    ? '仅文字'
+    : '语音 × ' + ((notification && notification.repeat_count) || 1) + ' 次';
+}
+
 function useTpl(text) {
   var student = document.getElementById('studentName').value.trim();
   document.getElementById('content').value = student ? '请' + student + text.replace('请','') : text;
@@ -1558,6 +1796,7 @@ function updatePreview() {
   if (!content) { document.getElementById('previewText').textContent = '已选择 ' + clsName + '，请输入通知内容'; return; }
   var preview = '发布到 ' + clsName + '：\n' + content;
   if (sig) preview += '\n—— ' + sig;
+  preview += '\n方式：' + (document.getElementById('broadcastMode').value === 'text' ? '仅文字（静音）' : '文字＋语音');
   document.getElementById('previewText').textContent = preview;
 }
 
@@ -1574,7 +1813,8 @@ function doSend() {
     content: document.getElementById('content').value.trim(),
     signature: document.getElementById('signature').value.trim(),
     student_name: document.getElementById('studentName').value.trim(),
-    repeat_count: parseInt(document.getElementById('repeatCount').value) || 2
+    repeat_count: parseInt(document.getElementById('repeatCount').value) || 2,
+    broadcast_mode: document.getElementById('broadcastMode').value
   };
 
   fetch(API + '/api/notify', { method:'POST', headers:headers(), body:JSON.stringify(body) })
@@ -1608,7 +1848,7 @@ function loadHistory() {
     el.innerHTML = list.map(function(n) {
       var t = new Date(n.created_at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
       var sender = n.sender_name || n.signature || '';
-      return '<div class="history-item"><div class="content">' + esc(n.content) + '</div><div class="meta">' + (sender ? '发送人：' + esc(sender) + '　' : '') + t + '　播报：' + n.repeat_count + ' 次</div><div class="actions"><button onclick="resend(' + n.id + ')">重发</button></div></div>';
+      return '<div class="history-item"><div class="content">' + esc(n.content) + '</div><div class="meta">' + (sender ? '发送人：' + esc(sender) + '　' : '') + t + '　' + notificationModeLabel(n) + '</div><div class="actions"><button onclick="resend(' + n.id + ')">重发</button></div></div>';
     }).join('');
   });
 }
