@@ -81,6 +81,18 @@ test('classroom broadcast remains subscription-gated instead of consuming AI poi
   assert.match(server, /app\.post\('\/api\/notify',\s*userAuth,\s*requireActivePlan/);
 });
 
+test('class timetable API is installed as its own route domain', () => {
+  const server = read('server.js');
+  const routes = read('timetable-routes.js');
+  assert.match(server, /require\('\.\/timetable-routes\.js'\)/);
+  assert.match(server, /installTimetableRoutes\(app,\s*\{\s*requireActivePlan\s*\}\)/);
+  assert.match(routes, /function\s+installTimetableRoutes\s*\(/);
+  assert.match(routes, /app\.get\('\/api\/classes\/:classId\/timetable'/);
+  assert.match(routes, /app\.put\('\/api\/classes\/:classId\/timetable'/);
+  assert.match(server, /socket\.emit\('bind-success',[\s\S]{0,500}timetable:\s*normalizeClassTimetable\(cls\.timetable\)/);
+  assert.match(routes, /state\.io\.to\(`class:\$\{cls\.id\}`\)\.emit\('class-timetable-update',\s*cls\.timetable\)/);
+});
+
 test('server startup logs never print the administrator password', () => {
   const server = read('server.js');
   assert.doesNotMatch(server, /console\.log\(`管理密码:\s*\$\{ADMIN_PASS\}`\)/);

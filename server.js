@@ -80,6 +80,14 @@ const {
   installTtsRoutes
 } = require('./tts-routes.js');
 
+const {
+  installTimetableRoutes
+} = require('./timetable-routes.js');
+
+const {
+  normalizeClassTimetable
+} = require('./class-timetable.js');
+
 // ---- 认证核心（自 auth-core.js 引入）----
 const {
   paidPlanExpiresFromNow, paidPlanExpiresForUser, activateYearlyPlan, genCode, genUniqueBindCode, genUniqueTeacherCode, hashPassword, verifyPassword, setUserPassword, genToken, safeEqual, issueUserToken, revokeUserToken, findUserByToken, refreshUserTokenExpiry, getUserPlanStatus
@@ -391,6 +399,7 @@ installReferralRoutes(app);
 installRoundtableRoutes(app);
 installEssayRoutes(app);
 installTtsRoutes(app);
+installTimetableRoutes(app, { requireActivePlan });
 
 app.post('/api/analytics/event', (req, res) => {
   if (!analyticsRequestAllowed(req)) return res.status(429).json({ error: '请求过于频繁' });
@@ -2261,6 +2270,7 @@ io.on('connection', (socket) => {
       grade: cls.grade || 'junior',
       management_enabled: !!cls.management_enabled,
       points_sound_enabled: !!cls.points_sound_enabled,
+      timetable: normalizeClassTimetable(cls.timetable),
       screen_token: issueScreenSession(cls)
     });
     socket.emit('bulletins-update', getActiveBulletins(cls.id));

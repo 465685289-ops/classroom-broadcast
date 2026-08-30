@@ -1122,7 +1122,7 @@ function upsertUser(user) {
     token_expires: user.token_expires || null,
     avatar: user.avatar || null,
     created_at: user.created_at || new Date().toISOString(),
-    extra_json: cls.timetable ? jsonString({ timetable: normalizeClassTimetable(cls.timetable) }) : null
+    extra_json: null
   });
 }
 
@@ -1144,7 +1144,7 @@ const upsertClassTx = db.transaction((cls) => {
     grade: cls.grade || 'junior',
     bind_code: cls.bind_code,
     created_at: cls.created_at || new Date().toISOString(),
-    extra_json: null
+    extra_json: cls.timetable ? jsonString({ timetable: normalizeClassTimetable(cls.timetable) }) : null
   });
   db.prepare('DELETE FROM class_members WHERE class_id = ?').run(cls.id);
   const insertMember = db.prepare('INSERT OR IGNORE INTO class_members (class_id, user_id) VALUES (?, ?)');
