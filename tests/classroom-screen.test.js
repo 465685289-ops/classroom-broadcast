@@ -60,6 +60,65 @@ test('broadcast quick replies keep only useful acknowledgements', () => {
   assert.doesNotMatch(page, /请再发一次/);
 });
 
+test('classroom broadcast requests the server voice first and keeps browser speech as fallback', () => {
+  const speakBlock = page.match(/function\s+speakText\s*\([\s\S]*?(?=\/\/ 服务器精品语音方案)/);
+  assert.ok(speakBlock, '缺少 speakText 实现');
+  const calls = [];
+  const context = {
+    calls,
+    ttsRunId: 0,
+    stopCurrentTTS() {},
+    speakTextFallback(text, repeatCount, onDone, runId) {
+      calls.push({ text, repeatCount, onDone, runId });
+    }
+  };
+  vm.runInNewContext(`${speakBlock[0]}; speakText('请保持安静', 2, 'done')`, context);
+  assert.deepEqual(calls.map(call => ({ text: call.text, repeatCount: call.repeatCount })), [
+    { text: '请保持安静', repeatCount: 2 }
+  ]);
+  assert.match(page, /xhr\.open\('POST',\s*'\/api\/tts'/);
+  assert.match(page, /function\s+speakWithBrowserTTS\s*\(/);
+  assert.doesNotMatch(page, /tts\.baidu\.com/);
+  assert.doesNotMatch(page, /gainNode\.gain\.value\s*=\s*(?:[2-9]|[1-9]\d)/);
+});
+
+test('text-only notices stay silent while legacy notices still use voice playback', () => {
+  const source = page.match(/function\s+notificationPlaybackPolicy[\s\S]*?(?=function\s+adjustBubbleFont)/);
+  assert.ok(source, '缺少通知播放策略');
+
+  const calls = [];
+  const context = {
+    calls,
+    notifTimer: null,
+    speakStartTimer: null,
+    clearTimeout() {},
+    setTimeout(callback, delay) {
+      calls.push(['timer', delay]);
+      if (delay === 1800) callback();
+      return 1;
+    },
+    playAlertSound() { calls.push(['alert']); },
+    speakText(text, repeatCount) { calls.push(['speak', text, repeatCount]); },
+    minimizeNotification() { calls.push(['minimize']); }
+  };
+  vm.runInNewContext(source[0], context);
+
+  const textPolicy = context.notificationPlaybackPolicy({ broadcast_mode: 'text', content: '请同学们整理书桌' });
+  context.startNotificationPlayback({ broadcast_mode: 'text', content: '请同学们整理书桌' }, '李老师', textPolicy);
+  assert.equal(textPolicy.playAudio, false);
+  assert.ok(textPolicy.readingDelay >= 8000 && textPolicy.readingDelay <= 20000);
+  assert.equal(calls.some(call => call[0] === 'alert' || call[0] === 'speak'), false);
+
+  calls.length = 0;
+  const legacyPolicy = context.notificationPlaybackPolicy({ content: '上课了', repeat_count: 2 });
+  context.startNotificationPlayback({ content: '上课了', repeat_count: 2 }, '李老师', legacyPolicy);
+  assert.equal(legacyPolicy.playAudio, true);
+  assert.equal(calls.some(call => call[0] === 'alert'), true);
+  assert.deepEqual(calls.find(call => call[0] === 'speak'), ['speak', '李老师通知，上课了', 2]);
+  assert.match(page, /仅文字/);
+  assert.match(page, /语音\s*×/);
+});
+
 test('today count and classroom history survive reloads and reset by day', () => {
   assert.match(page, /function\s+loadScreenState\s*\(/);
   assert.match(page, /function\s+saveScreenState\s*\(/);

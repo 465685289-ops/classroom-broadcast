@@ -88,6 +88,41 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
 .idle-promo .promo-line2 { font-size:12px; color:#9a8a72; margin-top:6px; letter-spacing:.3px; word-break:break-all; }
 .idle-promo .promo-line2 b { color:#7c5722; font-weight:600; }
 
+/* 右侧信息区：有课表时上下分区，没有课表时告示栏自动占满 */
+.idle-right { flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; gap:14px; }
+.timetable-board { flex:2 1 64%; min-height:0; display:flex; flex-direction:column; overflow:hidden;
+  border:1px solid rgba(255,255,255,.1); border-radius:20px; color:var(--ink);
+  background:radial-gradient(700px 300px at 100% 0%,rgba(199,154,74,.1),transparent 58%),var(--paper);
+  box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.86); }
+.timetable-board[hidden] { display:none; }
+.timetable-head { flex:0 0 auto; min-height:68px; padding:13px 22px 11px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+  border-bottom:1px solid rgba(47,41,33,.13); }
+.timetable-kicker { margin-bottom:4px; color:#a07132; font:700 9px/1 "Avenir Next","PingFang SC",sans-serif; letter-spacing:4px; }
+.timetable-head h2 { color:var(--ink); font-size:clamp(21px,1.8vw,28px); font-weight:700; letter-spacing:2px; }
+.timetable-hint { color:#8d8273; font:500 11px/1.5 "PingFang SC","Microsoft YaHei",sans-serif; white-space:nowrap; }
+.screen-timetable-grid { flex:1; min-height:0; padding:8px 12px 12px; }
+.screen-timetable { width:100%; height:100%; table-layout:fixed; border-collapse:separate; border-spacing:3px; font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
+.screen-timetable th,.screen-timetable td { overflow:hidden; text-align:center; border-radius:6px; }
+.screen-timetable thead th { height:27px; padding:3px 5px; background:rgba(36,33,28,.055); color:#71685c; font-size:11px; font-weight:650; }
+.screen-timetable .slot-head { width:68px; color:#9b9183; font-size:10px; font-weight:500; }
+.screen-timetable tbody th { width:68px; padding:2px 5px; color:#8f8476; font-size:10px; font-weight:500; white-space:nowrap; }
+.screen-timetable td { padding:2px 4px; background:rgba(255,255,255,.58); color:#353027; font-size:clamp(11px,.9vw,14px); font-weight:600; line-height:1.2; white-space:nowrap; text-overflow:ellipsis; }
+.screen-timetable .today { background:rgba(201,149,67,.18); color:#6d4818; box-shadow:inset 0 0 0 1px rgba(176,119,41,.18); }
+.screen-timetable thead .today { background:#b67d2d; color:#fffaf0; box-shadow:none; }
+.today-chip { display:inline-block; margin-left:4px; padding:1px 4px; border-radius:999px; background:rgba(255,255,255,.2); font-size:8px; vertical-align:1px; }
+.course-empty { color:rgba(78,70,59,.22); font-weight:400; }
+.idle-right .bulletin-board { flex:1 1 36%; }
+.idle-right.has-timetable .bulletin-head { min-height:66px; padding:11px 20px 9px; }
+.idle-right.has-timetable .bulletin-kicker { margin-bottom:3px; font-size:8px; }
+.idle-right.has-timetable .bulletin-head h2 { font-size:20px; }
+.idle-right.has-timetable .bulletin-list { padding:9px 12px 12px; }
+.idle-right.has-timetable .bulletin-empty { font-size:14px; line-height:1.55; }
+.idle-right.has-timetable .bulletin-empty::before { display:none; }
+.idle-right.has-timetable .bulletin-item { margin-bottom:7px; padding:9px 12px 8px 16px; }
+.idle-right.has-timetable .bulletin-item-title { margin-bottom:3px; font-size:16px; }
+.idle-right.has-timetable .bulletin-item-content { font-size:13px; line-height:1.45; }
+.idle-right.has-timetable .bulletin-item-meta { margin-top:5px; padding-top:5px; font-size:9px; }
+
 /* 告示栏：宣纸质感 */
 .bulletin-board { flex:1; min-height:0; display:flex; flex-direction:column; border:1px solid rgba(199,154,74,.3); border-radius:24px;
   background:linear-gradient(170deg,#fbf6ec 0%,#f4ecdd 100%); color:var(--ink); box-shadow:0 28px 90px rgba(0,0,0,.45); overflow:hidden; }
@@ -122,6 +157,11 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
   .idle-promo .promo-line2 { font-size:10px; margin-top:4px; }
   .bulletin-head { padding:20px 28px 14px; }
   .bulletin-list { padding:18px 22px 22px; }
+  .idle-right { gap:10px; }
+  .timetable-head { min-height:58px; padding:9px 18px 8px; }
+  .screen-timetable-grid { padding:5px 9px 8px; }
+  .screen-timetable { border-spacing:2px; }
+  .screen-timetable thead th { height:22px; }
 }
 
 @media(max-width:900px){
@@ -141,6 +181,13 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
   .bulletin-head { padding:16px 22px 12px; }
   .bulletin-head h2 { font-size:27px; }
   .bulletin-list { padding:14px 18px 18px; }
+  .idle-right.has-timetable { flex-direction:row; gap:10px; }
+  .idle-right.has-timetable .timetable-board { flex:2 1 68%; }
+  .idle-right.has-timetable .bulletin-board { flex:1 1 32%; }
+  .timetable-head { min-height:56px; padding:8px 14px 7px; }
+  .timetable-hint { display:none; }
+  .screen-timetable-grid { padding:5px 7px 7px; }
+  .screen-timetable { border-spacing:2px; }
 }
 
 @media(max-width:640px){
@@ -150,6 +197,10 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
   .screen-idle { padding-top:60px; }
   .idle-main { flex-basis:310px; padding:14px 18px; justify-content:flex-start; }
   .idle-promo { position:static; transform:none; width:100%; margin-top:12px; }
+  .idle-right.has-timetable { flex-direction:column; }
+  .idle-right.has-timetable .timetable-board { flex:1 1 auto; }
+  .idle-right.has-timetable .bulletin-board { flex:0 0 92px; }
+  .screen-timetable .slot-head,.screen-timetable tbody th { width:54px; }
 }
 
 /* ---------- 通知动画 ---------- */
@@ -293,16 +344,28 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
         </div>
       </div>
     </div>
-    <div class="bulletin-board">
-      <div class="bulletin-head">
-        <div>
-          <div class="bulletin-kicker">CLASS NOTICE</div>
-          <h2>班级告示栏</h2>
+    <div class="idle-right" id="idleRight">
+      <section class="timetable-board" id="classTimetableBoard" aria-label="班级周课表" hidden>
+        <div class="timetable-head">
+          <div>
+            <div class="timetable-kicker">WEEKLY TIMETABLE</div>
+            <h2>班级课程表</h2>
+          </div>
+          <div class="timetable-hint" id="timetableTodayHint">周一至周五 · 今日课程已高亮</div>
         </div>
-        <div class="bulletin-count" id="bulletinCount">0 条</div>
-      </div>
-      <div class="bulletin-list" id="bulletinList">
-        <div class="bulletin-empty">暂无告示<br>老师发布后会显示在这里</div>
+        <div class="screen-timetable-grid" id="screenTimetableGrid"></div>
+      </section>
+      <div class="bulletin-board" id="bulletinBoard">
+        <div class="bulletin-head">
+          <div>
+            <div class="bulletin-kicker">CLASS NOTICE</div>
+            <h2>班级告示栏</h2>
+          </div>
+          <div class="bulletin-count" id="bulletinCount">0 条</div>
+        </div>
+        <div class="bulletin-list" id="bulletinList">
+          <div class="bulletin-empty">暂无告示<br>老师发布后会显示在这里</div>
+        </div>
       </div>
     </div>
     <div class="points-idle-actions" id="pointsIdleActions" hidden>
@@ -447,6 +510,93 @@ var activeBulletins = [];
 var todayNotifCount = 0;
 var statsDay = '';
 var weekdays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+var renderedTimetableDay = -1;
+
+var SCREEN_TIMETABLE_DAYS = [
+  { key:'mon', label:'周一', dayIndex:1 },
+  { key:'tue', label:'周二', dayIndex:2 },
+  { key:'wed', label:'周三', dayIndex:3 },
+  { key:'thu', label:'周四', dayIndex:4 },
+  { key:'fri', label:'周五', dayIndex:5 }
+];
+var SCREEN_TIMETABLE_SLOTS = ['早读','第1节','第2节','第3节','第4节','第5节','第6节','第7节','第8节','晚自习1','晚自习2','晚自习3'];
+
+function escapeScreenTimetableText(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function normalizeScreenTimetable(value) {
+  var source = value && value.entries && typeof value.entries === 'object' ? value.entries : {};
+  var entries = {};
+  var hasEntries = false;
+  for (var dayIndex = 0; dayIndex < SCREEN_TIMETABLE_DAYS.length; dayIndex++) {
+    var key = SCREEN_TIMETABLE_DAYS[dayIndex].key;
+    var sourceCells = Array.isArray(source[key]) ? source[key] : [];
+    entries[key] = [];
+    for (var slotIndex = 0; slotIndex < SCREEN_TIMETABLE_SLOTS.length; slotIndex++) {
+      var course = String(sourceCells[slotIndex] == null ? '' : sourceCells[slotIndex]).trim().slice(0, 30);
+      entries[key].push(course);
+      if (course) hasEntries = true;
+    }
+  }
+  return { entries:entries, hasEntries:hasEntries };
+}
+
+function buildScreenTimetableHtml(timetable, currentDayIndex) {
+  var normalized = normalizeScreenTimetable(timetable);
+  var todayKey = null;
+  for (var i = 0; i < SCREEN_TIMETABLE_DAYS.length; i++) {
+    if (SCREEN_TIMETABLE_DAYS[i].dayIndex === currentDayIndex) todayKey = SCREEN_TIMETABLE_DAYS[i].key;
+  }
+
+  var html = '<table class="screen-timetable"><thead><tr><th class="slot-head">时段</th>';
+  for (var day = 0; day < SCREEN_TIMETABLE_DAYS.length; day++) {
+    var dayInfo = SCREEN_TIMETABLE_DAYS[day];
+    var isToday = dayInfo.key === todayKey;
+    html += '<th' + (isToday ? ' class="today"' : '') + '>' + dayInfo.label;
+    if (isToday) html += '<span class="today-chip">今天</span>';
+    html += '</th>';
+  }
+  html += '</tr></thead><tbody>';
+
+  for (var slot = 0; slot < SCREEN_TIMETABLE_SLOTS.length; slot++) {
+    html += '<tr><th scope="row">' + SCREEN_TIMETABLE_SLOTS[slot] + '</th>';
+    for (var column = 0; column < SCREEN_TIMETABLE_DAYS.length; column++) {
+      var columnKey = SCREEN_TIMETABLE_DAYS[column].key;
+      var value = normalized.entries[columnKey][slot];
+      html += '<td' + (columnKey === todayKey ? ' class="today"' : '') + '>';
+      html += value ? escapeScreenTimetableText(value) : '<span class="course-empty">—</span>';
+      html += '</td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  return { html:html, hasEntries:normalized.hasEntries, todayKey:todayKey };
+}
+
+function renderClassTimetable(timetable, currentDayIndex) {
+  var board = document.getElementById('classTimetableBoard');
+  var grid = document.getElementById('screenTimetableGrid');
+  var right = document.getElementById('idleRight');
+  if (!board || !grid || !right) return;
+  var dayIndex = typeof currentDayIndex === 'number' ? currentDayIndex : new Date().getDay();
+  var view = buildScreenTimetableHtml(timetable, dayIndex);
+  renderedTimetableDay = dayIndex;
+  if (!view.hasEntries) {
+    board.hidden = true;
+    grid.innerHTML = '';
+    right.classList.remove('has-timetable');
+    return;
+  }
+  grid.innerHTML = view.html;
+  board.hidden = false;
+  right.classList.add('has-timetable');
+}
 
 // ========== Avatar ==========
 function getAvatarSrc(id) {
@@ -672,6 +822,9 @@ function updateClock() {
     dateEl.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日';
     wdEl.textContent = weekdays[now.getDay()];
   }
+  if (currentClass && renderedTimetableDay !== now.getDay()) {
+    renderClassTimetable(currentClass.timetable, now.getDay());
+  }
   if (ensureCurrentStatsDay()) updateStats();
 }
 setInterval(updateClock, 1000);
@@ -750,6 +903,7 @@ function initSocket() {
     updateQuote();
     updateStats();
     renderHistory();
+    renderClassTimetable(cls.timetable);
     updateStatus(true);
     ClassroomPointsScreen.onBound(cls, savedBind);
     requestNotifPermission();
@@ -771,6 +925,11 @@ function initSocket() {
   socket.on('bulletins-update', function(list) {
     activeBulletins = list || [];
     renderBulletins();
+  });
+
+  socket.on('class-timetable-update', function(timetable) {
+    if (currentClass) currentClass.timetable = timetable;
+    renderClassTimetable(timetable);
   });
 
   ['class-management-update', 'class-roster-update', 'class-score-rules-update', 'class-score-entry', 'class-score-reversal'].forEach(function(eventName) {
@@ -842,6 +1001,41 @@ function showNextNotification() {
   displayNotification(notifQueue.shift());
 }
 
+function notificationPlaybackPolicy(data) {
+  var mode = data && data.broadcast_mode === 'text' ? 'text' : 'voice';
+  var contentLength = String(data && data.content || '').length;
+  return {
+    mode:mode,
+    playAudio:mode === 'voice',
+    readingDelay:mode === 'text' ? Math.max(8000, Math.min(20000, contentLength * 350)) : 0
+  };
+}
+
+function startNotificationPlayback(data, senderName, policy) {
+  var playback = policy || notificationPlaybackPolicy(data);
+  if (notifTimer) clearTimeout(notifTimer);
+  notifTimer = null;
+  if (speakStartTimer) clearTimeout(speakStartTimer);
+  speakStartTimer = null;
+
+  if (!playback.playAudio) {
+    notifTimer = setTimeout(function() {
+      minimizeNotification();
+    }, playback.readingDelay);
+    return playback;
+  }
+
+  playAlertSound();
+  speakStartTimer = setTimeout(function() {
+    var voiceText = senderName ? senderName + '通知，' + data.content : data.content;
+    var repeatCount = Math.max(1, parseInt(data.repeat_count, 10) || 1);
+    speakText(voiceText, repeatCount, function() {
+      minimizeNotification();
+    });
+  }, 1800);
+  return playback;
+}
+
 function displayNotification(data) {
   var overlay = document.getElementById('notifOverlay');
   var charEl = document.getElementById('notifCharacter');
@@ -857,11 +1051,11 @@ function displayNotification(data) {
 
   ClassroomPointsScreen.suspendForBroadcast();
 
-  playAlertSound();
   ensureCurrentStatsDay();
   todayNotifCount++;
 
   var senderName = data.sender_name || data.signature || '';
+  var playbackPolicy = notificationPlaybackPolicy(data);
   var sender = senderName ? '（' + senderName + '）' : '';
   showSystemNotification('班级通知' + sender, data.content);
 
@@ -902,7 +1096,11 @@ function displayNotification(data) {
   var meta = '';
   if (senderName) meta += '<span>发送人：' + esc(senderName) + '</span>';
   meta += '<span>时间：' + timeStr + '</span>';
-  meta += '<span>播报：' + data.repeat_count + ' 次</span>';
+  if (playbackPolicy.mode === 'text') {
+    meta += '<span>仅文字</span>';
+  } else {
+    meta += '<span>语音 × ' + Math.max(1, parseInt(data.repeat_count, 10) || 1) + ' 次</span>';
+  }
   metaEl.innerHTML = meta;
 
   idle.style.display = 'none';
@@ -934,16 +1132,7 @@ function displayNotification(data) {
     btns[i].disabled = false;
   }
 
-  // TTS after character arrives, then minimize when done
-  if (notifTimer) clearTimeout(notifTimer);
-  notifTimer = null;
-  if (speakStartTimer) clearTimeout(speakStartTimer);
-  speakStartTimer = setTimeout(function() {
-    var voiceText = senderName ? senderName + '通知，' + data.content : data.content;
-    speakText(voiceText, data.repeat_count, function() {
-      minimizeNotification();
-    });
-  }, 1800);
+  startNotificationPlayback(data, senderName, playbackPolicy);
 }
 
 function adjustBubbleFont(el, text) {
@@ -1047,7 +1236,7 @@ function renderHistory() {
 }
 
 // ========== TTS via Web Audio API ==========
-// TTS: 浏览器直接请求百度TTS（绕过服务器IP限流）
+// TTS: 优先请求自有服务端的腾讯云精品语音，失败时使用浏览器本地语音。
 function finishTTS(runId, onDone) {
   if (runId !== ttsRunId) return;
   activeAudio = null;
@@ -1100,51 +1289,10 @@ function playAudioElement(audio, runId, onPlayError) {
 function speakText(text, repeatCount, onDone) {
   stopCurrentTTS();
   var runId = ++ttsRunId;
-  var url = 'https://tts.baidu.com/text2audio?tex=' + encodeURIComponent(text) +
-    '&cuid=baidu_speech_demo&lan=zh&ctp=1&pdt=301&vol=15&rate=32&per=0&spd=4';
-  var audio = document.createElement('audio');
-  audio.src = url;
-  // 不设crossOrigin，避免百度不返回CORS头导致音频被拦截
-  audio.volume = 1.0;
-  activeAudio = audio;
-  var count = 0;
-
-  audio.onended = function() {
-    if (runId !== ttsRunId) return;
-    count++;
-    if (count < repeatCount) {
-      activeReplayTimer = setTimeout(function() {
-        if (runId !== ttsRunId) return;
-        audio.currentTime = 0;
-        playAudioElement(audio, runId, function() {
-          audio.onended = null;
-          audio.onerror = null;
-          activeAudio = null;
-          speakTextFallback(text, repeatCount - count, onDone, runId);
-        });
-      }, 800);
-    } else {
-      finishTTS(runId, onDone);
-    }
-  };
-  audio.onerror = function() {
-    // 直连失败，回退到服务器代理
-    if (runId !== ttsRunId) return;
-    audio.onended = null;
-    audio.onerror = null;
-    activeAudio = null;
-    speakTextFallback(text, repeatCount, onDone, runId);
-  };
-
-  playAudioElement(audio, runId, function() {
-    audio.onended = null;
-    audio.onerror = null;
-    activeAudio = null;
-    speakTextFallback(text, repeatCount, onDone, runId);
-  });
+  speakTextFallback(text, repeatCount, onDone, runId);
 }
 
-// 服务器代理回退方案
+// 服务器精品语音方案
 function speakTextFallback(text, repeatCount, onDone, runId) {
   if (runId !== ttsRunId) return;
   if (!audioCtx) {
@@ -1211,7 +1359,7 @@ function playTTSBuffer(buffer, repeatCount, count, onDone, runId) {
   var gainNode = audioCtx.createGain();
   activeAudioSource = source;
   source.buffer = buffer;
-  gainNode.gain.value = 3.0;
+  gainNode.gain.value = 1.0;
   source.connect(gainNode);
   gainNode.connect(audioCtx.destination);
   source.onended = function() {

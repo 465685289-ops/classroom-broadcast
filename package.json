@@ -4,12 +4,16 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "node --test --test-concurrency=1 tests/*.test.js"
+    "test": "node --test --test-concurrency=1 tests/*.test.js tests/*.test.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
     "express": "^4.21.0",
     "nodemailer": "^8.0.10",
-    "socket.io": "^4.8.0"
+    "socket.io": "^4.8.0",
+    "tencentcloud-sdk-nodejs-tts": "^4.1.237"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

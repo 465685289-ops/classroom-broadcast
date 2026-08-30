@@ -6,6 +6,8 @@ const { addMembershipDays, getMembershipStatus } = require('./learning-membershi
 const { createShixingPoints, POINT_COSTS } = require('./shixing-points');
 const { createUnifiedReferrals } = require('./unified-referrals');
 const classroomPoints = require('./classroom-points');
+const { normalizeClassTimetable } = require('./class-timetable');
+const { normalizeBroadcastMode } = require('./broadcast-notification');
 
 const SQLITE_FILE = process.env.SQLITE_FILE || path.join(__dirname, 'broadcast.db');
 const LEGACY_JSON_FILE = process.env.LEGACY_JSON_FILE || path.join(__dirname, 'data.json');
@@ -784,34 +786,40 @@ function loadClasses() {
     if (!memberMap[row.class_id]) memberMap[row.class_id] = [];
     memberMap[row.class_id].push(row.user_id);
   });
-  return db.prepare('SELECT * FROM classes WHERE archived_at IS NULL ORDER BY created_at, name').all().map(row => ({
-    id: row.id,
-    user_id: row.user_id,
-    name: row.name,
-    grade: row.grade,
-    bind_code: row.bind_code,
-    member_ids: memberMap[row.id] || [],
-    management_enabled: Number(row.management_enabled) === 1,
-    points_sound_enabled: Number(row.points_sound_enabled) === 1,
-    archived_at: row.archived_at || null,
-    created_at: row.created_at,
-    ...safeJsonParse(row.extra_json, {})
-  }));
+  return db.prepare('SELECT * FROM classes WHERE archived_at IS NULL ORDER BY created_at, name').all().map(row => {
+    const extra = safeJsonParse(row.extra_json, {});
+    return {
+      id: row.id,
+      user_id: row.user_id,
+      name: row.name,
+      grade: row.grade,
+      bind_code: row.bind_code,
+      member_ids: memberMap[row.id] || [],
+      management_enabled: Number(row.management_enabled) === 1,
+      points_sound_enabled: Number(row.points_sound_enabled) === 1,
+      archived_at: row.archived_at || null,
+      created_at: row.created_at,
+      timetable: normalizeClassTimetable(extra.timetable)
+    };
+  });
 }
 
 function loadNotifications() {
-  return db.prepare('SELECT * FROM notifications ORDER BY id').all().map(row => ({
-    id: row.id,
-    class_id: row.class_id,
-    user_id: row.user_id,
-    content: row.content,
-    signature: row.signature || '',
-    sender_name: row.sender_name || '',
-    student_name: row.student_name || '',
-    repeat_count: row.repeat_count || 1,
-    created_at: row.created_at,
-    ...safeJsonParse(row.extra_json, {})
-  }));
+  return db.prepare('SELECT * FROM notifications ORDER BY id').all().map(row => {
+    const extra = safeJsonParse(row.extra_json, {});
+    return {
+      id: row.id,
+      class_id: row.class_id,
+      user_id: row.user_id,
+      content: row.content,
+      signature: row.signature || '',
+      sender_name: row.sender_name || '',
+      student_name: row.student_name || '',
+      repeat_count: row.repeat_count || 1,
+      broadcast_mode: normalizeBroadcastMode(extra.broadcast_mode),
+      created_at: row.created_at
+    };
+  });
 }
 
 function loadReplies() {
@@ -1140,7 +1148,7 @@ const upsertClassTx = db.transaction((cls) => {
     grade: cls.grade || 'junior',
     bind_code: cls.bind_code,
     created_at: cls.created_at || new Date().toISOString(),
-    extra_json: null
+    extra_json: cls.timetable ? jsonString({ timetable: normalizeClassTimetable(cls.timetable) }) : null
   });
   db.prepare('DELETE FROM class_members WHERE class_id = ?').run(cls.id);
   const insertMember = db.prepare('INSERT OR IGNORE INTO class_members (class_id, user_id) VALUES (?, ?)');
@@ -1151,6 +1159,16 @@ const upsertClassTx = db.transaction((cls) => {
 
 function upsertClass(cls) {
   upsertClassTx(cls);
+}
+
+function saveClassTimetable(classId, timetable) {
+  const row = db.prepare('SELECT id, extra_json FROM classes WHERE id = ?').get(classId);
+  if (!row) throw new Error('班级不存在');
+  const normalized = normalizeClassTimetable(timetable);
+  const extra = safeJsonParse(row.extra_json, {});
+  db.prepare('UPDATE classes SET extra_json = ? WHERE id = ?')
+    .run(jsonString({ ...extra, timetable: normalized }), classId);
+  return normalized;
 }
 
 const deleteClassTx = db.transaction((classId) => {
@@ -1615,7 +1633,7 @@ function upsertNotification(row) {
     student_name: row.student_name || '',
     repeat_count: Number(row.repeat_count) || 1,
     created_at: row.created_at || new Date().toISOString(),
-    extra_json: null
+    extra_json: jsonString({ broadcast_mode: normalizeBroadcastMode(row.broadcast_mode) })
   });
 }
 
@@ -3895,6 +3913,7 @@ module.exports = {
   setCounter,
   upsertUser,
   upsertClass,
+  saveClassTimetable,
   deleteClass,
   classHasManagementHistory,
   archiveClass,

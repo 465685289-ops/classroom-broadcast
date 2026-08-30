@@ -5,7 +5,6 @@ const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 const { spawn } = require('child_process');
-const https = require('https');
 const nodemailer = require('nodemailer');
 const dbStore = require('./db');
 const { POINT_COSTS, POINT_PACKAGES } = require('./shixing-points');
@@ -77,38 +76,26 @@ const {
   installEssayRoutes
 } = require('./essay-routes.js');
 
-// 可选：从本机私有密钥文件加载环境变量（优先级低于真实环境变量，不覆盖已有值）。
-// 格式：每行 KEY=VALUE，# 开头为注释；路径可用 SECRETS_FILE 环境变量覆盖。
-// 文件不存在是常态（服务器上用 systemd/nginx 注入环境变量），静默跳过。
+const {
+  installTtsRoutes
+} = require('./tts-routes.js');
+
+const {
+  installTimetableRoutes
+} = require('./timetable-routes.js');
+
+const {
+  normalizeClassTimetable
+} = require('./class-timetable.js');
+
+const {
+  normalizeBroadcastMode
+} = require('./broadcast-notification.js');
+
 // ---- 认证核心（自 auth-core.js 引入）----
 const {
   paidPlanExpiresFromNow, paidPlanExpiresForUser, activateYearlyPlan, genCode, genUniqueBindCode, genUniqueTeacherCode, hashPassword, verifyPassword, setUserPassword, genToken, safeEqual, issueUserToken, revokeUserToken, findUserByToken, refreshUserTokenExpiry, getUserPlanStatus
 } = require('./auth-core');
-
-(function loadSecretsFile() {
-  const secretsPath = process.env.SECRETS_FILE
-    || path.join(require('os').homedir(), '.config', 'classroom-broadcast', 'secrets.env');
-  try {
-    let loaded = 0;
-    for (const raw of fs.readFileSync(secretsPath, 'utf8').split(/\r?\n/)) {
-      const line = raw.trim();
-      if (!line || line.startsWith('#')) continue;
-      const eq = line.indexOf('=');
-      if (eq <= 0) continue;
-      const key = line.slice(0, eq).trim();
-      if (!/^[A-Z][A-Z0-9_]*$/.test(key) || process.env[key] !== undefined) continue;
-      let value = line.slice(eq + 1).trim();
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
-      }
-      process.env[key] = value;
-      loaded++;
-    }
-    console.log('[SECURITY] 已从私有密钥文件加载 ' + loaded + ' 个配置项');
-  } catch (e) {
-    // 密钥文件缺失时走配置文件/env 默认逻辑
-  }
-})();
 
 const app = express();
 const server = http.createServer(app);
@@ -415,6 +402,8 @@ installEnglishRoutes(app);
 installReferralRoutes(app);
 installRoundtableRoutes(app);
 installEssayRoutes(app);
+installTtsRoutes(app);
+installTimetableRoutes(app, { requireActivePlan });
 
 app.post('/api/analytics/event', (req, res) => {
   if (!analyticsRequestAllowed(req)) return res.status(429).json({ error: '请求过于频繁' });
@@ -748,6 +737,99 @@ app.post('/api/password-reset/request', (req, res) => {
     message: '如果账号与联系方式匹配，管理员会在后台看到你的重置申请。请联系管理员为你设置临时密码。'
   });
 });
+
+// ── 工作台会话换广播令牌（同域统一账号 SSO 的最后一环）──
+
+const WORKBENCH_SSO_URL = (process.env.WORKBENCH_SSO_URL || 'http://127.0.0.1:8788').replace(/\/+$/, '')
+
+function workbenchUsername(me, users) {
+  const emailPrefix = String(me.email || '').split('@')[0]
+  let base = emailPrefix.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 16)
+  if (base.length < 2) base = `teacher${String(me.id || '').replace(/[^A-Za-z0-9]/g, '').slice(-6)}`
+  if (base.length < 2) base = 'teacher'
+  let candidate = base
+  let suffix = 2
+  while (users.some((item) => item.username === candidate)) {
+    candidate = `${base.slice(0, 16 - String(suffix).length)}${suffix}`
+    suffix += 1
+  }
+  return candidate
+}
+
+app.post('/api/sso/from-workbench', async (req, res) => {
+  const bearer = String(req.headers.authorization || '')
+  const workbenchToken = bearer.startsWith('Bearer ') ? bearer.slice(7) : ''
+  const cookieToken = workbenchToken
+    ? ''
+    : (parseCookieHeader(req.headers.cookie || '').shixing_auth || '')
+  if (!workbenchToken && !cookieToken) return res.status(401).json({ error: '缺少工作台会话' })
+  const state = store
+  let user = null
+  let workbenchLink = ''
+  if (workbenchToken) {
+    let me
+    try {
+      const resp = await fetch(`${WORKBENCH_SSO_URL}/api/auth/sso-identity`, {
+        headers: { Authorization: `Bearer ${workbenchToken}` },
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!resp.ok) return res.status(401).json({ error: '工作台会话已过期，请重新登录工作台' })
+      me = await resp.json()
+    } catch {
+      return res.status(503).json({ error: '工作台账号服务暂时不可用' })
+    }
+    if (!me?.id) return res.status(401).json({ error: '工作台会话已过期，请重新登录工作台' })
+    workbenchLink = `workbench:${me.id}`
+    const shixingSuffix = String(me.shixingUserId || '').startsWith('shixing:')
+      ? String(me.shixingUserId).slice('shixing:'.length)
+      : ''
+    const email = String(me.email || '').trim().toLowerCase()
+    if (shixingSuffix) user = state.users.find((item) => item.id === shixingSuffix)
+    if (!user && email) {
+      user = state.users.find((item) => item.contact_type === 'email'
+        && String(item.contact_value || '').trim().toLowerCase() === email)
+    }
+    if (!user) {
+      if (!email) return res.status(400).json({ error: '工作台账号缺少邮箱，暂时无法开通广播身份' })
+      const password = hashPassword(crypto.randomBytes(32).toString('base64url'))
+      user = {
+        id: crypto.randomUUID(),
+        username: workbenchUsername(me, state.users),
+        display_name: String(me.name || '老师').trim().slice(0, 20) || '老师',
+        teacher_code: genUniqueTeacherCode(),
+        contact_type: 'email',
+        contact_value: email,
+        registration_email: email,
+        password_hash: password.hash,
+        password_salt: password.salt,
+        plan: 'trial',
+        plan_expires: null,
+        token: '',
+        token_expires: null,
+        workbenchUserId: workbenchLink,
+        created_at: new Date().toISOString()
+      }
+      state.users.push(user)
+    }
+    user.workbenchUserId = workbenchLink
+  } else {
+    // 跨标签页：新标签拿不到工作台 sessionStorage，改凭师行登录 Cookie 定位广播账号
+    user = findUserByToken(cookieToken)
+    if (!user) {
+      return res.status(401).json({ error: '登录已过期，请重新登录' })
+    }
+  }
+  let token = user.token
+  if (!(token && user.token_expires && Date.parse(user.token_expires) > Date.now())) {
+    token = genToken()
+    user.token = token
+    user.token_expires = new Date(Date.now() + AUTH_TOKEN_TTL_MS).toISOString()
+  }
+  saveDB(state)
+  setAuthCookie(req, res, token)
+  res.set('Cache-Control', 'no-store')
+  res.json({ token, username: user.username, display_name: user.display_name, plan_status: getUserPlanStatus(user) })
+})
 
 app.get('/api/profile', userAuth, (req, res) => {
   const u = req.user;
@@ -1449,13 +1531,14 @@ app.post('/api/messages/read', userAuth, (req, res) => {
 
 // ---------- Notification API ----------
 app.post('/api/notify', userAuth, requireActivePlan, (req, res) => {
-  const { class_id, content, signature, student_name, repeat_count } = req.body;
+  const { class_id, content, signature, student_name, repeat_count, broadcast_mode } = req.body;
   if (!class_id || !content) return res.status(400).json({ error: '请选择班级并输入内容' });
 
   const cls = store.classes.find(c => c.id === class_id && isClassMember(c, req.user.id));
   if (!cls) return res.status(404).json({ error: '班级不存在' });
 
-  const rc = Math.min(Math.max(parseInt(repeat_count) || 1, 1), 10);
+  const mode = normalizeBroadcastMode(broadcast_mode);
+  const rc = mode === 'text' ? 1 : Math.min(Math.max(parseInt(repeat_count) || 1, 1), 10);
   const senderName = String(signature || '').trim() || getTeacherName(req.user);
   const notification = {
     id: store.nextNotifId++,
@@ -1466,6 +1549,7 @@ app.post('/api/notify', userAuth, requireActivePlan, (req, res) => {
     sender_name: senderName,
     student_name: student_name || '',
     repeat_count: rc,
+    broadcast_mode: mode,
     created_at: new Date().toISOString()
   };
   store.notifications.push(notification);
@@ -1605,61 +1689,6 @@ app.delete('/api/bulletins/:id', userAuth, (req, res) => {
   dbStore.deleteBulletin(bulletin.id);
   emitBulletins(cls.id);
   res.json({ ok: true });
-});
-
-// ---------- TTS ----------
-// TTS 限流：同一 IP 每分钟最多20次
-const ttsRateMap = new Map();
-const TTS_RATE_LIMIT = 20;
-const TTS_RATE_WINDOW_MS = 60 * 1000;
-
-function ttsRateLimited(ip) {
-  const now = Date.now();
-  const rec = ttsRateMap.get(ip);
-  if (!rec || now - rec.first >= TTS_RATE_WINDOW_MS) {
-    if (ttsRateMap.size > 5000) ttsRateMap.clear();
-    ttsRateMap.set(ip, { first: now, count: 1 });
-    return false;
-  }
-  rec.count++;
-  return rec.count > TTS_RATE_LIMIT;
-}
-
-app.post('/api/tts', (req, res) => {
-  if (ttsRateLimited(req.ip || 'unknown')) return res.status(429).end();
-  // 鉴权：教室端带绑定码，老师端带登录 token，二者必居其一
-  const bindCode = String(req.body.bind_code || '').trim().toUpperCase();
-  const boundClass = bindCode ? store.classes.find(c => c.bind_code === bindCode) : null;
-  const authedUser = findUserByToken(authTokenFromReq(req));
-  if (!boundClass && !authedUser) return res.status(401).end();
-  const text = String(req.body.text || '').slice(0, 500);
-  console.log('[TTS] text:', text ? text.slice(0, 30) : '(empty)', 'len:', text.length);
-  if (!text) return res.status(400).end();
-
-  const reqPath = '/text2audio?tex=' + encodeURIComponent(text) +
-    '&cuid=baidu_speech_demo&lan=zh&ctp=1&pdt=301&vol=15&rate=32&per=0&spd=4';
-  console.log('[TTS] path:', reqPath.slice(0, 200));
-
-  https.get({
-    hostname: 'tts.baidu.com',
-    path: reqPath,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Referer': 'https://www.baidu.com',
-      'Accept': '*/*'
-    }
-  }, (resp) => {
-    const ct = resp.headers['content-type'] || '';
-    console.log('[TTS] baidu resp:', resp.statusCode, ct);
-    if (resp.statusCode !== 200 || ct.indexOf('audio') === -1) {
-      let body = '';
-      resp.on('data', c => body += c);
-      resp.on('end', () => { console.log('[TTS] baidu body:', body.slice(0, 300)); });
-      return res.status(500).end();
-    }
-    res.set('Content-Type', ct);
-    resp.pipe(res);
-  }).on('error', (e) => { console.log('[TTS] error:', e.message); res.status(500).end(); });
 });
 
 // ---------- Admin API ----------
@@ -2247,6 +2276,7 @@ io.on('connection', (socket) => {
       grade: cls.grade || 'junior',
       management_enabled: !!cls.management_enabled,
       points_sound_enabled: !!cls.points_sound_enabled,
+      timetable: normalizeClassTimetable(cls.timetable),
       screen_token: issueScreenSession(cls)
     });
     socket.emit('bulletins-update', getActiveBulletins(cls.id));
