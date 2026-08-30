@@ -7,6 +7,7 @@ const { createShixingPoints, POINT_COSTS } = require('./shixing-points');
 const { createUnifiedReferrals } = require('./unified-referrals');
 const classroomPoints = require('./classroom-points');
 const { normalizeClassTimetable } = require('./class-timetable');
+const { normalizeBroadcastMode } = require('./broadcast-notification');
 
 const SQLITE_FILE = process.env.SQLITE_FILE || path.join(__dirname, 'broadcast.db');
 const LEGACY_JSON_FILE = process.env.LEGACY_JSON_FILE || path.join(__dirname, 'data.json');
@@ -804,18 +805,21 @@ function loadClasses() {
 }
 
 function loadNotifications() {
-  return db.prepare('SELECT * FROM notifications ORDER BY id').all().map(row => ({
-    id: row.id,
-    class_id: row.class_id,
-    user_id: row.user_id,
-    content: row.content,
-    signature: row.signature || '',
-    sender_name: row.sender_name || '',
-    student_name: row.student_name || '',
-    repeat_count: row.repeat_count || 1,
-    created_at: row.created_at,
-    ...safeJsonParse(row.extra_json, {})
-  }));
+  return db.prepare('SELECT * FROM notifications ORDER BY id').all().map(row => {
+    const extra = safeJsonParse(row.extra_json, {});
+    return {
+      id: row.id,
+      class_id: row.class_id,
+      user_id: row.user_id,
+      content: row.content,
+      signature: row.signature || '',
+      sender_name: row.sender_name || '',
+      student_name: row.student_name || '',
+      repeat_count: row.repeat_count || 1,
+      broadcast_mode: normalizeBroadcastMode(extra.broadcast_mode),
+      created_at: row.created_at
+    };
+  });
 }
 
 function loadReplies() {
@@ -1629,7 +1633,7 @@ function upsertNotification(row) {
     student_name: row.student_name || '',
     repeat_count: Number(row.repeat_count) || 1,
     created_at: row.created_at || new Date().toISOString(),
-    extra_json: null
+    extra_json: jsonString({ broadcast_mode: normalizeBroadcastMode(row.broadcast_mode) })
   });
 }
 

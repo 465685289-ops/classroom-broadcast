@@ -88,6 +88,10 @@ const {
   normalizeClassTimetable
 } = require('./class-timetable.js');
 
+const {
+  normalizeBroadcastMode
+} = require('./broadcast-notification.js');
+
 // ---- 认证核心（自 auth-core.js 引入）----
 const {
   paidPlanExpiresFromNow, paidPlanExpiresForUser, activateYearlyPlan, genCode, genUniqueBindCode, genUniqueTeacherCode, hashPassword, verifyPassword, setUserPassword, genToken, safeEqual, issueUserToken, revokeUserToken, findUserByToken, refreshUserTokenExpiry, getUserPlanStatus
@@ -1527,13 +1531,14 @@ app.post('/api/messages/read', userAuth, (req, res) => {
 
 // ---------- Notification API ----------
 app.post('/api/notify', userAuth, requireActivePlan, (req, res) => {
-  const { class_id, content, signature, student_name, repeat_count } = req.body;
+  const { class_id, content, signature, student_name, repeat_count, broadcast_mode } = req.body;
   if (!class_id || !content) return res.status(400).json({ error: '请选择班级并输入内容' });
 
   const cls = store.classes.find(c => c.id === class_id && isClassMember(c, req.user.id));
   if (!cls) return res.status(404).json({ error: '班级不存在' });
 
-  const rc = Math.min(Math.max(parseInt(repeat_count) || 1, 1), 10);
+  const mode = normalizeBroadcastMode(broadcast_mode);
+  const rc = mode === 'text' ? 1 : Math.min(Math.max(parseInt(repeat_count) || 1, 1), 10);
   const senderName = String(signature || '').trim() || getTeacherName(req.user);
   const notification = {
     id: store.nextNotifId++,
@@ -1544,6 +1549,7 @@ app.post('/api/notify', userAuth, requireActivePlan, (req, res) => {
     sender_name: senderName,
     student_name: student_name || '',
     repeat_count: rc,
+    broadcast_mode: mode,
     created_at: new Date().toISOString()
   };
   store.notifications.push(notification);
