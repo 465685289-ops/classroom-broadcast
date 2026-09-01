@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>班级广播 · 老师端</title>
+<script>
+// 旧地址仅作兼容入口；完整教师控制台已合并到师行教师工作台。
+var oldPaymentOrder = new URLSearchParams(window.location.search).get('pay_order');
+window.location.replace('/student-growth/?page=broadcast' + (oldPaymentOrder ? '&panel=account&pay_order=' + encodeURIComponent(oldPaymentOrder) : ''));
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",sans-serif;background:#f5f7fa;color:#333;min-height:100vh}

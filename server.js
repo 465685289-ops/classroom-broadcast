@@ -966,7 +966,7 @@ app.post('/api/payments/yearly', userAuth, async (req, res) => {
     sign: yungouSign(requiredParams, YUNGOU_PAY_KEY),
     attach: req.user.id,
     notify_url: baseUrl + '/api/payments/yungou/notify',
-    return_url: baseUrl + '/teacher.html?pay_order=' + encodeURIComponent(outTradeNo),
+    return_url: baseUrl + '/student-growth/?page=broadcast&panel=account&pay_order=' + encodeURIComponent(outTradeNo),
     auto: '0'
   };
   if (YUNGOU_APP_ID) params.app_id = YUNGOU_APP_ID;
