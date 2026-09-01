@@ -85,6 +85,14 @@ const {
 } = require('./timetable-routes.js');
 
 const {
+  installClassroomOnboardingRoutes,
+  rememberClassroomOnboardingClass,
+  markClassroomOnboardingScreenConnected,
+  markClassroomOnboardingFirstNotification,
+  clearClassroomOnboardingForClass
+} = require('./classroom-onboarding-routes.js');
+
+const {
   normalizeClassTimetable
 } = require('./class-timetable.js');
 
@@ -404,6 +412,7 @@ installRoundtableRoutes(app);
 installEssayRoutes(app);
 installTtsRoutes(app);
 installTimetableRoutes(app, { requireActivePlan });
+installClassroomOnboardingRoutes(app);
 
 app.post('/api/analytics/event', (req, res) => {
   if (!analyticsRequestAllowed(req)) return res.status(429).json({ error: '请求过于频繁' });
@@ -1152,6 +1161,7 @@ app.post('/api/classes', userAuth, requireActivePlan, (req, res) => {
   };
   store.classes.push(cls);
   dbStore.upsertClass(cls);
+  rememberClassroomOnboardingClass(req.user.id, cls.id, cls.created_at);
   res.json(classResponse(cls, req.user.id));
 });
 
@@ -1167,6 +1177,7 @@ app.delete('/api/classes/:id', userAuth, (req, res) => {
     store.bulletins = store.bulletins.filter(b => b.class_id !== req.params.id);
     dbStore.deleteClass(req.params.id);
   }
+  clearClassroomOnboardingForClass(req.user.id, cls.id);
   res.json({ ok: true, archived });
 });
 
@@ -1557,6 +1568,9 @@ app.post('/api/notify', userAuth, requireActivePlan, (req, res) => {
   dbStore.upsertNotification(notification);
   dbStore.setCounter('nextNotifId', store.nextNotifId);
   dbStore.pruneNotifications(5000);
+  if (cls.user_id === req.user.id) {
+    markClassroomOnboardingFirstNotification(req.user.id, cls.id, notification.id, notification.created_at);
+  }
 
   const emitData = { ...notification, class_name: cls.name, avatar: req.user.avatar || 'a1' };
   io.to(`class:${class_id}`).emit('notification', emitData);
@@ -2280,6 +2294,7 @@ io.on('connection', (socket) => {
       screen_token: issueScreenSession(cls)
     });
     socket.emit('bulletins-update', getActiveBulletins(cls.id));
+    markClassroomOnboardingScreenConnected(cls.user_id, cls.id, new Date().toISOString());
     io.emit('online-update');
   });
 
