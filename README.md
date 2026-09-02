@@ -10,6 +10,7 @@
 - 班级告示栏，适合发布作业和值日等静默通知
 - 消息中心，接收教室回复和班级邀请
 - 云狗微信支付年费开通
+- 师行共享积分的余额、充值、流水与工作台服务端扣分接口
 - SQLite 本地数据库存储，启动时可从旧 `data.json` 自动迁移
 
 ## 技术栈
@@ -50,7 +51,10 @@ PUBLIC_BASE_URL=https://your-domain.example
 YUNGOU_MCH_ID=your_mch_id
 YUNGOU_PAY_KEY=your_pay_key
 YEARLY_PLAN_PRICE=9.90
+WORKBENCH_POINTS_SECRET=replace-with-a-random-service-secret
 ```
+
+`WORKBENCH_POINTS_SECRET` 只能配置在广播服务与教师工作台两个服务端，不能进入浏览器代码。广播会员管理教室广播时长，师行积分用于 AI 类功能，两者独立计费。
 
 ### 腾讯云精品语音
 

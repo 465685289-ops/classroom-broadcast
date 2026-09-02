@@ -3741,6 +3741,10 @@ function adjustShixingPoints(row) {
   return shixingPoints.adjust(row).balance;
 }
 
+function consumeShixingPoints(row) {
+  return shixingPoints.consume(row);
+}
+
 function hasShixingPointTopup(userId) {
   return shixingPoints.hasPaidTopup(userId);
 }
@@ -4172,6 +4176,7 @@ module.exports = {
   listShixingPointLedger,
   addShixingPointsForPayment,
   adjustShixingPoints,
+  consumeShixingPoints,
   hasShixingPointTopup,
   migrateShixingPoints,
   listRoundtableCreditLedger,

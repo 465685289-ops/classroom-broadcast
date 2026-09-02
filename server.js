@@ -57,6 +57,10 @@ const {
 } = require('./comment-routes.js');
 
 const {
+  installShixingPointsRoutes
+} = require('./shixing-points-routes.js');
+
+const {
   installLearningRoutes
 } = require('./learning-routes.js');
 
@@ -405,6 +409,7 @@ app.get('/english/revise/:token', (req, res) => res.sendFile(path.join(__dirname
 app.use(express.static(path.join(__dirname, 'public')));
 installAdminSessionRoutes(app);
 installCommentRoutes(app);
+installShixingPointsRoutes(app);
 installLearningRoutes(app);
 installEnglishRoutes(app);
 installReferralRoutes(app);
@@ -856,6 +861,7 @@ app.get('/api/profile', userAuth, (req, res) => {
     plan_status: req.planStatus,
     class_count: classCount,
     notif_count: notifCount,
+    point_balance: dbStore.getShixingPointBalance(u.id),
     feature_subscriptions: featureSubscriptions
   });
 });

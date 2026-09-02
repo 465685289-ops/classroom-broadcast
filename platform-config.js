@@ -103,6 +103,7 @@ const FREE_TRIAL_DAYS = 3;
 const PAID_PLAN_DAYS = 180;
 const YEARLY_PLAN_PRICE = configValue('YEARLY_PLAN_PRICE', 'yearly_plan_price', '9.90');
 const PUBLIC_BASE_URL = configValue('PUBLIC_BASE_URL', 'public_base_url', '').replace(/\/+$/, '');
+const WORKBENCH_POINTS_SECRET = String(process.env.WORKBENCH_POINTS_SECRET || '').trim();
 const COMMENT_BASE_URL = commentConfigValue('COMMENT_BASE_URL', 'comment_base_url', '').replace(/\/+$/, '');
 const DEEPSEEK_API_KEY = commentConfigValue('DEEPSEEK_API_KEY', 'deepseek_api_key', '');
 const DEEPSEEK_MODEL = commentConfigValue('DEEPSEEK_MODEL', 'deepseek_model', 'deepseek-v4-flash') || 'deepseek-v4-flash';
@@ -228,6 +229,7 @@ module.exports = {
   PAID_PLAN_DAYS,
   YEARLY_PLAN_PRICE,
   PUBLIC_BASE_URL,
+  WORKBENCH_POINTS_SECRET,
   COMMENT_BASE_URL,
   DEEPSEEK_API_KEY,
   DEEPSEEK_MODEL,
