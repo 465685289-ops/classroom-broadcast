@@ -46,7 +46,7 @@ test('charges the five AI products from one shared balance', () => {
   db.prepare('INSERT INTO users (id, username) VALUES (?, ?)').run('u1', 'teacher');
   const points = createShixingPoints(db);
 
-  assert.deepEqual(POINT_COSTS, { comment: 25, essay: 50, english: 50, roundtable: 50, edulab: 75 });
+  assert.deepEqual(POINT_COSTS, { comment: 25, essay: 50, english: 50, roundtable: 50, edulab: 75, family_message: 10 });
   assert.equal(points.debit({ user_id: 'u1', product: 'comment', note: '评语' }).balance, 1600);
   assert.equal(points.debit({ user_id: 'u1', product: 'essay', note: '作文' }).balance, 1550);
   assert.equal(points.debit({ user_id: 'u1', product: 'english', note: '英语作文' }).balance, 1500);
@@ -56,6 +56,28 @@ test('charges the five AI products from one shared balance', () => {
     () => points.debit({ user_id: 'u1', product: 'edulab', cost: 1500 }),
     err => err && err.code === 'SHIXING_POINTS_EXHAUSTED' && err.balance === 1375
   );
+});
+
+test('family message usage debits only once for one operation id', () => {
+  const db = testDb();
+  db.prepare('INSERT INTO users (id, username) VALUES (?, ?)').run('u1', 'teacher');
+  const points = createShixingPoints(db);
+  const before = points.getBalance('u1');
+  const first = points.consume({
+    user_id: 'u1',
+    product: 'family_message',
+    operation_id: 'family-message-op-001'
+  });
+  assert.equal(first.points, 10);
+  assert.equal(first.balance, before - 10);
+  assert.equal(first.duplicate, false);
+  const duplicate = points.consume({
+    user_id: 'u1',
+    product: 'family_message',
+    operation_id: 'family-message-op-001'
+  });
+  assert.deepEqual(duplicate, { balance: before - 10, points: 10, duplicate: true });
+  assert.equal(points.getBalance('u1'), before - 10);
 });
 
 test('adds the essay migration once for accounts migrated before essay joined shared points', () => {
