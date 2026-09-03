@@ -122,6 +122,15 @@ function ensureSchema() {
       extra_json TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS account_password_aliases (
+      user_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (user_id, source)
+    );
+
     CREATE TABLE IF NOT EXISTS classes (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
@@ -661,6 +670,7 @@ function ensureSchema() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_classes_user ON classes(user_id);
+    CREATE INDEX IF NOT EXISTS idx_account_password_aliases_user ON account_password_aliases(user_id);
     CREATE INDEX IF NOT EXISTS idx_class_members_user ON class_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_classroom_onboarding_class ON classroom_onboarding(first_class_id);
     CREATE INDEX IF NOT EXISTS idx_notifications_class ON notifications(class_id, id DESC);
@@ -1139,6 +1149,38 @@ function upsertUser(user) {
     created_at: user.created_at || new Date().toISOString(),
     extra_json: null
   });
+}
+
+const upsertAccountPasswordAliasStmt = db.prepare(`
+  INSERT INTO account_password_aliases (user_id, source, password_hash, password_salt, created_at)
+  VALUES (@user_id, @source, @password_hash, @password_salt, @created_at)
+  ON CONFLICT(user_id, source) DO UPDATE SET
+    password_hash = excluded.password_hash,
+    password_salt = excluded.password_salt,
+    created_at = excluded.created_at
+`);
+
+function upsertAccountPasswordAlias(row) {
+  upsertAccountPasswordAliasStmt.run({
+    user_id: row.user_id,
+    source: row.source,
+    password_hash: row.password_hash,
+    password_salt: row.password_salt,
+    created_at: row.created_at || new Date().toISOString()
+  });
+}
+
+function listAccountPasswordAliases(userId) {
+  return db.prepare(`
+    SELECT source, password_hash, password_salt, created_at
+    FROM account_password_aliases
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+  `).all(userId);
+}
+
+function deleteAccountPasswordAliases(userId) {
+  return db.prepare('DELETE FROM account_password_aliases WHERE user_id = ?').run(userId).changes;
 }
 
 const upsertClassTx = db.transaction((cls) => {
@@ -4004,6 +4046,9 @@ module.exports = {
   backupLegacyJson,
   setCounter,
   upsertUser,
+  upsertAccountPasswordAlias,
+  listAccountPasswordAliases,
+  deleteAccountPasswordAliases,
   upsertClass,
   saveClassTimetable,
   getClassroomOnboarding,

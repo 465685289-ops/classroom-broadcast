@@ -367,11 +367,24 @@ function findUniqueUserByEmail(email) {
   return contacts.length === 1 ? contacts[0] : null;
 }
 
-function findUserByLogin(login) {
-  const exactUsername = store.users.find(user => user.username === login);
-  if (exactUsername) return exactUsername;
+function findUsersByLogin(login) {
   const email = normalizeEmailInput(login);
-  return email ? findUniqueUserByEmail(email) : null;
+  if (email) {
+    const registered = store.users.filter(user => normalizeEmailInput(user.registration_email) === email);
+    const exactEmailUsername = store.users.find(user => user.username === login);
+    const contacts = store.users.filter(user => user.contact_type === 'email'
+      && normalizeEmailInput(user.contact_value) === email);
+    return [...new Map([...registered, ...(exactEmailUsername ? [exactEmailUsername] : []), ...contacts]
+      .map(user => [user.id, user])).values()];
+  }
+  const exactUsername = store.users.find(user => user.username === login);
+  return exactUsername ? [exactUsername] : [];
+}
+
+function userPasswordMatches(user, password) {
+  if (verifyPassword(password, user.password_hash, user.password_salt)) return true;
+  return dbStore.listAccountPasswordAliases(user.id)
+    .some(alias => verifyPassword(password, alias.password_hash, alias.password_salt));
 }
 
 // ---- 应用级中间件与页面路由（保持原顺序）----
@@ -619,8 +632,16 @@ app.get('/api/referral', userAuth, (req, res) => {
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: '请输入邮箱或旧用户名和密码' });
-  const user = findUserByLogin(String(username).trim());
-  if (!user || !verifyPassword(password, user.password_hash, user.password_salt)) {
+  const login = String(username).trim();
+  const matchingUsers = findUsersByLogin(login)
+    .filter(candidate => userPasswordMatches(candidate, password));
+  const email = normalizeEmailInput(login);
+  const registeredMatches = email ? matchingUsers.filter(candidate =>
+    normalizeEmailInput(candidate.registration_email) === email) : [];
+  const user = matchingUsers.length === 1
+    ? matchingUsers[0]
+    : registeredMatches.length === 1 ? registeredMatches[0] : null;
+  if (!user) {
     return res.status(401).json({ error: '邮箱、用户名或密码错误' });
   }
   issueUserToken(user);

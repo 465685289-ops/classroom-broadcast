@@ -7,6 +7,7 @@ const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const Database = require('better-sqlite3');
 
 const ROOT = path.join(__dirname, '..');
 const TMP = path.join(os.tmpdir(), 'shixing-registration-api-' + Date.now());
@@ -93,6 +94,12 @@ test.before(async () => {
   fs.mkdirSync(TMP, { recursive: true });
   const legacyPassword = 'legacy-password';
   const legacySalt = 'legacy-user-test-salt';
+  const aliasMasterSalt = 'alias-master-test-salt';
+  const aliasShadowSalt = 'alias-shadow-test-salt';
+  const duplicateOneSalt = 'duplicate-one-test-salt';
+  const duplicateTwoSalt = 'duplicate-two-test-salt';
+  const conflictOwnerSalt = 'conflict-owner-test-salt';
+  const conflictLinkedSalt = 'conflict-linked-test-salt';
   fs.writeFileSync(path.join(TMP, 'legacy.json'), JSON.stringify({
     users: [{
       id: 'legacy-user-id',
@@ -109,6 +116,96 @@ test.before(async () => {
       token: null,
       token_expires: null,
       created_at: '2026-01-01T00:00:00.000Z'
+    }, {
+      id: 'alias-user-id',
+      username: 'alias-user',
+      display_name: '密码兼容用户',
+      teacher_code: 'ALIAS1',
+      contact_type: 'email',
+      contact_value: 'alias@example.com',
+      registration_email: 'alias@example.com',
+      password_hash: crypto.scryptSync('master-password', aliasMasterSalt, 64).toString('hex'),
+      password_salt: aliasMasterSalt,
+      plan: 'trial',
+      plan_expires: null,
+      token: null,
+      token_expires: null,
+      created_at: '2026-01-02T00:00:00.000Z'
+    }, {
+      id: 'alias-shadow-id',
+      username: 'alias@example.com',
+      display_name: '旧用户名占位账号',
+      teacher_code: 'SHADOW',
+      contact_type: 'email',
+      contact_value: 'shadow-contact@example.com',
+      registration_email: '',
+      password_hash: crypto.scryptSync('shadow-password', aliasShadowSalt, 64).toString('hex'),
+      password_salt: aliasShadowSalt,
+      plan: 'trial',
+      plan_expires: null,
+      token: null,
+      token_expires: null,
+      created_at: '2026-01-02T12:00:00.000Z'
+    }, {
+      id: 'conflict-owner-id',
+      username: 'conflict-owner',
+      display_name: '邮箱登记账号',
+      teacher_code: 'CON001',
+      contact_type: 'email',
+      contact_value: 'conflict@example.com',
+      registration_email: 'conflict@example.com',
+      password_hash: crypto.scryptSync('conflict-owner-password', conflictOwnerSalt, 64).toString('hex'),
+      password_salt: conflictOwnerSalt,
+      plan: 'trial',
+      plan_expires: null,
+      token: null,
+      token_expires: null,
+      created_at: '2026-01-05T00:00:00.000Z'
+    }, {
+      id: 'conflict-linked-id',
+      username: 'conflict-linked',
+      display_name: '工作台绑定账号',
+      teacher_code: 'CON002',
+      contact_type: 'email',
+      contact_value: 'conflict@example.com',
+      registration_email: '',
+      password_hash: crypto.scryptSync('linked-master-password', conflictLinkedSalt, 64).toString('hex'),
+      password_salt: conflictLinkedSalt,
+      plan: 'trial',
+      plan_expires: null,
+      token: null,
+      token_expires: null,
+      created_at: '2026-01-06T00:00:00.000Z'
+    }, {
+      id: 'duplicate-one-id',
+      username: 'duplicate-one',
+      display_name: '重名用户甲',
+      teacher_code: 'DUP001',
+      contact_type: 'email',
+      contact_value: 'duplicate@example.com',
+      registration_email: '',
+      password_hash: crypto.scryptSync('duplicate-one-password', duplicateOneSalt, 64).toString('hex'),
+      password_salt: duplicateOneSalt,
+      plan: 'trial',
+      plan_expires: null,
+      token: null,
+      token_expires: null,
+      created_at: '2026-01-03T00:00:00.000Z'
+    }, {
+      id: 'duplicate-two-id',
+      username: 'duplicate-two',
+      display_name: '重名用户乙',
+      teacher_code: 'DUP002',
+      contact_type: 'email',
+      contact_value: 'duplicate@example.com',
+      registration_email: '',
+      password_hash: crypto.scryptSync('duplicate-two-password', duplicateTwoSalt, 64).toString('hex'),
+      password_salt: duplicateTwoSalt,
+      plan: 'trial',
+      plan_expires: null,
+      token: null,
+      token_expires: null,
+      created_at: '2026-01-04T00:00:00.000Z'
     }],
     classes: [], notifications: [], replies: [], messages: [], bulletins: [], payments: [],
     nextNotifId: 1, nextMessageId: 1, nextBulletinId: 1
@@ -201,4 +298,95 @@ test('legacy users can log in by username or unique email and reset with email o
 
   const updatedLogin = await post('/api/login', { username: 'legacy@example.com', password: 'new-legacy-password' });
   assert.equal(updatedLogin.status, 200);
+});
+
+test('duplicate legacy email is resolved only when one account password matches', async () => {
+  const first = await post('/api/login', {
+    username: 'duplicate@example.com',
+    password: 'duplicate-one-password'
+  });
+  assert.equal(first.status, 200);
+  assert.equal(first.body.user.id, 'duplicate-one-id');
+
+  const second = await post('/api/login', {
+    username: 'duplicate@example.com',
+    password: 'duplicate-two-password'
+  });
+  assert.equal(second.status, 200);
+  assert.equal(second.body.user.id, 'duplicate-two-id');
+});
+
+test('a legacy alias can select its linked account even when another account owns the registration email', async () => {
+  const aliasSalt = 'conflict-workbench-alias-salt';
+  const sqlite = new Database(path.join(TMP, 'test.db'));
+  try {
+    sqlite.prepare(`
+      INSERT INTO account_password_aliases (user_id, source, password_hash, password_salt, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      'conflict-linked-id',
+      'student-growth-v7',
+      crypto.scryptSync('conflict-workbench-password', aliasSalt, 64).toString('hex'),
+      aliasSalt,
+      new Date().toISOString()
+    );
+  } finally {
+    sqlite.close();
+  }
+
+  const result = await post('/api/login', {
+    username: 'conflict@example.com',
+    password: 'conflict-workbench-password'
+  });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.user.id, 'conflict-linked-id');
+});
+
+test('legacy workbench password alias logs in until the user resets the canonical password', async () => {
+  const aliasSalt = 'old-workbench-alias-salt';
+  const sqlite = new Database(path.join(TMP, 'test.db'));
+  try {
+    sqlite.prepare(`
+      INSERT INTO account_password_aliases (user_id, source, password_hash, password_salt, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      'alias-user-id',
+      'student-growth-v7',
+      crypto.scryptSync('old-workbench-password', aliasSalt, 64).toString('hex'),
+      aliasSalt,
+      new Date().toISOString()
+    );
+  } finally {
+    sqlite.close();
+  }
+
+  const legacyLogin = await post('/api/login', {
+    username: 'alias@example.com',
+    password: 'old-workbench-password'
+  });
+  assert.equal(legacyLogin.status, 200);
+  assert.equal(legacyLogin.body.user.id, 'alias-user-id');
+
+  const sent = await post('/api/password-reset/send-code', { email: 'alias@example.com' });
+  assert.equal(sent.status, 200);
+  const code = codeFromMessage(messages.at(-1));
+  const verified = await post('/api/password-reset/verify-code', { email: 'alias@example.com', code });
+  assert.equal(verified.status, 200);
+  const confirmed = await post('/api/password-reset/confirm', {
+    email: 'alias@example.com',
+    reset_token: verified.body.reset_token,
+    password: 'final-unified-password'
+  });
+  assert.equal(confirmed.status, 200);
+
+  const oldAlias = await post('/api/login', {
+    username: 'alias@example.com',
+    password: 'old-workbench-password'
+  });
+  assert.equal(oldAlias.status, 401);
+  const finalLogin = await post('/api/login', {
+    username: 'alias@example.com',
+    password: 'final-unified-password'
+  });
+  assert.equal(finalLogin.status, 200);
 });

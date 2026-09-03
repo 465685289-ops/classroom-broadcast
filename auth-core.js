@@ -64,6 +64,7 @@ function setUserPassword(user, password) {
   user.password_hash = hash;
   user.password_salt = salt;
   issueUserToken(user); // 改密码即吊销旧登录
+  dbStore.deleteAccountPasswordAliases(user.id);
   dbStore.upsertUser(user);
 }
 
