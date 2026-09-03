@@ -346,15 +346,32 @@ function normalizeEmailInput(value) {
 
 
 function passwordResetIdentity(req) {
-  const username = String(req.body.username || '').trim();
   const email = normalizeEmailInput(req.body.email || req.body.contact);
-  const user = username ? store.users.find(u => u.username === username) : null;
-  const matched = !!(user && email && contactMatches(user, { type: 'email', value: email }));
-  return { username, email, user, matched };
+  const user = email ? findUniqueUserByEmail(email) : null;
+  return { email, user, matched: !!user };
 }
 
 function findUserByEmail(email) {
-  return store.users.find(user => normalizeEmailInput(user.registration_email || user.contact_value) === email);
+  return store.users.find(user => {
+    const registrationEmail = normalizeEmailInput(user.registration_email);
+    const contactEmail = user.contact_type === 'email' ? normalizeEmailInput(user.contact_value) : null;
+    return registrationEmail === email || contactEmail === email;
+  });
+}
+
+function findUniqueUserByEmail(email) {
+  const registered = store.users.filter(user => normalizeEmailInput(user.registration_email) === email);
+  if (registered.length) return registered.length === 1 ? registered[0] : null;
+  const contacts = store.users.filter(user => user.contact_type === 'email'
+    && normalizeEmailInput(user.contact_value) === email);
+  return contacts.length === 1 ? contacts[0] : null;
+}
+
+function findUserByLogin(login) {
+  const exactUsername = store.users.find(user => user.username === login);
+  if (exactUsername) return exactUsername;
+  const email = normalizeEmailInput(login);
+  return email ? findUniqueUserByEmail(email) : null;
 }
 
 // ---- 应用级中间件与页面路由（保持原顺序）----
@@ -491,17 +508,13 @@ app.post('/api/register/send-code', async (req, res) => {
 });
 
 app.post('/api/register', (req, res) => {
-  const { username, password, display_name } = req.body;
+  const { password, display_name } = req.body;
   const email = normalizeEmailInput(req.body.email);
   const code = String(req.body.code || '').trim();
-  if (!username || !password) return res.status(400).json({ error: '请输入用户名和密码' });
-  if (username.length < 2 || username.length > 20) return res.status(400).json({ error: '用户名2-20个字符' });
+  if (!password) return res.status(400).json({ error: '请输入密码' });
   if (password.length < 4) return res.status(400).json({ error: '密码至少4位' });
   if (!email) return res.status(400).json({ error: '请输入有效邮箱地址' });
   if (!/^\d{6}$/.test(code)) return res.status(400).json({ error: '请输入6位邮箱验证码' });
-  if (store.users.find(u => u.username === username)) {
-    return res.status(400).json({ error: '用户名已存在' });
-  }
   if (findUserByEmail(email)) return res.status(400).json({ error: '该邮箱已注册，请直接登录' });
 
   const codeRow = dbStore.getLatestRegistrationEmailCode(email);
@@ -522,8 +535,8 @@ app.post('/api/register', (req, res) => {
   const token = genToken();
   const user = {
     id: crypto.randomUUID(),
-    username,
-    display_name: display_name || username,
+    username: email,
+    display_name: String(display_name || email.split('@')[0]).trim().slice(0, 20),
     teacher_code: genUniqueTeacherCode(),
     contact_type: 'email',
     contact_value: email,
@@ -605,10 +618,10 @@ app.get('/api/referral', userAuth, (req, res) => {
 
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: '请输入用户名和密码' });
-  const user = store.users.find(u => u.username === username);
+  if (!username || !password) return res.status(400).json({ error: '请输入邮箱或旧用户名和密码' });
+  const user = findUserByLogin(String(username).trim());
   if (!user || !verifyPassword(password, user.password_hash, user.password_salt)) {
-    return res.status(401).json({ error: '用户名或密码错误' });
+    return res.status(401).json({ error: '邮箱、用户名或密码错误' });
   }
   issueUserToken(user);
   if (!user.teacher_code) user.teacher_code = genUniqueTeacherCode();
@@ -636,8 +649,8 @@ app.post('/api/password-reset/send-code', async (req, res) => {
   }
 
   const identity = passwordResetIdentity(req);
-  if (!identity.username || !identity.email) {
-    return res.status(400).json({ error: '请输入用户名和注册时填写的邮箱' });
+  if (!identity.email) {
+    return res.status(400).json({ error: '请输入注册时填写的邮箱' });
   }
 
   if (!identity.matched) {
@@ -674,14 +687,14 @@ app.post('/api/password-reset/send-code', async (req, res) => {
 });
 
 app.post('/api/password-reset/verify-code', (req, res) => {
-  const username = String(req.body.username || '').trim();
   const email = normalizeEmailInput(req.body.email || req.body.contact);
   const code = String(req.body.code || '').trim();
-  if (!username || !email || !/^\d{6}$/.test(code)) {
-    return res.status(400).json({ error: '请输入用户名、邮箱和6位验证码' });
+  if (!email || !/^\d{6}$/.test(code)) {
+    return res.status(400).json({ error: '请输入邮箱和6位验证码' });
   }
 
-  const row = dbStore.getLatestPasswordResetCode(username, email);
+  const user = findUniqueUserByEmail(email);
+  const row = user ? dbStore.getLatestPasswordResetCode(user.username, email) : null;
   if (!row || row.used_at || Date.parse(row.expires_at) < Date.now() || row.attempts >= RESET_CODE_MAX_ATTEMPTS) {
     return res.status(400).json({ error: '验证码不正确或已过期，请重新获取' });
   }
@@ -698,14 +711,14 @@ app.post('/api/password-reset/verify-code', (req, res) => {
 });
 
 app.post('/api/password-reset/confirm', (req, res) => {
-  const username = String(req.body.username || '').trim();
   const email = normalizeEmailInput(req.body.email || req.body.contact);
   const resetToken = String(req.body.reset_token || '').trim();
   const password = String(req.body.password || '');
-  if (!username || !email || !resetToken) return res.status(400).json({ error: '请先完成邮箱验证码验证' });
+  if (!email || !resetToken) return res.status(400).json({ error: '请先完成邮箱验证码验证' });
   if (password.length < 4) return res.status(400).json({ error: '新密码至少4位' });
 
-  const rows = dbStore.listVerifiedPasswordResetCodes(username, email);
+  const user = findUniqueUserByEmail(email);
+  const rows = user ? dbStore.listVerifiedPasswordResetCodes(user.username, email) : [];
   let matched = null;
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -717,11 +730,13 @@ app.post('/api/password-reset/confirm', (req, res) => {
     }
   }
 
-  const user = store.users.find(u => u.username === username);
-  if (!matched || !user || !contactMatches(user, { type: 'email', value: email })) {
+  if (!matched || !user) {
     return res.status(400).json({ error: '重置凭证已失效，请重新获取验证码' });
   }
 
+  user.registration_email = email;
+  user.contact_type = 'email';
+  user.contact_value = email;
   setUserPassword(user, password);
   dbStore.markPasswordResetCodeUsed(matched.id);
   res.json({ ok: true, message: '密码已重置，请用新密码登录' });
