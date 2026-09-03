@@ -490,6 +490,62 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
 <script src="/classroom-points-queue.js"></script>
 <script src="/classroom-points-screen.js"></script>
 <script>
+// ========== Persistent Screen Binding ==========
+var SCREEN_BIND_STORAGE_KEY = 'screen_bind_code';
+
+function normalizeScreenBindCode(value) {
+  var code = String(value || '').trim().toUpperCase();
+  return /^[A-Z0-9_-]{4,12}$/.test(code) ? code : '';
+}
+
+function screenBindCodeFromHash(hashValue) {
+  var source = String(hashValue || '').replace(/^#/, '');
+  if (!source) return '';
+  var pairs = source.split('&');
+  for (var i = 0; i < pairs.length; i++) {
+    var separator = pairs[i].indexOf('=');
+    var rawKey = separator >= 0 ? pairs[i].slice(0, separator) : pairs[i];
+    var rawValue = separator >= 0 ? pairs[i].slice(separator + 1) : '';
+    try {
+      if (decodeURIComponent(rawKey) === 'bind') {
+        return normalizeScreenBindCode(decodeURIComponent(rawValue));
+      }
+    } catch (error) {
+      return '';
+    }
+  }
+  return '';
+}
+
+function fixedScreenUrl(bindCode) {
+  var code = normalizeScreenBindCode(bindCode);
+  var base = window.location.origin + window.location.pathname + (window.location.search || '');
+  return code ? base + '#bind=' + encodeURIComponent(code) : base;
+}
+
+function readSavedScreenBind() {
+  return screenBindCodeFromHash(window.location.hash) ||
+    normalizeScreenBindCode(localStorage.getItem(SCREEN_BIND_STORAGE_KEY));
+}
+
+function persistScreenBind(bindCode) {
+  var code = normalizeScreenBindCode(bindCode);
+  if (!code) return '';
+  localStorage.setItem(SCREEN_BIND_STORAGE_KEY, code);
+  history.replaceState(null, '', fixedScreenUrl(code));
+  return code;
+}
+
+function clearScreenBind() {
+  localStorage.removeItem(SCREEN_BIND_STORAGE_KEY);
+  history.replaceState(null, '', fixedScreenUrl(''));
+}
+
+function handleScreenBindError(message) {
+  showBindPage(message || '绑定码暂时无法使用，请检查网络或重新输入');
+}
+
+// ========== Screen Runtime State ==========
 var socket;
 var currentClass = null;
 var currentGrade = 'junior';
@@ -503,7 +559,7 @@ var activeAudio = null;
 var activeAudioSource = null;
 var activeTtsXhr = null;
 var activeReplayTimer = null;
-var savedBind = localStorage.getItem('screen_bind_code') || '';
+var savedBind = readSavedScreenBind();
 var audioCtx = null;
 var notifHistory = [];
 var activeBulletins = [];
@@ -892,7 +948,7 @@ function initSocket() {
 
   socket.on('bind-success', function(cls) {
     currentClass = cls;
-    localStorage.setItem('screen_bind_code', savedBind);
+    savedBind = persistScreenBind(savedBind);
     document.getElementById('bindPage').style.display = 'none';
     document.getElementById('screenPage').style.display = 'block';
     document.getElementById('screenClassName').textContent = cls.name;
@@ -913,9 +969,7 @@ function initSocket() {
   });
 
   socket.on('bind-error', function(msg) {
-    localStorage.removeItem('screen_bind_code');
-    savedBind = '';
-    showBindPage(msg || '绑定码无效，请重新输入');
+    handleScreenBindError(msg);
   });
 
   socket.on('notification', function(data) {
@@ -974,7 +1028,7 @@ function updateFullscreenButton() {
 document.addEventListener('fullscreenchange', updateFullscreenButton);
 
 function doBind() {
-  var code = document.getElementById('bindCodeInput').value.trim().toUpperCase();
+  var code = normalizeScreenBindCode(document.getElementById('bindCodeInput').value);
   if (!code) return;
   savedBind = code;
   document.getElementById('bindError').textContent = '';
@@ -985,7 +1039,7 @@ function doBind() {
 function unbind() {
   if (!confirm('确定解除绑定？')) return;
   if (currentClass) localStorage.removeItem(screenStateKey(currentClass.id));
-  localStorage.removeItem('screen_bind_code');
+  clearScreenBind();
   location.reload();
 }
 

@@ -402,7 +402,8 @@
     <div class="modal-sub" id="authSub">师行产品共用同一账号；积分与评语生成、数学课件通用</div>
     <div class="modal-sub" id="roundtableInviteContext" style="display:none;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:8px"></div>
     <div class="err" id="authErr" aria-live="polite"></div>
-    <div class="field"><label class="sr-only" for="authUser">用户名</label><input id="authUser" placeholder="用户名" autocomplete="username"></div>
+    <div class="field" id="authUserField"><label class="sr-only" for="authUser">邮箱或旧用户名</label><input id="authUser" placeholder="邮箱或旧用户名" autocomplete="username"></div>
+    <div class="field" id="authNameField" style="display:none"><label class="sr-only" for="authName">称呼</label><input id="authName" placeholder="称呼，例如：李老师" autocomplete="name"></div>
     <div class="field"><label class="sr-only" for="authPass">密码</label><input id="authPass" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()"></div>
     <div class="field" id="authEmailField" style="display:none"><label class="sr-only" for="authEmail">邮箱</label><input id="authEmail" type="email" placeholder="邮箱（用于接收验证码）" autocomplete="email"></div>
     <div class="field" id="authCodeField" style="display:none"><label class="sr-only" for="authCode">邮箱验证码</label><div class="code-row"><input id="authCode" inputmode="numeric" autocomplete="one-time-code" placeholder="6位验证码"><button class="btn-primary" id="sendAuthCodeBtn" type="button" onclick="sendRegisterCode()">获取验证码</button></div></div>
@@ -637,6 +638,8 @@ function toggleAuthMode() {
   const isReg = authMode === 'register';
   document.getElementById('authTitle').textContent = isReg ? '注册思想圆桌' : '登录思想圆桌';
   document.getElementById('authBtn').textContent = isReg ? '注 册' : '登 录';
+  document.getElementById('authUserField').style.display = isReg ? 'none' : '';
+  document.getElementById('authNameField').style.display = isReg ? '' : 'none';
   document.getElementById('authEmailField').style.display = isReg ? '' : 'none';
   document.getElementById('authCodeField').style.display = isReg ? '' : 'none';
   document.getElementById('authSwitch').innerHTML = isReg
@@ -671,20 +674,20 @@ async function sendRegisterCode() {
 
 async function submitAuth() {
   const username = document.getElementById('authUser').value.trim();
+  const displayName = document.getElementById('authName').value.trim();
   const password = document.getElementById('authPass').value;
   const err = document.getElementById('authErr');
   const btn = document.getElementById('authBtn');
   err.textContent = '';
-  if (!username || !password) { err.textContent = '请输入用户名和密码'; return; }
   const isReg = authMode === 'register';
-  const body = { username, password };
+  if (!password || (!isReg && !username) || (isReg && !displayName)) { err.textContent = isReg ? '请填写称呼和密码' : '请输入邮箱（或旧用户名）和密码'; return; }
+  const body = isReg ? { password, display_name: displayName } : { username, password };
   if (isReg) {
     const email = document.getElementById('authEmail').value.trim();
     const code = document.getElementById('authCode').value.trim();
     if (!email || !code) { err.textContent = '请填写邮箱和验证码'; return; }
     body.email = email;
     body.code = code;
-    body.display_name = username;
   }
   btn.disabled = true;
   try {

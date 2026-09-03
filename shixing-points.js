@@ -3,7 +3,8 @@ const POINT_COSTS = Object.freeze({
   essay: 50,
   english: 50,
   roundtable: 50,
-  edulab: 75
+  edulab: 75,
+  family_message: 10
 });
 
 const POINT_PACKAGES = Object.freeze({
@@ -58,6 +59,17 @@ function createShixingPoints(db) {
       out_trade_no TEXT NOT NULL UNIQUE,
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS shixing_point_operations (
+      operation_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      product TEXT NOT NULL,
+      points INTEGER NOT NULL,
+      balance_after INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_shixing_point_operations_user
+      ON shixing_point_operations(user_id, created_at DESC);
   `);
 
   const tableExistsStmt = db.prepare("SELECT 1 AS ok FROM sqlite_master WHERE type = 'table' AND name = ?");
@@ -67,6 +79,12 @@ function createShixingPoints(db) {
   const purchaseStmt = db.prepare("SELECT * FROM shixing_point_ledger WHERE out_trade_no = ? AND reason = 'purchase'");
   const firstTopupStmt = db.prepare('INSERT OR IGNORE INTO shixing_first_topups (user_id, out_trade_no, created_at) VALUES (?, ?, ?)');
   const hasTopupStmt = db.prepare('SELECT 1 AS ok FROM shixing_first_topups WHERE user_id = ?');
+  const operationStmt = db.prepare('SELECT * FROM shixing_point_operations WHERE operation_id = ?');
+  const insertOperationStmt = db.prepare(`
+    INSERT INTO shixing_point_operations (
+      operation_id, user_id, product, points, balance_after, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `);
   const usernameStmt = tableExists('users') ? db.prepare('SELECT username FROM users WHERE id = ?') : null;
   const insertStmt = db.prepare(`
     INSERT INTO shixing_point_ledger (
@@ -263,6 +281,39 @@ function createShixingPoints(db) {
     });
   }
 
+  const consumeTx = db.transaction((row) => {
+    const operationId = String(row.operation_id || '').trim();
+    if (!/^[A-Za-z0-9_-]{12,100}$/.test(operationId)) throw new Error('扣分操作号无效');
+    const product = String(row.product || '').trim();
+    const cost = POINT_COSTS[product];
+    if (!cost) throw new Error('不支持的积分用途');
+    const info = userInfo({ id: row.user_id, username: row.username });
+    if (!info.id) throw new Error('缺少用户 ID');
+    const existing = operationStmt.get(operationId);
+    if (existing) {
+      if (existing.user_id !== info.id || existing.product !== product || Number(existing.points) !== cost) {
+        throw new Error('扣分操作号已被其他请求使用');
+      }
+      return { balance: Number(existing.balance_after) || 0, points: cost, duplicate: true };
+    }
+    const result = debit({
+      user_id: info.id,
+      username: info.username,
+      product,
+      cost,
+      reason: 'usage',
+      note: row.note || product + ' 成功生成消耗 ' + cost + ' 积分',
+      extra_json: { operation_id: operationId }
+    });
+    const createdAt = row.created_at || new Date().toISOString();
+    insertOperationStmt.run(operationId, info.id, product, cost, result.balance, createdAt);
+    return { balance: result.balance, points: cost, duplicate: false };
+  });
+
+  function consume(row) {
+    return consumeTx(row);
+  }
+
   const addPaymentTx = db.transaction((row) => {
     const info = userInfo({ id: row.user_id, username: row.username });
     const pkg = POINT_PACKAGES[String(row.package_key || '')];
@@ -396,6 +447,7 @@ function createShixingPoints(db) {
     getBalance,
     adjust,
     debit,
+    consume,
     addPayment,
     addLegacyPayment,
     hasPaidTopup,

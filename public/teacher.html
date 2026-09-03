@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>班级广播 · 老师端</title>
+<script>
+// 旧地址仅作兼容入口；完整教师控制台已合并到师行教师工作台。
+var oldPaymentOrder = new URLSearchParams(window.location.search).get('pay_order');
+window.location.replace('/student-growth/?page=broadcast' + (oldPaymentOrder ? '&panel=account&pay_order=' + encodeURIComponent(oldPaymentOrder) : ''));
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",sans-serif;background:#f5f7fa;color:#333;min-height:100vh}
@@ -211,10 +216,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 .class-item .info{flex:1}
 .class-item .name{font-size:15px;font-weight:500}
 .class-item .code{font-size:12px;color:#999;margin-top:2px}
+.class-fixed-link{display:inline-flex;align-items:center;margin-top:7px;padding:5px 9px;border:1px solid #b9cff7;border-radius:7px;background:#f4f8ff;color:#2f6fd3;font-size:12px;cursor:pointer}
+.class-fixed-link:hover{background:#eaf2ff;border-color:#8fb3ee}
 .class-item .online-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
 .class-item .online-dot.on{background:#52c41a}
 .class-item .online-dot.off{background:#ddd}
 .class-item .del{font-size:12px;color:#ff4d4f;cursor:pointer;padding:4px 10px;border:1px solid #ffccc7;border-radius:6px}
+
+/* First classroom-screen onboarding */
+.classroom-onboarding-card{position:relative;overflow:hidden;margin:0 0 14px;padding:18px;border:1px solid var(--v-line,#e0d4bd);border-radius:16px;background:linear-gradient(135deg,#fffaf0 0%,#f1e3c7 100%);box-shadow:0 1px 0 #fffdf7 inset,0 15px 32px -26px rgba(58,48,38,.62)}
+.classroom-onboarding-card:before{content:"";position:absolute;width:150px;height:150px;right:-65px;top:-75px;border:1px solid rgba(154,111,46,.22);border-radius:50%;box-shadow:0 0 0 18px rgba(154,111,46,.05),0 0 0 37px rgba(154,111,46,.035)}
+.classroom-onboarding-card.is-complete{padding:14px 18px;background:linear-gradient(135deg,#f7f6eb,#e5eee2)}
+.onboarding-head{position:relative;display:flex;gap:12px;align-items:flex-start}
+.onboarding-emblem{width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex:0 0 38px;border-radius:12px;background:var(--v-brass,#9a6f2e);color:#fffaf0;font-size:20px;box-shadow:0 7px 16px rgba(124,87,34,.2)}
+.onboarding-kicker{font-size:11px;line-height:1;color:var(--v-brass-deep,#7c5722);font-weight:700;letter-spacing:1.6px;margin:2px 0 6px}
+.onboarding-head h2{font-size:18px;line-height:1.25;color:var(--v-ink,#3a3026);margin:0}
+.onboarding-status{position:relative;margin:12px 0 0;font-size:13px;line-height:1.7;color:var(--v-ink-soft,#6f6354)}
+.onboarding-steps{position:relative;list-style:none;margin:15px 0 12px;padding:0;display:grid;gap:8px}
+.onboarding-step{display:flex;align-items:flex-start;gap:10px;padding:9px 10px;border:1px solid rgba(154,111,46,.16);border-radius:11px;background:rgba(255,253,247,.62)}
+.onboarding-step-mark{width:21px;height:21px;display:flex;align-items:center;justify-content:center;flex:0 0 21px;border:1px solid #c8b794;border-radius:50%;color:#8b795d;font-size:11px;font-weight:700}
+.onboarding-step.done .onboarding-step-mark{border-color:var(--v-forest,#4a5d44);background:var(--v-forest,#4a5d44);color:#fff}
+.onboarding-step-copy{flex:1;min-width:0}
+.onboarding-step-copy strong{display:block;color:var(--v-ink,#3a3026);font-size:14px;line-height:1.45}
+.onboarding-step-copy small{display:block;margin-top:2px;color:var(--v-ink-soft,#6f6354);font-size:12px;line-height:1.5}
+.onboarding-step-state{padding-top:2px;color:var(--v-brass-deep,#7c5722);font-size:12px;white-space:nowrap}
+.onboarding-step.done .onboarding-step-state{color:var(--v-forest,#4a5d44)}
+.onboarding-actions{position:relative;display:flex;flex-wrap:wrap;gap:8px}
+.onboarding-actions button{min-height:34px;padding:7px 11px;border:1px solid #8a6228;border-radius:9px;background:#fbf6ec;color:var(--v-brass-deep,#7c5722);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.onboarding-actions button.primary{background:linear-gradient(180deg,#a9793a,#8a6228);color:#fdf6e7}
+.onboarding-actions button:active{transform:translateY(1px)}
+@media(max-width:480px){.classroom-onboarding-card{padding:16px}.onboarding-head h2{font-size:17px}.onboarding-step{padding:8px}.onboarding-step-state{display:none}}
 
 .add-class{display:flex;gap:8px;margin-top:12px}
 .add-class input{flex:1;padding:10px 14px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:14px;outline:none}
@@ -431,8 +462,8 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
       <!-- Login Form -->
       <div class="auth-form active" id="loginForm">
         <div class="form-group">
-          <label>用户名</label>
-          <input type="text" id="loginUser" placeholder="输入用户名" autocomplete="username">
+          <label>邮箱或旧用户名</label>
+          <input type="text" id="loginUser" placeholder="输入邮箱；老用户也可输入原用户名" autocomplete="username">
         </div>
         <div class="form-group">
           <label>密码</label>
@@ -449,8 +480,8 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
       <!-- Register Form -->
       <div class="auth-form" id="registerForm">
         <div class="form-group">
-          <label>用户名</label>
-          <input type="text" id="regUser" placeholder="2-20个字符" autocomplete="off">
+          <label>称呼</label>
+          <input type="text" id="regName" placeholder="例如：李老师" autocomplete="name">
         </div>
         <div class="form-group">
           <label>邮箱</label>
@@ -471,10 +502,6 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
           <label>确认密码</label>
           <input type="password" id="regPass2" placeholder="再次输入密码" autocomplete="new-password">
         </div>
-        <div class="form-group">
-          <label>称呼（选填）</label>
-          <input type="text" id="regName" placeholder="例如：李老师">
-        </div>
         <div class="remember-row">
           <input type="checkbox" id="regRemember" checked>
           <label for="regRemember">记住密码</label>
@@ -486,11 +513,7 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
       <div class="auth-form" id="forgotForm">
         <div id="forgotStep1">
           <div class="form-group">
-            <label>用户名</label>
-            <input type="text" id="forgotUser" placeholder="输入要找回的用户名" autocomplete="username">
-          </div>
-          <div class="form-group">
-            <label>注册时填写的邮箱</label>
+            <label>账号绑定邮箱</label>
             <input type="text" id="forgotEmail" placeholder="用于接收验证码" autocomplete="email">
           </div>
           <button class="auth-btn" id="sendResetCodeBtn" onclick="sendResetCode()">发送验证码</button>
@@ -514,7 +537,7 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
           </div>
           <button class="auth-btn" onclick="confirmPasswordReset()">重置密码</button>
         </div>
-        <div class="auth-note">验证码10分钟内有效。若注册时填的是手机号，请联系管理员重置。</div>
+        <div class="auth-note">验证码10分钟内有效。输入师行账号绑定的邮箱即可找回密码。</div>
         <div class="auth-link" onclick="switchAuth('login')">返回登录</div>
         <div class="auth-error" id="forgotError"></div>
       </div>
@@ -578,6 +601,18 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
 
     <!-- Publish: Send -->
     <div id="publish-send">
+      <section class="classroom-onboarding-card" id="classroomOnboardingCard" hidden aria-live="polite">
+        <div class="onboarding-head">
+          <div class="onboarding-emblem" aria-hidden="true">▣</div>
+          <div>
+            <div class="onboarding-kicker">首次开通</div>
+            <h2 id="classroomOnboardingTitle">先把第一块教室大屏开通</h2>
+          </div>
+        </div>
+        <p class="onboarding-status" id="classroomOnboardingStatus"></p>
+        <ol class="onboarding-steps" id="classroomOnboardingSteps"></ol>
+        <div class="onboarding-actions" id="classroomOnboardingActions"></div>
+      </section>
       <div class="card">
         <div class="form-row">
           <label>班级</label>
@@ -770,10 +805,11 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
         <h3>教室绑定说明</h3>
         <p style="font-size:14px;color:#666;line-height:1.8;">
           1. 在上方新增班级后，会生成一个绑定码<br>
-          2. 在教室电脑浏览器打开本网址<br>
-          3. 点击「教室端」，输入绑定码即可连接<br>
-          4. 同一个班级可邀请多位老师协作，任课老师使用自己的账号即可发送到同一块屏幕<br>
-          5. 建议将屏幕端设为浏览器全屏（按 F11）
+          2. 点击班级下方的「复制固定教室链接」<br>
+          3. 在教室电脑打开该链接，并把它收藏为书签或设为浏览器首页<br>
+          4. 以后从这个固定链接进入会自动恢复绑定，不用反复输入绑定码<br>
+          5. 同一个班级可邀请多位老师协作，任课老师使用自己的账号即可发送到同一块屏幕<br>
+          6. 建议将屏幕端设为浏览器全屏（按 F11）
         </p>
       </div>
       <div class="card" id="classTimetableCard">
@@ -1071,6 +1107,145 @@ var emailReminderShownForUser = '';
 var currentTimetableOwner = false;
 var currentClassTimetable = null;
 
+// ========== Persistent Classroom Links ==========
+function normalizeTeacherBindCode(value) {
+  var code = String(value || '').trim().toUpperCase();
+  return /^[A-Z0-9_-]{4,12}$/.test(code) ? code : '';
+}
+
+function fixedClassroomScreenUrl(bindCode) {
+  var code = normalizeTeacherBindCode(bindCode);
+  return window.location.origin + '/screen.html' + (code ? '#bind=' + encodeURIComponent(code) : '');
+}
+
+function fallbackCopyFixedClassroomLink(value) {
+  var textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  textarea.remove();
+}
+
+function copyFixedClassroomLink(bindCode) {
+  var url = fixedClassroomScreenUrl(bindCode);
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(url).then(function() {
+      toast('固定教室链接已复制', 'success');
+    }).catch(function() {
+      fallbackCopyFixedClassroomLink(url);
+      toast('固定教室链接已复制', 'success');
+    });
+  }
+  fallbackCopyFixedClassroomLink(url);
+  toast('固定教室链接已复制', 'success');
+  return Promise.resolve();
+}
+
+function escapeTeacherAttribute(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ========== Teacher Runtime State ==========
+var classroomOnboardingState = null;
+var classroomOnboardingCollapsed = false;
+var onboardingRequestedClassId = '';
+
+function onboardingStepHtml(number, title, description, done) {
+  return '<li class="onboarding-step' + (done ? ' done' : '') + '"><span class="onboarding-step-mark">' + (done ? '✓' : number) + '</span><div class="onboarding-step-copy"><strong>' + title + '</strong><small>' + description + '</small></div><span class="onboarding-step-state">' + (done ? '已完成' : '待完成') + '</span></li>';
+}
+
+function renderClassroomOnboarding(data) {
+  classroomOnboardingState = data || null;
+  var card = document.getElementById('classroomOnboardingCard');
+  var title = document.getElementById('classroomOnboardingTitle');
+  var status = document.getElementById('classroomOnboardingStatus');
+  var stepsEl = document.getElementById('classroomOnboardingSteps');
+  var actions = document.getElementById('classroomOnboardingActions');
+  if (!card || !title || !status || !stepsEl || !actions) return;
+
+  var classroom = data && data.classroom ? data.classroom : null;
+  var steps = data && data.steps ? data.steps : {};
+  var complete = !!(data && data.completed);
+  card.hidden = false;
+  card.className = 'classroom-onboarding-card' + (complete ? ' is-complete' : '');
+  title.textContent = complete ? '教室大屏已开通' : '先把第一块教室大屏开通';
+  status.textContent = complete
+    ? '下一步可设置课程表、邀请科任老师协作。'
+    : '按这三步走，第一块教室大屏就能开始工作。';
+  stepsEl.innerHTML = onboardingStepHtml('1', '建立我的第一个班级', classroom
+    ? '当前班级：' + esc(classroom.name) + '。'
+    : '先创建一个班级，系统会生成专属绑定码。', !!steps.class_created) +
+    onboardingStepHtml('2', '连接教室大屏', steps.screen_connected
+      ? '大屏已成功连接；现在状态：' + (classroom && classroom.online ? '在线' : '暂时离线') + '。'
+      : '在教室电脑打开固定链接，再输入绑定码。', !!steps.screen_connected) +
+    onboardingStepHtml('3', '发送一条测试通知', steps.first_notice_sent
+      ? '首条通知已发送；以后可直接在这里发布。'
+      : '默认文字＋语音、播报一次，课前确认声音和画面。', !!steps.first_notice_sent);
+
+  if (complete) {
+    actions.innerHTML = '<button type="button" class="primary" onclick="goToOnboardingClassSetup()">设置课程表或管理班级</button>';
+  } else if (!steps.class_created) {
+    actions.innerHTML = '<button type="button" class="primary" onclick="goToOnboardingClassSetup()">去创建班级</button>';
+  } else if (!steps.screen_connected) {
+    actions.innerHTML = '<button type="button" class="primary" onclick="prepareOnboardingScreenSetup()">复制教室固定链接</button>';
+  } else {
+    actions.innerHTML = '<button type="button" class="primary" onclick="prepareOnboardingTestNotice()">发送测试通知</button>';
+  }
+}
+
+function loadClassroomOnboarding() {
+  fetch(API + '/api/classroom-onboarding', { headers: headers() })
+  .then(function(r) {
+    if (r.status === 401) { logout(); throw 'auth'; }
+    return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+  })
+  .then(function(result) {
+    if (!result.ok) throw new Error(result.data && result.data.error || '首次开通状态加载失败');
+    renderClassroomOnboarding(result.data);
+  })
+  .catch(function(error) {
+    if (error !== 'auth') console.log('[ONBOARDING] load failed:', error.message || error);
+  });
+}
+
+function goToOnboardingClassSetup() {
+  switchTab('manage');
+  var input = document.getElementById('newClassName');
+  if (input && input.scrollIntoView) input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (input && !classes.length) input.focus();
+}
+
+function prepareOnboardingScreenSetup() {
+  var classroom = classroomOnboardingState && classroomOnboardingState.classroom;
+  if (!classroom || !classroom.bind_code) { goToOnboardingClassSetup(); return; }
+  copyFixedClassroomLink(classroom.bind_code);
+  switchTab('manage');
+  toast('固定链接已复制：请到教室电脑打开并输入绑定码', 'success');
+}
+
+function prepareOnboardingTestNotice() {
+  var classroom = classroomOnboardingState && classroomOnboardingState.classroom;
+  if (!classroom || !classroom.id) { goToOnboardingClassSetup(); return; }
+  switchTab('publish');
+  switchPublishSection('send');
+  document.getElementById('classSelect').value = classroom.id;
+  document.getElementById('content').value = '测试通知：班级广播已连接成功。';
+  document.getElementById('repeatCount').value = '1';
+  setBroadcastMode('voice');
+  updatePreview();
+  var content = document.getElementById('content');
+  if (content && content.scrollIntoView) content.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  toast('已填好测试通知：默认会播报一次语音', 'success');
+}
+
 // ========== Avatar System ==========
 var avatarIds = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14','a15','a16'];
 
@@ -1287,7 +1462,6 @@ function sendRegisterCode() {
 }
 
 function doRegister() {
-  var username = document.getElementById('regUser').value.trim();
   var email = document.getElementById('regEmail').value.trim();
   var code = document.getElementById('regCode').value.trim();
   var password = document.getElementById('regPass').value;
@@ -1295,7 +1469,7 @@ function doRegister() {
   var display_name = document.getElementById('regName').value.trim();
   var remember = document.getElementById('regRemember').checked;
 
-  if (!username || !password) { document.getElementById('regError').textContent = '请填写用户名和密码'; return; }
+  if (!display_name || !password) { document.getElementById('regError').textContent = '请填写称呼和密码'; return; }
   if (!email || !code) { document.getElementById('regError').textContent = '请填写邮箱和验证码'; return; }
   if (password !== password2) { document.getElementById('regError').textContent = '两次密码不一致'; return; }
   document.getElementById('regError').textContent = '';
@@ -1303,7 +1477,7 @@ function doRegister() {
   fetch(API + '/api/register', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ username: username, password: password, display_name: display_name || username, email: email, code: code })
+    body: JSON.stringify({ password: password, display_name: display_name, email: email, code: code })
   })
   .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
   .then(function(r) {
@@ -1311,7 +1485,7 @@ function doRegister() {
     token = r.data.token;
     if (remember) {
       localStorage.setItem('broadcast_token', token);
-      localStorage.setItem('broadcast_user', username);
+      localStorage.setItem('broadcast_user', email);
     } else {
       sessionStorage.setItem('broadcast_token', token);
     }
@@ -1336,7 +1510,6 @@ function setForgotMessage(text, ok) {
 
 function getForgotIdentity() {
   return {
-    username: document.getElementById('forgotUser').value.trim(),
     email: document.getElementById('forgotEmail').value.trim()
   };
 }
@@ -1363,15 +1536,15 @@ function startForgotCooldown(seconds) {
 
 function sendResetCode() {
   var identity = getForgotIdentity();
-  if (!identity.username || !identity.email) {
-    setForgotMessage('请填写用户名和注册时填写的邮箱', false);
+  if (!identity.email) {
+    setForgotMessage('请填写账号绑定邮箱', false);
     return;
   }
   setForgotMessage('', false);
   fetch(API + '/api/password-reset/send-code', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ username: identity.username, email: identity.email })
+    body: JSON.stringify({ email: identity.email })
   })
   .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
   .then(function(r) {
@@ -1386,14 +1559,14 @@ function sendResetCode() {
 function verifyResetCode() {
   var identity = getForgotIdentity();
   var code = document.getElementById('forgotCode').value.trim();
-  if (!identity.username || !identity.email || !code) {
-    setForgotMessage('请输入用户名、邮箱和验证码', false);
+  if (!identity.email || !code) {
+    setForgotMessage('请输入邮箱和验证码', false);
     return;
   }
   fetch(API + '/api/password-reset/verify-code', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ username: identity.username, email: identity.email, code: code })
+    body: JSON.stringify({ email: identity.email, code: code })
   })
   .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
   .then(function(r) {
@@ -1415,13 +1588,13 @@ function confirmPasswordReset() {
   fetch(API + '/api/password-reset/confirm', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ username: identity.username, email: identity.email, reset_token: forgotResetToken, password: password })
+    body: JSON.stringify({ email: identity.email, reset_token: forgotResetToken, password: password })
   })
   .then(function(r) { return r.json().then(function(d) { return {ok:r.ok,data:d}; }); })
   .then(function(r) {
     if (!r.ok) { setForgotMessage(r.data.error || '重置失败', false); return; }
     setForgotMessage(r.data.message || '密码已重置，请登录', true);
-    document.getElementById('loginUser').value = identity.username;
+    document.getElementById('loginUser').value = identity.email;
     document.getElementById('loginPass').value = '';
     setTimeout(function() { switchAuth('login'); }, 900);
   })
@@ -1515,6 +1688,7 @@ function loadClasses() {
     renderClassList();
     renderTimetableClassSelect();
     ClassroomPointsTeacher.setClasses(classes);
+    loadClassroomOnboarding();
   })
   .catch(function(e) { if (e !== 'auth') toast('加载班级失败','error'); });
 }
@@ -1526,7 +1700,12 @@ function renderClassSelects() {
     var val = sel.value;
     sel.innerHTML = '<option value="">请选择班级</option>' +
       classes.map(function(c) { return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join('');
-    sel.value = val;
+    if (id === 'classSelect' && onboardingRequestedClassId && classes.some(function(c) { return c.id === onboardingRequestedClassId; })) {
+      sel.value = onboardingRequestedClassId;
+      onboardingRequestedClassId = '';
+    } else {
+      sel.value = val;
+    }
   });
   updatePreview();
 }
@@ -1543,7 +1722,7 @@ function renderClassList() {
     var pointsControl = c.is_owner
       ? '<div class="ctp-class-switch"><span class="' + (c.management_enabled ? 'enabled' : '') + '">' + (c.management_enabled ? '班级管理已开启' : '仅广播') + '</span><button type="button" onclick="ClassroomPointsTeacher.toggleFromClassList(\'' + c.id + '\',' + (!c.management_enabled) + ')">' + (c.management_enabled ? '关闭' : '开启班级管理') + '</button></div>'
       : '<div class="ctp-class-switch"><span class="collaborator">' + (c.management_enabled ? '班级管理已开启' : '当前仅广播') + '</span></div>';
-    return '<div class="class-item"><div class="info"><div class="name"><span class="online-dot ' + (c.online ? 'on' : 'off') + '"></span>' + esc(c.name) + ' <span style="font-size:11px;color:#999;font-weight:400;background:#f5f5f5;padding:1px 6px;border-radius:4px">' + gl + '</span> <span style="font-size:11px;color:#4f8cff;font-weight:400;background:#eef4ff;padding:1px 6px;border-radius:4px">' + role + '</span></div><div class="code">绑定码：' + c.bind_code + '　' + (c.online ? '在线 ' + c.online + ' 台' : '离线') + '</div><div class="code">老师：' + (memberNames || '-') + '</div>' + pointsControl + invite + '</div>' + actions + '</div>';
+    return '<div class="class-item"><div class="info"><div class="name"><span class="online-dot ' + (c.online ? 'on' : 'off') + '"></span>' + esc(c.name) + ' <span style="font-size:11px;color:#999;font-weight:400;background:#f5f5f5;padding:1px 6px;border-radius:4px">' + gl + '</span> <span style="font-size:11px;color:#4f8cff;font-weight:400;background:#eef4ff;padding:1px 6px;border-radius:4px">' + role + '</span></div><div class="code">绑定码：' + esc(c.bind_code) + '　' + (c.online ? '在线 ' + c.online + ' 台' : '离线') + '</div><button type="button" class="class-fixed-link" data-bind-code="' + escapeTeacherAttribute(c.bind_code) + '" onclick="copyFixedClassroomLink(this.dataset.bindCode)">复制固定教室链接</button><div class="code">老师：' + (memberNames || '-') + '</div>' + pointsControl + invite + '</div>' + actions + '</div>';
   }).join('');
 }
 
@@ -1707,7 +1886,9 @@ function addClass() {
   .then(function(r) {
     if (!r.ok) { toast(r.data.error,'error'); return; }
     input.value = '';
+    onboardingRequestedClassId = r.data.id || '';
     loadClasses();
+    loadClassroomOnboarding();
     toast('班级已添加','success');
   });
 }
@@ -1728,6 +1909,7 @@ function delClass(id) {
   .then(function(r) {
     if (!r.ok) { toast(r.data.error || '删除失败','error'); return; }
     loadClasses();
+    loadClassroomOnboarding();
     toast(r.data.archived ? '班级已归档，积分流水已保留' : '已删除','success');
   })
   .catch(function() { toast('网络错误','error'); });
@@ -1824,6 +2006,7 @@ function doSend() {
     toast('发送成功！','success');
     document.getElementById('content').value = '';
     updatePreview();
+    loadClassroomOnboarding();
   })
   .catch(function() { toast('网络错误','error'); })
   .finally(function() { btn.disabled = false; btn.textContent = '立即发布'; });

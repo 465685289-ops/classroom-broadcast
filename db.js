@@ -122,6 +122,15 @@ function ensureSchema() {
       extra_json TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS account_password_aliases (
+      user_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (user_id, source)
+    );
+
     CREATE TABLE IF NOT EXISTS classes (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
@@ -136,6 +145,16 @@ function ensureSchema() {
       class_id TEXT NOT NULL,
       user_id TEXT NOT NULL,
       PRIMARY KEY (class_id, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS classroom_onboarding (
+      user_id TEXT PRIMARY KEY,
+      version INTEGER NOT NULL DEFAULT 1,
+      first_class_id TEXT,
+      screen_connected_at TEXT,
+      first_notification_id INTEGER,
+      first_notification_at TEXT,
+      updated_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS notifications (
@@ -651,7 +670,9 @@ function ensureSchema() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_classes_user ON classes(user_id);
+    CREATE INDEX IF NOT EXISTS idx_account_password_aliases_user ON account_password_aliases(user_id);
     CREATE INDEX IF NOT EXISTS idx_class_members_user ON class_members(user_id);
+    CREATE INDEX IF NOT EXISTS idx_classroom_onboarding_class ON classroom_onboarding(first_class_id);
     CREATE INDEX IF NOT EXISTS idx_notifications_class ON notifications(class_id, id DESC);
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
     CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id, created_at DESC);
@@ -1130,6 +1151,38 @@ function upsertUser(user) {
   });
 }
 
+const upsertAccountPasswordAliasStmt = db.prepare(`
+  INSERT INTO account_password_aliases (user_id, source, password_hash, password_salt, created_at)
+  VALUES (@user_id, @source, @password_hash, @password_salt, @created_at)
+  ON CONFLICT(user_id, source) DO UPDATE SET
+    password_hash = excluded.password_hash,
+    password_salt = excluded.password_salt,
+    created_at = excluded.created_at
+`);
+
+function upsertAccountPasswordAlias(row) {
+  upsertAccountPasswordAliasStmt.run({
+    user_id: row.user_id,
+    source: row.source,
+    password_hash: row.password_hash,
+    password_salt: row.password_salt,
+    created_at: row.created_at || new Date().toISOString()
+  });
+}
+
+function listAccountPasswordAliases(userId) {
+  return db.prepare(`
+    SELECT source, password_hash, password_salt, created_at
+    FROM account_password_aliases
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+  `).all(userId);
+}
+
+function deleteAccountPasswordAliases(userId) {
+  return db.prepare('DELETE FROM account_password_aliases WHERE user_id = ?').run(userId).changes;
+}
+
 const upsertClassTx = db.transaction((cls) => {
   db.prepare(`
     INSERT INTO classes (id, user_id, name, grade, bind_code, created_at, extra_json)
@@ -1169,6 +1222,83 @@ function saveClassTimetable(classId, timetable) {
   db.prepare('UPDATE classes SET extra_json = ? WHERE id = ?')
     .run(jsonString({ ...extra, timetable: normalized }), classId);
   return normalized;
+}
+
+function getClassroomOnboarding(userId) {
+  const row = db.prepare(`
+    SELECT user_id, version, first_class_id, screen_connected_at,
+           first_notification_id, first_notification_at, updated_at
+    FROM classroom_onboarding
+    WHERE user_id = ?
+  `).get(userId);
+  if (!row) return null;
+  return {
+    user_id: row.user_id,
+    version: Number(row.version) || 1,
+    first_class_id: row.first_class_id || null,
+    screen_connected_at: row.screen_connected_at || null,
+    first_notification_id: row.first_notification_id === null ? null : Number(row.first_notification_id),
+    first_notification_at: row.first_notification_at || null,
+    updated_at: row.updated_at
+  };
+}
+
+function ensureClassroomOnboarding(userId, classId, at) {
+  const timestamp = at || new Date().toISOString();
+  db.prepare(`
+    INSERT OR IGNORE INTO classroom_onboarding (
+      user_id, version, first_class_id, screen_connected_at,
+      first_notification_id, first_notification_at, updated_at
+    ) VALUES (?, 1, ?, NULL, NULL, NULL, ?)
+  `).run(userId, classId || null, timestamp);
+  if (classId) {
+    db.prepare(`
+      UPDATE classroom_onboarding
+      SET first_class_id = ?, updated_at = ?
+      WHERE user_id = ? AND first_class_id IS NULL
+    `).run(classId, timestamp, userId);
+  }
+  return getClassroomOnboarding(userId);
+}
+
+function rememberOnboardingClass(userId, classId, at) {
+  if (!userId || !classId) throw new Error('首次开通记录需要用户和班级');
+  return ensureClassroomOnboarding(userId, classId, at);
+}
+
+function markOnboardingScreenConnected(userId, classId, at) {
+  if (!userId || !classId) throw new Error('大屏连接记录需要用户和班级');
+  const timestamp = at || new Date().toISOString();
+  ensureClassroomOnboarding(userId, classId, timestamp);
+  db.prepare(`
+    UPDATE classroom_onboarding
+    SET screen_connected_at = ?, updated_at = ?
+    WHERE user_id = ? AND first_class_id = ? AND screen_connected_at IS NULL
+  `).run(timestamp, timestamp, userId, classId);
+  return getClassroomOnboarding(userId);
+}
+
+function markOnboardingFirstNotification(userId, classId, notificationId, at) {
+  if (!userId || !classId || notificationId === undefined || notificationId === null) {
+    throw new Error('首条通知记录需要用户、班级和通知');
+  }
+  const timestamp = at || new Date().toISOString();
+  ensureClassroomOnboarding(userId, classId, timestamp);
+  db.prepare(`
+    UPDATE classroom_onboarding
+    SET first_notification_id = ?, first_notification_at = ?, updated_at = ?
+    WHERE user_id = ? AND first_class_id = ? AND first_notification_at IS NULL
+  `).run(Number(notificationId), timestamp, timestamp, userId, classId);
+  return getClassroomOnboarding(userId);
+}
+
+function clearClassroomOnboardingForClass(userId, classId) {
+  if (!userId || !classId) return false;
+  const result = db.prepare(`
+    DELETE FROM classroom_onboarding
+    WHERE user_id = ? AND first_class_id = ?
+  `).run(userId, classId);
+  return result.changes > 0;
 }
 
 const deleteClassTx = db.transaction((classId) => {
@@ -3653,6 +3783,10 @@ function adjustShixingPoints(row) {
   return shixingPoints.adjust(row).balance;
 }
 
+function consumeShixingPoints(row) {
+  return shixingPoints.consume(row);
+}
+
 function hasShixingPointTopup(userId) {
   return shixingPoints.hasPaidTopup(userId);
 }
@@ -3912,8 +4046,16 @@ module.exports = {
   backupLegacyJson,
   setCounter,
   upsertUser,
+  upsertAccountPasswordAlias,
+  listAccountPasswordAliases,
+  deleteAccountPasswordAliases,
   upsertClass,
   saveClassTimetable,
+  getClassroomOnboarding,
+  rememberOnboardingClass,
+  markOnboardingScreenConnected,
+  markOnboardingFirstNotification,
+  clearClassroomOnboardingForClass,
   deleteClass,
   classHasManagementHistory,
   archiveClass,
@@ -4079,6 +4221,7 @@ module.exports = {
   listShixingPointLedger,
   addShixingPointsForPayment,
   adjustShixingPoints,
+  consumeShixingPoints,
   hasShixingPointTopup,
   migrateShixingPoints,
   listRoundtableCreditLedger,
