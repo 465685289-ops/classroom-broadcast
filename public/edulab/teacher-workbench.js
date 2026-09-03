@@ -322,7 +322,7 @@ async function deleteCourseware(id) {
 function openAuth(tab) {
   switchAuth(tab || 'login');
   show($('authOverlay'), true);
-  setTimeout(() => $(tab === 'register' ? 'regUser' : 'loginUser').focus(), 30);
+  setTimeout(() => $(tab === 'register' ? 'regName' : 'loginUser').focus(), 30);
 }
 
 function closeAuth() { show($('authOverlay'), false); }
@@ -340,7 +340,7 @@ function switchAuth(tab) {
 async function login() {
   const username = $('loginUser').value.trim();
   const password = $('loginPass').value;
-  if (!username || !password) return showError('authError', '请输入用户名和密码');
+  if (!username || !password) return showError('authError', '请输入邮箱（或旧用户名）和密码');
   $('btnLogin').disabled = true;
   try {
     const response = await fetch('/api/login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
@@ -378,14 +378,14 @@ async function sendRegisterCode() {
 }
 
 async function register() {
-  const username = $('regUser').value.trim();
+  const displayName = $('regName').value.trim();
   const email = $('regEmail').value.trim();
   const code = $('regCode').value.trim();
   const password = $('regPass').value;
-  if (!username || !email || !code || !password) return showError('authError', '请填写用户名、邮箱、验证码和密码');
+  if (!displayName || !email || !code || !password) return showError('authError', '请填写称呼、邮箱、验证码和密码');
   $('btnRegister').disabled = true;
   try {
-    const response = await fetch('/api/register', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, code, password, display_name: username }) });
+    const response = await fetch('/api/register', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, code, password, display_name: displayName }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || '注册失败');
     await refreshMe();

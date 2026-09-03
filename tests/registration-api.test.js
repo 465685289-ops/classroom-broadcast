@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const http = require('node:http');
 const net = require('node:net');
@@ -90,6 +91,28 @@ function codeFromMessage(message) {
 
 test.before(async () => {
   fs.mkdirSync(TMP, { recursive: true });
+  const legacyPassword = 'legacy-password';
+  const legacySalt = 'legacy-user-test-salt';
+  fs.writeFileSync(path.join(TMP, 'legacy.json'), JSON.stringify({
+    users: [{
+      id: 'legacy-user-id',
+      username: 'legacy-user',
+      display_name: '老用户',
+      teacher_code: 'LEGACY',
+      contact_type: 'email',
+      contact_value: 'legacy@example.com',
+      registration_email: '',
+      password_hash: crypto.scryptSync(legacyPassword, legacySalt, 64).toString('hex'),
+      password_salt: legacySalt,
+      plan: 'trial',
+      plan_expires: null,
+      token: null,
+      token_expires: null,
+      created_at: '2026-01-01T00:00:00.000Z'
+    }],
+    classes: [], notifications: [], replies: [], messages: [], bulletins: [], payments: [],
+    nextNotifId: 1, nextMessageId: 1, nextBulletinId: 1
+  }));
   smtpServer = createSmtpServer();
   const smtpPort = await listen(smtpServer);
   const portServer = http.createServer();
@@ -101,7 +124,7 @@ test.before(async () => {
       ...process.env,
       PORT: String(appPort),
       SQLITE_FILE: path.join(TMP, 'test.db'),
-      LEGACY_JSON_FILE: path.join(TMP, 'missing-data.json'),
+      LEGACY_JSON_FILE: path.join(TMP, 'legacy.json'),
       BACKUP_DIR: path.join(TMP, 'backups'),
       SMTP_HOST: '127.0.0.1',
       SMTP_PORT: String(smtpPort),
@@ -128,8 +151,9 @@ test('registers only after an emailed code and rejects reuse', async () => {
   assert.equal(send.status, 200);
   const code = codeFromMessage(messages.at(-1));
 
-  const registration = await post('/api/register', { username: 'new-user', password: 'secure-password', display_name: '新用户', email, code });
+  const registration = await post('/api/register', { password: 'secure-password', display_name: '新用户', email, code });
   assert.equal(registration.status, 200);
+  assert.equal(registration.body.user.username, email);
   assert.equal(registration.body.user.contact_value, email);
 
   const profile = await post('/api/profile', { contact: '13800138000' }, registration.body.token);
@@ -137,7 +161,7 @@ test('registers only after an emailed code and rejects reuse', async () => {
   const duplicateAfterContactChange = await post('/api/register/send-code', { email });
   assert.equal(duplicateAfterContactChange.status, 400);
 
-  const reuse = await post('/api/register', { username: 'other-user', password: 'secure-password', email, code });
+  const reuse = await post('/api/register', { password: 'secure-password', display_name: '另一位用户', email, code });
   assert.equal(reuse.status, 400);
 });
 
@@ -151,4 +175,30 @@ test('rejects a duplicate email and enforces the IP hourly send limit', async ()
   }
   const limited = await post('/api/register/send-code', { email: 'rate-limited@example.com' });
   assert.equal(limited.status, 429);
+});
+
+test('legacy users can log in by username or unique email and reset with email only', async () => {
+  const usernameLogin = await post('/api/login', { username: 'legacy-user', password: 'legacy-password' });
+  assert.equal(usernameLogin.status, 200);
+
+  const emailLogin = await post('/api/login', { username: 'legacy@example.com', password: 'legacy-password' });
+  assert.equal(emailLogin.status, 200);
+
+  const sent = await post('/api/password-reset/send-code', { email: 'legacy@example.com' });
+  assert.equal(sent.status, 200);
+  const code = codeFromMessage(messages.at(-1));
+
+  const verified = await post('/api/password-reset/verify-code', { email: 'legacy@example.com', code });
+  assert.equal(verified.status, 200);
+  assert.ok(verified.body.reset_token);
+
+  const confirmed = await post('/api/password-reset/confirm', {
+    email: 'legacy@example.com',
+    reset_token: verified.body.reset_token,
+    password: 'new-legacy-password'
+  });
+  assert.equal(confirmed.status, 200);
+
+  const updatedLogin = await post('/api/login', { username: 'legacy@example.com', password: 'new-legacy-password' });
+  assert.equal(updatedLogin.status, 200);
 });
