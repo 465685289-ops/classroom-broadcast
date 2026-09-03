@@ -184,12 +184,12 @@ h1,h2,.welcome-card h1{font-family:"Songti SC","STSong","SimSun",serif;letter-sp
       </div>
       <div class="auth-error" aria-live="polite">{{authError}}</div>
       <div v-if="authTab==='login'">
-        <div class="auth-field"><label for="essayLoginUser">用户名</label><input id="essayLoginUser" type="text" v-model="loginUser" autocomplete="username"></div>
+        <div class="auth-field"><label for="essayLoginUser">邮箱或旧用户名</label><input id="essayLoginUser" type="text" v-model="loginUser" autocomplete="username" placeholder="输入邮箱；老用户也可输入原用户名"></div>
         <div class="auth-field"><label for="essayLoginPass">密码</label><input id="essayLoginPass" type="password" v-model="loginPass" autocomplete="current-password" @keyup.enter="doLogin"></div>
         <button class="btn-primary" style="width:100%;padding:12px;margin-top:8px" @click="doLogin" :disabled="authBusy">{{authBusy?'登录中...':'登录'}}</button>
       </div>
       <div v-else>
-        <div class="auth-field"><label for="essayRegUser">用户名（2-20个字符）</label><input id="essayRegUser" type="text" v-model="regUser" autocomplete="username"></div>
+        <div class="auth-field"><label for="essayRegName">称呼</label><input id="essayRegName" type="text" v-model="regName" autocomplete="name" placeholder="例如：李老师"></div>
         <div class="auth-field"><label for="essayRegEmail">邮箱</label><input id="essayRegEmail" type="email" v-model="regEmail" autocomplete="email" placeholder="用于接收注册验证码"></div>
         <div class="auth-field"><label for="essayRegCode">邮箱验证码</label><div style="display:flex;gap:8px"><input id="essayRegCode" type="text" v-model="regCode" inputmode="numeric" autocomplete="one-time-code" placeholder="请输入6位验证码"><button class="btn-primary" type="button" style="white-space:nowrap;padding:0 12px" @click="sendRegisterCode" :disabled="authBusy">获取验证码</button></div></div>
         <div class="auth-field"><label for="essayRegPass">密码</label><input id="essayRegPass" type="password" v-model="regPass" autocomplete="new-password" @keyup.enter="doRegister"></div>
@@ -824,7 +824,7 @@ createApp({
     const pendingOcrFile = ref(null);
     const loginUser = ref('');
     const loginPass = ref('');
-    const regUser = ref('');
+    const regName = ref('');
     const regEmail = ref('');
     const regCode = ref('');
     const regPass = ref('');
@@ -997,7 +997,7 @@ createApp({
 
     // ---- 登录注册 ----
     async function doLogin() {
-      if (!loginUser.value.trim() || !loginPass.value) { authError.value = '请输入用户名和密码'; return; }
+      if (!loginUser.value.trim() || !loginPass.value) { authError.value = '请输入邮箱（或旧用户名）和密码'; return; }
       authBusy.value = true;
       authError.value = '';
       try {
@@ -1029,11 +1029,11 @@ createApp({
     }
 
     async function doRegister() {
-      if (!regUser.value.trim() || !regEmail.value.trim() || !regCode.value.trim() || !regPass.value) { authError.value = '请填写用户名、邮箱、验证码和密码'; return; }
+      if (!regName.value.trim() || !regEmail.value.trim() || !regCode.value.trim() || !regPass.value) { authError.value = '请填写称呼、邮箱、验证码和密码'; return; }
       authBusy.value = true;
       authError.value = '';
       try {
-        const d = await api('/api/register', { method: 'POST', body: JSON.stringify({ username: regUser.value.trim(), email: regEmail.value.trim(), code: regCode.value.trim(), display_name: regUser.value.trim(), password: regPass.value }) });
+        const d = await api('/api/register', { method: 'POST', body: JSON.stringify({ email: regEmail.value.trim(), code: regCode.value.trim(), display_name: regName.value.trim(), password: regPass.value }) });
         saveToken(d.token);
         user.value = d.user;
         await loadEssayConfig();
@@ -1838,7 +1838,7 @@ h2 { color: #7c5722; margin-top: 24px; font-size: 18px; }
     });
 
     return {
-      user, authTab, authError, authBusy, showAuthModal, loginUser, loginPass, regUser, regEmail, regCode, regPass,
+      user, authTab, authError, authBusy, showAuthModal, loginUser, loginPass, regName, regEmail, regCode, regPass,
       openAuth, closeAuth, doLogin, sendRegisterCode, doRegister, doLogout,
       balance, pointCost, signupBonusPoints, packages, showBuyModal, showWelcome, selectedPkg, payBusy,
       cardInput, cardMsg, cardMsgType, redeemBusy, toast,

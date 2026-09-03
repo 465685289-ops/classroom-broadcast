@@ -103,9 +103,9 @@ test('authentication controls expose labels and dialog semantics', () => {
   const essay = read('public/zuowen.html');
   const roundtable = read('public/roundtable/index.html');
   const math = read('public/edulab/pro.html');
-  assert.match(comment, /<label\s+for="loginUser">用户名<\/label>/);
+  assert.match(comment, /<label\s+for="loginUser">邮箱或旧用户名<\/label>/);
   assert.match(comment, /id="authPage"[^>]+role="dialog"[^>]+aria-modal="true"/);
-  assert.match(essay, /<label\s+for="essayLoginUser">用户名<\/label>/);
-  assert.match(roundtable, /<label\s+class="sr-only"\s+for="authUser">用户名<\/label>/);
-  assert.match(math, /<label\s+class="sr-only"\s+for="loginUser">用户名<\/label>/);
+  assert.match(essay, /<label\s+for="essayLoginUser">邮箱或旧用户名<\/label>/);
+  assert.match(roundtable, /<label\s+class="sr-only"\s+for="authUser">邮箱或旧用户名<\/label>/);
+  assert.match(math, /<label\s+class="sr-only"\s+for="loginUser">邮箱或旧用户名<\/label>/);
 });
