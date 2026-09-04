@@ -390,3 +390,22 @@ test('legacy workbench password alias logs in until the user resets the canonica
   });
   assert.equal(finalLogin.status, 200);
 });
+
+test('successful login stores an exact last login timestamp in the master account', async () => {
+  const before = Date.now();
+  const result = await post('/api/login', {
+    username: 'duplicate-one',
+    password: 'duplicate-one-password'
+  });
+  assert.equal(result.status, 200);
+
+  const sqlite = new Database(path.join(TMP, 'test.db'), { readonly: true });
+  try {
+    const row = sqlite.prepare('SELECT last_login_at FROM users WHERE id = ?').get('duplicate-one-id');
+    assert.ok(row.last_login_at);
+    assert.ok(Date.parse(row.last_login_at) >= before);
+    assert.ok(Date.parse(row.last_login_at) <= Date.now());
+  } finally {
+    sqlite.close();
+  }
+});

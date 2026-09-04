@@ -119,6 +119,7 @@ function ensureSchema() {
       token TEXT,
       avatar TEXT,
       created_at TEXT,
+      last_login_at TEXT,
       extra_json TEXT
     );
 
@@ -728,6 +729,7 @@ function ensureSchema() {
   ensureColumn('users', 'registration_email', 'TEXT');
   ensureColumn('users', 'minutes_per_notice', 'INTEGER DEFAULT 3');
   ensureColumn('users', 'token_expires', 'TEXT');
+  ensureColumn('users', 'last_login_at', 'TEXT');
   ensureColumn('classes', 'management_enabled', 'INTEGER DEFAULT 0');
   ensureColumn('classes', 'points_sound_enabled', 'INTEGER DEFAULT 0');
   ensureColumn('classes', 'archived_at', 'TEXT');
@@ -796,6 +798,7 @@ function loadUsers() {
     token_expires: row.token_expires || null,
     avatar: row.avatar || undefined,
     created_at: row.created_at,
+    last_login_at: row.last_login_at || null,
     ...safeJsonParse(row.extra_json, {})
   }));
 }
@@ -1108,8 +1111,8 @@ function getConversionReport(days) {
 ensureSchema();
 
 const insertUserStmt = db.prepare(`
-  INSERT INTO users (id, username, display_name, teacher_code, contact_type, contact_value, registration_email, minutes_per_notice, password_hash, password_salt, plan, plan_expires, token, token_expires, avatar, created_at, extra_json)
-  VALUES (@id, @username, @display_name, @teacher_code, @contact_type, @contact_value, @registration_email, @minutes_per_notice, @password_hash, @password_salt, @plan, @plan_expires, @token, @token_expires, @avatar, @created_at, @extra_json)
+  INSERT INTO users (id, username, display_name, teacher_code, contact_type, contact_value, registration_email, minutes_per_notice, password_hash, password_salt, plan, plan_expires, token, token_expires, avatar, created_at, last_login_at, extra_json)
+  VALUES (@id, @username, @display_name, @teacher_code, @contact_type, @contact_value, @registration_email, @minutes_per_notice, @password_hash, @password_salt, @plan, @plan_expires, @token, @token_expires, @avatar, @created_at, @last_login_at, @extra_json)
   ON CONFLICT(id) DO UPDATE SET
     username = excluded.username,
     display_name = excluded.display_name,
@@ -1126,6 +1129,7 @@ const insertUserStmt = db.prepare(`
     token_expires = excluded.token_expires,
     avatar = excluded.avatar,
     created_at = excluded.created_at,
+    last_login_at = excluded.last_login_at,
     extra_json = excluded.extra_json
 `);
 
@@ -1147,6 +1151,7 @@ function upsertUser(user) {
     token_expires: user.token_expires || null,
     avatar: user.avatar || null,
     created_at: user.created_at || new Date().toISOString(),
+    last_login_at: user.last_login_at || null,
     extra_json: null
   });
 }
