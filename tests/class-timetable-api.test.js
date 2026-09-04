@@ -113,7 +113,7 @@ test('class members can read a normalized empty timetable while outsiders cannot
   const memberView = await request('/api/classes/' + CLASS_ID + '/timetable', { token: MEMBER_TOKEN });
   assert.equal(memberView.status, 200);
   assert.equal(memberView.body.is_owner, false);
-  assert.deepEqual(Object.keys(memberView.body.timetable.entries), ['mon', 'tue', 'wed', 'thu', 'fri']);
+  assert.deepEqual(Object.keys(memberView.body.timetable.entries), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
   assert.equal(memberView.body.timetable.entries.mon.length, 12);
 
   const outsiderView = await request('/api/classes/' + CLASS_ID + '/timetable', { token: OUTSIDER_TOKEN });
@@ -139,7 +139,7 @@ test('only an active class owner can save the shared timetable', async () => {
   assert.equal(saved.body.is_owner, true);
   assert.equal(saved.body.timetable.entries.mon[0], '语文');
   assert.equal(saved.body.timetable.entries.fri[1], '班会');
-  assert.equal(saved.body.timetable.entries.sat, undefined);
+  assert.equal(saved.body.timetable.entries.sat[0], '不应保存');
   assert.ok(Date.parse(saved.body.timetable.updated_at));
 
   const reloaded = await request('/api/classes/' + CLASS_ID + '/timetable', { token: MEMBER_TOKEN });

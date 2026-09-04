@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>班级广播 · 老师端</title>
+<script src="/registration-email-helper.js"></script>
 <script>
 // 旧地址仅作兼容入口；完整教师控制台已合并到师行教师工作台。
 var oldPaymentOrder = new URLSearchParams(window.location.search).get('pay_order');
@@ -1456,7 +1457,10 @@ function sendRegisterCode() {
     body: JSON.stringify({ email: email })
   })
   .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
-  .then(function(r) { document.getElementById('regError').textContent = r.ok ? '验证码已发送，请查看邮箱' : (r.data.error || '验证码发送失败'); })
+  .then(function(r) {
+    if (r.ok) { document.getElementById('regError').textContent = '验证码已发送，请查看邮箱'; return; }
+    ShixingRegistrationEmail.showFailure({ data:r.data, input:document.getElementById('regEmail'), message:document.getElementById('regError') });
+  })
   .catch(function() { document.getElementById('regError').textContent = '网络连接失败'; })
   .finally(function() { button.disabled = false; button.textContent = '获取验证码'; });
 }
@@ -1731,7 +1735,9 @@ var CLASS_TIMETABLE_DAYS = [
   { key: 'tue', label: '周二' },
   { key: 'wed', label: '周三' },
   { key: 'thu', label: '周四' },
-  { key: 'fri', label: '周五' }
+  { key: 'fri', label: '周五' },
+  { key: 'sat', label: '周六', weekend: true },
+  { key: 'sun', label: '周日', weekend: true }
 ];
 var CLASS_TIMETABLE_SLOTS = [
   '早读', '第1节', '第2节', '第3节', '第4节', '第5节',
@@ -1758,14 +1764,14 @@ function buildTimetableEditorHtml(timetable, isOwner) {
   var normalized = normalizeTimetableForEditor(timetable);
   var html = '<table class="class-timetable-table"><thead><tr><th class="slot-head">时段</th>';
   CLASS_TIMETABLE_DAYS.forEach(function(day) {
-    html += '<th>' + day.label + '</th>';
+    html += '<th' + (day.weekend ? ' class="weekend-col"' : '') + '>' + day.label + '</th>';
   });
   html += '</tr></thead><tbody>';
   CLASS_TIMETABLE_SLOTS.forEach(function(slot, slotIndex) {
     html += '<tr><th class="slot-head">' + slot + '</th>';
     CLASS_TIMETABLE_DAYS.forEach(function(day) {
       var value = normalized.entries[day.key][slotIndex];
-      html += '<td><input type="text" maxlength="30" data-day="' + day.key + '" data-slot="' + slotIndex + '" value="' + escapeTimetableAttribute(value) + '" aria-label="' + day.label + ' ' + slot + '"' + (isOwner ? '' : ' readonly') + '></td>';
+      html += '<td' + (day.weekend ? ' class="weekend-col"' : '') + '><input type="text" maxlength="30" data-day="' + day.key + '" data-slot="' + slotIndex + '" value="' + escapeTimetableAttribute(value) + '" aria-label="' + day.label + ' ' + slot + '"' + (isOwner ? '' : ' readonly') + '></td>';
     });
     html += '</tr>';
   });

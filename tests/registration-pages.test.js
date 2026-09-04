@@ -23,6 +23,8 @@ for (const pageName of pages) {
     assert.match(page, /\/api\/register\/send-code/);
     assert.match(page, /email/);
     assert.match(page, /code/);
+    assert.match(page, /registration-email-helper\.js/, pageName + ' should load the shared email correction UI');
+    assert.match(page, /ShixingRegistrationEmail\.showFailure/, pageName + ' should offer the shared correction controls');
   });
 }
 

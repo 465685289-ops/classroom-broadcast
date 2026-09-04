@@ -11,6 +11,7 @@ const { POINT_COSTS, POINT_PACKAGES } = require('./shixing-points');
 const { REFERRAL_REWARDS } = require('./unified-referrals');
 const { isLearningHost } = require('./learning-membership');
 const classroomPoints = require('./classroom-points');
+const { createEmailDomainValidator } = require('./email-domain-validator');
 const {
   buildLearningItems,
   buildPolishRetryUserPrompt,
@@ -104,6 +105,11 @@ const {
   normalizeBroadcastMode
 } = require('./broadcast-notification.js');
 
+const {
+  fetchWorkbenchAdminSummary,
+  mergeWorkbenchProfiles
+} = require('./workbench-admin.js');
+
 // ---- 认证核心（自 auth-core.js 引入）----
 const {
   paidPlanExpiresFromNow, paidPlanExpiresForUser, activateYearlyPlan, genCode, genUniqueBindCode, genUniqueTeacherCode, hashPassword, verifyPassword, setUserPassword, genToken, safeEqual, issueUserToken, revokeUserToken, findUserByToken, refreshUserTokenExpiry, getUserPlanStatus
@@ -113,10 +119,14 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 state.io = io;
+const registrationEmailDomainValidator = createEmailDomainValidator({
+  dnsCheckEnabled: String(process.env.EMAIL_DOMAIN_DNS_CHECK || 'true').toLowerCase() !== 'false',
+  timeoutMs: 1000
+});
 
 // ---- 平台配置层（自 platform-config.js 引入）----
 const {
-  loadPaymentConfig, loadMailConfig, loadCommentConfig, loadEssayConfig, PAYMENT_CONFIG, MAIL_CONFIG, COMMENT_CONFIG, ESSAY_CONFIG, configValue, commentConfigValue, essayConfigValue, mailConfigValue, mailConfigBool, PORT, ADMIN_PASS, FREE_TRIAL_DAYS, PAID_PLAN_DAYS, YEARLY_PLAN_PRICE, PUBLIC_BASE_URL, COMMENT_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL, YUNGOU_MCH_ID, YUNGOU_PAY_KEY, YUNGOU_APP_ID, YUNGOU_API_HOST, LEGACY_COMMENT_PACKAGES, LEGACY_ROUNDTABLE_PACKAGES, ROUNDTABLE_CARD_ENABLED, ROUNDTABLE_BASE_URL, ROUNDTABLE_SPEAK_CAP, ESSAY_BASE_URL, ENGLISH_BASE_URL, QWEN_API_KEY, QWEN_OCR_MODEL, MINIMAX_API_KEYS, MINIMAX_MODEL, FREE_ESSAY_CREDITS, ESSAY_OCR_DAILY_LIMIT, ESSAY_PAY_MAX, ESSAY_PACKAGES, ESSAY_CARD_ENABLED, ESSAY_TIME_PACKAGES, ESSAY_REFERRAL_GRADING_THRESHOLD, ESSAY_REFERRAL_GRADING_REWARD, ESSAY_REFERRAL_PURCHASE_REWARD, LEARNING_BASE_URL, LEARNING_MODEL, LEARNING_DAILY_LIMIT, LEARNING_PACKAGES, COMMENT_REFERRAL_USAGE_THRESHOLD, COMMENT_REFERRAL_USAGE_CREDITS, COMMENT_REFERRAL_PURCHASE_CREDITS, COMMENT_REFERRAL_UNPAID_USAGE_CAP, BROADCAST_REFERRAL_USAGE_DAYS, BROADCAST_REFERRAL_PURCHASE_DAYS, BROADCAST_REFERRAL_UNPAID_USAGE_CAP, LEGACY_PREMIUM_PLAN, SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM, RESET_CODE_TTL_MS, RESET_TOKEN_TTL_MS, RESET_CODE_COOLDOWN_MS, RESET_CODE_MAX_ATTEMPTS, REGISTRATION_CODE_TTL_MS, REGISTRATION_CODE_COOLDOWN_MS, REGISTRATION_CODE_MAX_ATTEMPTS, REGISTRATION_CODE_IP_HOURLY_LIMIT, AUTH_COOKIE_NAME, ADMIN_COOKIE_NAME, ANALYTICS_COOKIE_NAME, ADMIN_SESSION_TTL_MS, AUTH_TOKEN_TTL_MS, INVITE_COOKIE_NAME, DEVICE_COOKIE_NAME, INVITE_COOKIE_MAX_AGE_MS, INVITE_COOKIE_SECRET, ANALYTICS_HASH_SALT, ADMIN_PASS_IS_DEFAULT, ROADMAP_FEATURES
+  loadPaymentConfig, loadMailConfig, loadCommentConfig, loadEssayConfig, PAYMENT_CONFIG, MAIL_CONFIG, COMMENT_CONFIG, ESSAY_CONFIG, configValue, commentConfigValue, essayConfigValue, mailConfigValue, mailConfigBool, PORT, ADMIN_PASS, FREE_TRIAL_DAYS, PAID_PLAN_DAYS, YEARLY_PLAN_PRICE, PUBLIC_BASE_URL, WORKBENCH_POINTS_SECRET, COMMENT_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL, YUNGOU_MCH_ID, YUNGOU_PAY_KEY, YUNGOU_APP_ID, YUNGOU_API_HOST, LEGACY_COMMENT_PACKAGES, LEGACY_ROUNDTABLE_PACKAGES, ROUNDTABLE_CARD_ENABLED, ROUNDTABLE_BASE_URL, ROUNDTABLE_SPEAK_CAP, ESSAY_BASE_URL, ENGLISH_BASE_URL, QWEN_API_KEY, QWEN_OCR_MODEL, MINIMAX_API_KEYS, MINIMAX_MODEL, FREE_ESSAY_CREDITS, ESSAY_OCR_DAILY_LIMIT, ESSAY_PAY_MAX, ESSAY_PACKAGES, ESSAY_CARD_ENABLED, ESSAY_TIME_PACKAGES, ESSAY_REFERRAL_GRADING_THRESHOLD, ESSAY_REFERRAL_GRADING_REWARD, ESSAY_REFERRAL_PURCHASE_REWARD, LEARNING_BASE_URL, LEARNING_MODEL, LEARNING_DAILY_LIMIT, LEARNING_PACKAGES, COMMENT_REFERRAL_USAGE_THRESHOLD, COMMENT_REFERRAL_USAGE_CREDITS, COMMENT_REFERRAL_PURCHASE_CREDITS, COMMENT_REFERRAL_UNPAID_USAGE_CAP, BROADCAST_REFERRAL_USAGE_DAYS, BROADCAST_REFERRAL_PURCHASE_DAYS, BROADCAST_REFERRAL_UNPAID_USAGE_CAP, LEGACY_PREMIUM_PLAN, SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM, RESET_CODE_TTL_MS, RESET_TOKEN_TTL_MS, RESET_CODE_COOLDOWN_MS, RESET_CODE_MAX_ATTEMPTS, REGISTRATION_CODE_TTL_MS, REGISTRATION_CODE_COOLDOWN_MS, REGISTRATION_CODE_MAX_ATTEMPTS, REGISTRATION_CODE_IP_HOURLY_LIMIT, AUTH_COOKIE_NAME, ADMIN_COOKIE_NAME, ANALYTICS_COOKIE_NAME, ADMIN_SESSION_TTL_MS, AUTH_TOKEN_TTL_MS, INVITE_COOKIE_NAME, DEVICE_COOKIE_NAME, INVITE_COOKIE_MAX_AGE_MS, INVITE_COOKIE_SECRET, ANALYTICS_HASH_SALT, ADMIN_PASS_IS_DEFAULT, ROADMAP_FEATURES
 } = require('./platform-config');
 app.set('trust proxy', true);
 
@@ -484,6 +494,15 @@ app.post('/api/register/send-code', async (req, res) => {
 
   const email = normalizeEmailInput(req.body.email);
   if (!email) return res.status(400).json({ error: '请输入有效邮箱地址' });
+  const domainValidation = await registrationEmailDomainValidator.validate(email);
+  if (!domainValidation.ok) {
+    return res.status(domainValidation.code === 'EMAIL_DOMAIN_TYPO' ? 422 : 400).json({
+      error: domainValidation.message,
+      code: domainValidation.code,
+      entered_email: email,
+      ...(domainValidation.suggestedEmail ? { suggested_email: domainValidation.suggestedEmail } : {})
+    });
+  }
   if (findUserByEmail(email)) return res.status(400).json({ error: '该邮箱已注册，请直接登录' });
 
   const now = Date.now();
@@ -546,6 +565,7 @@ app.post('/api/register', (req, res) => {
 
   const { hash, salt } = hashPassword(password);
   const token = genToken();
+  const createdAt = new Date().toISOString();
   const user = {
     id: crypto.randomUUID(),
     username: email,
@@ -560,7 +580,8 @@ app.post('/api/register', (req, res) => {
     plan_expires: null,
     token,
     token_expires: new Date(Date.now() + AUTH_TOKEN_TTL_MS).toISOString(),
-    created_at: new Date().toISOString()
+    created_at: createdAt,
+    last_login_at: createdAt
   };
   let referralResult = { bound: false };
   try {
@@ -645,6 +666,7 @@ app.post('/api/login', (req, res) => {
     return res.status(401).json({ error: '邮箱、用户名或密码错误' });
   }
   issueUserToken(user);
+  user.last_login_at = new Date().toISOString();
   if (!user.teacher_code) user.teacher_code = genUniqueTeacherCode();
   dbStore.upsertUser(user);
   const status = getUserPlanStatus(user);
@@ -1748,11 +1770,34 @@ app.delete('/api/bulletins/:id', userAuth, (req, res) => {
 });
 
 // ---------- Admin API ----------
-app.get('/api/admin/users', adminAuth, (req, res) => {
-  const users = store.users.map(u => ({
+async function mergedAdminUsers() {
+  let workbenchUsers = [];
+  let workbenchAvailable = false;
+  try {
+    const workbench = await fetchWorkbenchAdminSummary({
+      baseUrl: WORKBENCH_SSO_URL,
+      secret: WORKBENCH_POINTS_SECRET
+    });
+    workbenchUsers = Array.isArray(workbench.users) ? workbench.users : [];
+    workbenchAvailable = true;
+  } catch {
+    // 工作台短暂不可用时仍返回主账号数据，避免整个用户后台失效。
+  }
+  return {
+    users: [...mergeWorkbenchProfiles(store.users, workbenchUsers).values()],
+    workbenchAvailable,
+    workbenchProfileCount: workbenchUsers.length
+  };
+}
+
+app.get('/api/admin/users', adminAuth, async (req, res) => {
+  const merged = await mergedAdminUsers();
+  const users = merged.users.map(u => ({
     id: u.id, username: u.username, display_name: u.display_name,
     contact_type: u.contact_type || '', contact_value: u.contact_value || '',
     plan: u.plan, plan_expires: u.plan_expires, created_at: u.created_at,
+    last_login_at: u.last_login_at || null,
+    workbench: u.workbench,
     plan_status: getUserPlanStatus(u),
     class_count: store.classes.filter(c => c.user_id === u.id).length,
     notif_count: store.notifications.filter(n => n.user_id === u.id).length,
@@ -1770,6 +1815,8 @@ function adminUserSummary(u) {
     contact_type: u.contact_type || '',
     contact_value: u.contact_value || '',
     created_at: u.created_at,
+    last_login_at: u.last_login_at || null,
+    workbench: u.workbench || null,
     plan: u.plan,
     plan_expires: u.plan_expires,
     plan_status: getUserPlanStatus(u),
@@ -1780,13 +1827,16 @@ function adminUserSummary(u) {
   };
 }
 
-app.get('/api/admin/users/search', adminAuth, (req, res) => {
+app.get('/api/admin/users/search', adminAuth, async (req, res) => {
   const q = String(req.query.q || '').trim().toLowerCase();
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.max(10, Math.min(100, parseInt(req.query.limit, 10) || 30));
-  const filtered = store.users.filter(u => {
+  const merged = await mergedAdminUsers();
+  const filtered = merged.users.filter(u => {
     if (!q) return true;
-    return [u.username, u.display_name, u.contact_value, u.registration_email]
+    const workbench = u.workbench || {};
+    return [u.username, u.display_name, u.contact_value, u.registration_email,
+      workbench.name, workbench.email, workbench.school, workbench.subject]
       .some(value => String(value || '').toLowerCase().includes(q));
   }).sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
   const offset = (page - 1) * limit;
@@ -1796,12 +1846,15 @@ app.get('/api/admin/users/search', adminAuth, (req, res) => {
     total: filtered.length,
     page,
     limit,
-    pages: Math.max(1, Math.ceil(filtered.length / limit))
+    pages: Math.max(1, Math.ceil(filtered.length / limit)),
+    workbench_available: merged.workbenchAvailable,
+    workbench_profile_count: merged.workbenchProfileCount
   });
 });
 
-app.get('/api/admin/users/:userId', adminAuth, (req, res) => {
-  const user = store.users.find(u => u.id === req.params.userId);
+app.get('/api/admin/users/:userId', adminAuth, async (req, res) => {
+  const merged = await mergedAdminUsers();
+  const user = merged.users.find(u => u.id === req.params.userId);
   if (!user) return res.status(404).json({ error: '用户不存在' });
   res.json({
     ok: true,

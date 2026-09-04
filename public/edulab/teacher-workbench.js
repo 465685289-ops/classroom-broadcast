@@ -360,7 +360,10 @@ async function sendRegisterCode() {
   try {
     const response = await fetch('/api/register/send-code', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || '验证码发送失败');
+    if (!response.ok) {
+      ShixingRegistrationEmail.showFailure({ data, input:$('regEmail'), message:$('authError') });
+      throw Object.assign(new Error(data.error || '验证码发送失败'), { alreadyShown:true });
+    }
     showError('authError', data.message || '验证码已发送，请查看邮箱', true);
     let seconds = 60;
     clearInterval(codeTimer);
@@ -373,7 +376,7 @@ async function sendRegisterCode() {
   } catch (error) {
     button.disabled = false;
     button.textContent = '获取验证码';
-    showError('authError', error.message || '网络错误，请重试');
+    if (!error.alreadyShown) showError('authError', error.message || '网络错误，请重试');
   }
 }
 

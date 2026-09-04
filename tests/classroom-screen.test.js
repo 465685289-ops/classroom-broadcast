@@ -60,6 +60,15 @@ test('broadcast quick replies keep only useful acknowledgements', () => {
   assert.doesNotMatch(page, /请再发一次/);
 });
 
+test('new broadcasts are not blocked by an unacknowledged notice', () => {
+  assert.match(page, /classroom-notification-queue\.js/);
+  const showBlock = page.match(/function\s+showNotification\s*\([\s\S]*?(?=function\s+showNextNotification)/);
+  assert.ok(showBlock, '缺少通知入队逻辑');
+  assert.match(showBlock[0], /ClassroomNotificationQueue\.routeIncomingNotification/);
+  assert.match(showBlock[0], /action\s*===\s*'interrupt'[\s\S]*?dismissNotification\(0\)/);
+  assert.match(page, /function\s+dismissNotification\s*\(nextDelay\)/);
+});
+
 test('classroom broadcast requests the server voice first and keeps browser speech as fallback', () => {
   const speakBlock = page.match(/function\s+speakText\s*\([\s\S]*?(?=\/\/ 服务器精品语音方案)/);
   assert.ok(speakBlock, '缺少 speakText 实现');

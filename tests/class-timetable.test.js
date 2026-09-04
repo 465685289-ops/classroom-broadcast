@@ -43,22 +43,25 @@ test('class timetable normalizes fixed weekdays and twelve bounded slots', () =>
     entries: {
       mon: [' 语文 ', 'x'.repeat(35)],
       tue: 'not-an-array',
-      sat: ['不应保存']
+      sat: [' 周六竞赛 '],
+      zhouba: ['不应保存']
     },
     updated_at: NOW
   });
 
-  assert.deepEqual(TIMETABLE_DAYS, ['mon', 'tue', 'wed', 'thu', 'fri']);
+  assert.deepEqual(TIMETABLE_DAYS, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
   assert.deepEqual(TIMETABLE_SLOTS, [
     '早读', '第1节', '第2节', '第3节', '第4节', '第5节',
     '第6节', '第7节', '第8节', '晚自习1', '晚自习2', '晚自习3'
   ]);
-  assert.deepEqual(Object.keys(result.entries), ['mon', 'tue', 'wed', 'thu', 'fri']);
+  assert.deepEqual(Object.keys(result.entries), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
   assert.equal(result.entries.mon.length, 12);
   assert.equal(result.entries.mon[0], '语文');
   assert.equal(result.entries.mon[1], 'x'.repeat(30));
   assert.equal(result.entries.tue.every(value => value === ''), true);
-  assert.equal(result.entries.sat, undefined);
+  assert.equal(result.entries.sat.length, 12);
+  assert.equal(result.entries.sat[0], '周六竞赛');
+  assert.equal(result.entries.zhouba, undefined);
   assert.equal(result.updated_at, NOW);
 });
 

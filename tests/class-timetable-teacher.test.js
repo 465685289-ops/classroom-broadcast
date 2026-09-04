@@ -41,6 +41,7 @@ test('class timetable editor renders five weekdays and twelve mobile-scrollable 
   assert.equal((context.result.match(/<tr/g) || []).length, 13);
   assert.equal((context.result.match(/data-day="mon"/g) || []).length, 12);
   assert.equal((context.result.match(/data-day="fri"/g) || []).length, 12);
+  assert.equal((context.result.match(/data-day="sat"/g) || []).length, 12, '周末列应可编辑');
   assert.match(context.result, /&lt;script&gt;/);
   assert.match(context.result, /&quot; onfocus=&quot;alert\(1\)/);
   assert.match(context.result, /readonly/);
