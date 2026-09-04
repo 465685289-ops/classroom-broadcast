@@ -489,6 +489,7 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
 <script src="/socket.io/socket.io.js"></script>
 <script src="/classroom-points-queue.js"></script>
 <script src="/classroom-points-screen.js"></script>
+<script src="/classroom-notification-queue.js"></script>
 <script>
 // ========== Persistent Screen Binding ==========
 var SCREEN_BIND_STORAGE_KEY = 'screen_bind_code';
@@ -552,6 +553,7 @@ var currentGrade = 'junior';
 var notifTimer = null;
 var bubbleTimer = null;
 var speakStartTimer = null;
+var replyDismissTimer = null;
 var notifQueue = [];
 var notifShowing = false;
 var ttsRunId = 0;
@@ -1045,7 +1047,13 @@ function unbind() {
 
 // ========== Notification Display ==========
 function showNotification(data) {
-  notifQueue.push(data);
+  var action = ClassroomNotificationQueue.routeIncomingNotification(notifQueue, notifShowing, data);
+  if (action === 'interrupt') {
+    // Acknowledgement is optional. New broadcasts always take priority over an
+    // older notice or a TTS request that has become stuck in the browser.
+    dismissNotification(0);
+    return;
+  }
   showNextNotification();
 }
 
@@ -1217,7 +1225,7 @@ function minimizeNotification() {
   }, notifQueue.length ? 5000 : 15000);
 }
 
-function dismissNotification() {
+function dismissNotification(nextDelay) {
   var hadActiveNotification = notifShowing;
   var overlay = document.getElementById('notifOverlay');
   var quickReply = document.getElementById('quickReply');
@@ -1239,11 +1247,12 @@ function dismissNotification() {
   if (notifTimer) { clearTimeout(notifTimer); notifTimer = null; }
   if (bubbleTimer) { clearTimeout(bubbleTimer); bubbleTimer = null; }
   if (speakStartTimer) { clearTimeout(speakStartTimer); speakStartTimer = null; }
+  if (replyDismissTimer) { clearTimeout(replyDismissTimer); replyDismissTimer = null; }
   stopCurrentTTS();
   notifShowing = false;
   if (!notifQueue.length) ClassroomPointsScreen.resumeAfterBroadcast();
   if (hadActiveNotification && notifQueue.length) {
-    setTimeout(function() { showNextNotification(); }, 300);
+    setTimeout(function() { showNextNotification(); }, typeof nextDelay === 'number' ? nextDelay : 300);
   }
 }
 
@@ -1261,7 +1270,11 @@ function sendReply(text) {
       btns[i].disabled = true;
     }
   }
-  setTimeout(function() { dismissNotification(); }, 1500);
+  if (replyDismissTimer) clearTimeout(replyDismissTimer);
+  replyDismissTimer = setTimeout(function() {
+    replyDismissTimer = null;
+    dismissNotification();
+  }, 1500);
 }
 
 // ========== History ==========
