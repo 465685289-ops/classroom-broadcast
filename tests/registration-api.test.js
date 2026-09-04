@@ -229,6 +229,7 @@ test.before(async () => {
       SMTP_USER: 'test-user',
       SMTP_PASS: 'test-pass',
       MAIL_FROM: '师行 <no-reply@example.test>',
+      EMAIL_DOMAIN_DNS_CHECK: 'false',
       ADMIN_PASS: 'test-admin-pass'
     },
     stdio: ['ignore', 'pipe', 'pipe']
@@ -260,6 +261,15 @@ test('registers only after an emailed code and rejects reuse', async () => {
 
   const reuse = await post('/api/register', { password: 'secure-password', display_name: '另一位用户', email, code });
   assert.equal(reuse.status, 400);
+});
+
+test('rejects a common mistyped mailbox domain before sending or starting cooldown', async () => {
+  const before = messages.length;
+  const response = await post('/api/register/send-code', { email: '870763093@qq.con' });
+  assert.equal(response.status, 422);
+  assert.equal(response.body.code, 'EMAIL_DOMAIN_TYPO');
+  assert.equal(response.body.suggested_email, '870763093@qq.com');
+  assert.equal(messages.length, before);
 });
 
 test('rejects a duplicate email and enforces the IP hourly send limit', async () => {

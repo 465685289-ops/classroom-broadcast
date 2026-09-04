@@ -6,6 +6,7 @@
 <meta name="description" content="师行 AI 作文批改助手，支持小学、初中和高中作文拍照识别、评分、旁批与修改建议。">
 <link rel="canonical" href="https://zuowen.yingyuzuowen.asia/">
 <title>AI作文批改助手 - 小学初中高中全学段</title>
+<script src="/registration-email-helper.js"></script>
 <script src="/vendor/vue.global.prod.min.js"></script>
 <script src="/vendor/xlsx.full.min.js"></script>
 <script src="/vendor/FileSaver.min.js"></script>
@@ -182,7 +183,7 @@ h1,h2,.welcome-card h1{font-family:"Songti SC","STSong","SimSun",serif;letter-sp
         <button :class="{active:authTab==='login'}" @click="authTab='login';authError=''">登录</button>
         <button :class="{active:authTab==='register'}" @click="authTab='register';authError=''">注册</button>
       </div>
-      <div class="auth-error" aria-live="polite">{{authError}}</div>
+      <div class="auth-error" id="essayAuthError" aria-live="polite">{{authError}}</div>
       <div v-if="authTab==='login'">
         <div class="auth-field"><label for="essayLoginUser">邮箱或旧用户名</label><input id="essayLoginUser" type="text" v-model="loginUser" autocomplete="username" placeholder="输入邮箱；老用户也可输入原用户名"></div>
         <div class="auth-field"><label for="essayLoginPass">密码</label><input id="essayLoginPass" type="password" v-model="loginPass" autocomplete="current-password" @keyup.enter="doLogin"></div>
@@ -1019,13 +1020,19 @@ createApp({
       if (!regEmail.value.trim()) { authError.value = '请填写邮箱'; return; }
       authBusy.value = true;
       authError.value = '';
+      let emailErrorData = null;
       try {
         const d = await api('/api/register/send-code', { method: 'POST', body: JSON.stringify({ email: regEmail.value.trim() }) });
         authError.value = d.message || '验证码已发送，请查看邮箱';
       } catch (e) {
         authError.value = e.message || '验证码发送失败';
+        emailErrorData = e.data;
       }
       authBusy.value = false;
+      if (emailErrorData) {
+        await nextTick();
+        ShixingRegistrationEmail.showFailure({ data:emailErrorData, input:document.getElementById('essayRegEmail'), message:document.getElementById('essayAuthError') });
+      }
     }
 
     async function doRegister() {

@@ -128,6 +128,7 @@ test.before(async () => {
       BACKUP_DIR: path.join(TMP, 'backups'),
       SMTP_HOST: '127.0.0.1', SMTP_PORT: String(smtpPort), SMTP_SECURE: 'false',
       SMTP_USER: 'test-user', SMTP_PASS: 'test-pass', MAIL_FROM: '师行 <no-reply@example.test>',
+      EMAIL_DOMAIN_DNS_CHECK: 'false',
       ADMIN_PASS: 'test-admin-pass', INVITE_COOKIE_SECRET: 'test-invite-secret'
     },
     stdio: ['ignore', 'pipe', 'pipe']

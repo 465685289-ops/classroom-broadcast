@@ -11,6 +11,7 @@ const { POINT_COSTS, POINT_PACKAGES } = require('./shixing-points');
 const { REFERRAL_REWARDS } = require('./unified-referrals');
 const { isLearningHost } = require('./learning-membership');
 const classroomPoints = require('./classroom-points');
+const { createEmailDomainValidator } = require('./email-domain-validator');
 const {
   buildLearningItems,
   buildPolishRetryUserPrompt,
@@ -118,6 +119,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 state.io = io;
+const registrationEmailDomainValidator = createEmailDomainValidator({
+  dnsCheckEnabled: String(process.env.EMAIL_DOMAIN_DNS_CHECK || 'true').toLowerCase() !== 'false',
+  timeoutMs: 1000
+});
 
 // ---- 平台配置层（自 platform-config.js 引入）----
 const {
@@ -489,6 +494,15 @@ app.post('/api/register/send-code', async (req, res) => {
 
   const email = normalizeEmailInput(req.body.email);
   if (!email) return res.status(400).json({ error: '请输入有效邮箱地址' });
+  const domainValidation = await registrationEmailDomainValidator.validate(email);
+  if (!domainValidation.ok) {
+    return res.status(domainValidation.code === 'EMAIL_DOMAIN_TYPO' ? 422 : 400).json({
+      error: domainValidation.message,
+      code: domainValidation.code,
+      entered_email: email,
+      ...(domainValidation.suggestedEmail ? { suggested_email: domainValidation.suggestedEmail } : {})
+    });
+  }
   if (findUserByEmail(email)) return res.status(400).json({ error: '该邮箱已注册，请直接登录' });
 
   const now = Date.now();

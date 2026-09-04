@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>班级广播 · 老师端</title>
+<script src="/registration-email-helper.js"></script>
 <script>
 // 旧地址仅作兼容入口；完整教师控制台已合并到师行教师工作台。
 var oldPaymentOrder = new URLSearchParams(window.location.search).get('pay_order');
@@ -1456,7 +1457,10 @@ function sendRegisterCode() {
     body: JSON.stringify({ email: email })
   })
   .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
-  .then(function(r) { document.getElementById('regError').textContent = r.ok ? '验证码已发送，请查看邮箱' : (r.data.error || '验证码发送失败'); })
+  .then(function(r) {
+    if (r.ok) { document.getElementById('regError').textContent = '验证码已发送，请查看邮箱'; return; }
+    ShixingRegistrationEmail.showFailure({ data:r.data, input:document.getElementById('regEmail'), message:document.getElementById('regError') });
+  })
   .catch(function() { document.getElementById('regError').textContent = '网络连接失败'; })
   .finally(function() { button.disabled = false; button.textContent = '获取验证码'; });
 }

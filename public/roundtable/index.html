@@ -6,6 +6,7 @@
 <meta name="description" content="师行思想圆桌让七位跨时空思想者围绕一个话题展开多轮观点碰撞。">
 <link rel="canonical" href="https://notice.yingyuzuowen.asia/roundtable/">
 <title>思想圆桌 · 七人谈</title>
+<script src="/registration-email-helper.js"></script>
 <style>
   :root {
     --bg: #f3eadc;
@@ -663,7 +664,8 @@ async function sendRegisterCode() {
       body: JSON.stringify({ email })
     });
     const data = await r.json();
-    err.textContent = data.message || data.error || (r.ok ? '验证码已发送，请查看邮箱' : '验证码发送失败');
+    if (r.ok) err.textContent = data.message || '验证码已发送，请查看邮箱';
+    else ShixingRegistrationEmail.showFailure({ data, input:document.getElementById('authEmail'), message:err });
   } catch (e) {
     err.textContent = '网络错误，请重试';
   } finally {

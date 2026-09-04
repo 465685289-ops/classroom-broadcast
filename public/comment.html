@@ -6,6 +6,7 @@
 <meta name="description" content="师行 AI 评语生成助手，支持学生画像、批量生成、二次改写、历史记录和打印排版。">
 <link rel="canonical" href="https://comment.yingyuzuowen.asia/">
 <title>师行 · AI 评语生成助手</title>
+<script src="/registration-email-helper.js"></script>
 <script async src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -775,7 +776,10 @@ function sendRegisterCode() {
   button.textContent = '发送中...';
   fetch(API + '/api/register/send-code', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:email}) })
   .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
-  .then(function(r){ setAuthError(r.ok ? '验证码已发送，请查看邮箱' : (r.data.error || '验证码发送失败')); })
+  .then(function(r){
+    if (r.ok) { setAuthError('验证码已发送，请查看邮箱'); return; }
+    ShixingRegistrationEmail.showFailure({ data:r.data, input:document.getElementById('regEmail'), message:document.getElementById('authError') });
+  })
   .catch(function(){ setAuthError('网络连接失败'); })
   .finally(function(){ button.disabled = false; button.textContent = '获取验证码'; });
 }
