@@ -31,7 +31,9 @@ test('weekly timetable renders 12 school periods, highlights only today, and esc
   assert.match(context.monday.html, /今天/);
   assert.match(context.monday.html, /&lt;script&gt;/);
   assert.doesNotMatch(context.monday.html, /<script>/);
-  assert.doesNotMatch(context.saturday.html, /class="today"/);
+  // 2026-09 规格：周末也算教学日，周六上课时当日列正常高亮
+  assert.equal((context.saturday.html.match(/class="today"/g) || []).length, 13, '周六教学日应全列高亮');
+  assert.match(context.saturday.html, /周六<span class="today-chip">今天<\/span>/);
   assert.equal(context.empty.hasEntries, false);
 });
 

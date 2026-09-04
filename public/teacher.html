@@ -1735,7 +1735,9 @@ var CLASS_TIMETABLE_DAYS = [
   { key: 'tue', label: '周二' },
   { key: 'wed', label: '周三' },
   { key: 'thu', label: '周四' },
-  { key: 'fri', label: '周五' }
+  { key: 'fri', label: '周五' },
+  { key: 'sat', label: '周六', weekend: true },
+  { key: 'sun', label: '周日', weekend: true }
 ];
 var CLASS_TIMETABLE_SLOTS = [
   '早读', '第1节', '第2节', '第3节', '第4节', '第5节',
@@ -1762,14 +1764,14 @@ function buildTimetableEditorHtml(timetable, isOwner) {
   var normalized = normalizeTimetableForEditor(timetable);
   var html = '<table class="class-timetable-table"><thead><tr><th class="slot-head">时段</th>';
   CLASS_TIMETABLE_DAYS.forEach(function(day) {
-    html += '<th>' + day.label + '</th>';
+    html += '<th' + (day.weekend ? ' class="weekend-col"' : '') + '>' + day.label + '</th>';
   });
   html += '</tr></thead><tbody>';
   CLASS_TIMETABLE_SLOTS.forEach(function(slot, slotIndex) {
     html += '<tr><th class="slot-head">' + slot + '</th>';
     CLASS_TIMETABLE_DAYS.forEach(function(day) {
       var value = normalized.entries[day.key][slotIndex];
-      html += '<td><input type="text" maxlength="30" data-day="' + day.key + '" data-slot="' + slotIndex + '" value="' + escapeTimetableAttribute(value) + '" aria-label="' + day.label + ' ' + slot + '"' + (isOwner ? '' : ' readonly') + '></td>';
+      html += '<td' + (day.weekend ? ' class="weekend-col"' : '') + '><input type="text" maxlength="30" data-day="' + day.key + '" data-slot="' + slotIndex + '" value="' + escapeTimetableAttribute(value) + '" aria-label="' + day.label + ' ' + slot + '"' + (isOwner ? '' : ' readonly') + '></td>';
     });
     html += '</tr>';
   });

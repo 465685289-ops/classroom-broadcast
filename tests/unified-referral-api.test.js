@@ -95,9 +95,9 @@ function codeFromMessage(message) {
 async function register(username, email, extra = {}, cookie = '') {
   const sent = await request('/api/register/send-code', { method: 'POST', body: { email } });
   assert.equal(sent.status, 200);
-  // 并行负载下 SMTP 投递可能晚于下一次请求：轮询等待包含验证码的邮件（最长约2秒）
+  // 并行负载下 SMTP 投递可能晚于下一次请求：轮询等待包含验证码的邮件（最长约5秒）
   let code = null;
-  for (let i = 0; i < 40 && !code; i++) {
+  for (let i = 0; i < 100 && !code; i++) {
     const last = messages.at(-1);
     if (last) {
       try { code = codeFromMessage(last); } catch (e) { /* 邮件未到，继续等 */ }

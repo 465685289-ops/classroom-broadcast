@@ -1,6 +1,6 @@
 'use strict';
 
-const TIMETABLE_DAYS = Object.freeze(['mon', 'tue', 'wed', 'thu', 'fri']);
+const TIMETABLE_DAYS = Object.freeze(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
 const TIMETABLE_SLOTS = Object.freeze([
   '早读',
   '第1节',
