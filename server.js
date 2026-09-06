@@ -1504,6 +1504,21 @@ app.post('/api/screen/session', (req, res) => {
   });
 });
 
+// 审查 F07：大屏重连后按最后收到通知 ID 补取漏接（30 分钟有效期内）
+app.get('/api/screen/missed/:classId', screenSessionAuth, (req, res) => {
+  const cls = store.classes.find(c => c.id === req.params.classId);
+  if (!cls) return res.status(404).json({ error: '班级不存在' });
+  const afterId = Number(req.query.after) || 0;
+  const cutoff = Date.now() - 30 * 60 * 1000;
+  const missed = store.notifications
+    .filter(n => n.class_id === cls.id && Number(n.id) > afterId
+      && (!n.created_at || new Date(n.created_at).getTime() >= cutoff))
+    .sort((a, b) => Number(a.id) - Number(b.id))
+    .slice(-20)
+    .map(n => ({ id: n.id, content: n.content, sender: n.sender || '', created_at: n.created_at }));
+  res.json({ notifications: missed });
+});
+
 app.get('/api/screen/classroom-state', screenSessionAuth, (req, res) => {
   const cls = req.screenClass;
   const payload = classManagementPayload(cls);
@@ -2403,6 +2418,7 @@ io.on('connection', (socket) => {
       class_id: socket.classId,
       class_name: cls.name,
       reply_text: replyText,
+      notification_id: String(data && data.notification_id || '') || null,
       created_at: new Date().toISOString()
     };
     if (!store.replies) store.replies = [];
