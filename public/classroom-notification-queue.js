@@ -8,7 +8,9 @@
   function routeIncomingNotification(queue, isShowing, notification) {
     if (!Array.isArray(queue)) throw new Error('通知队列不可用');
     queue.push(notification);
-    return isShowing ? 'interrupt' : 'start';
+    // 审查 F07：普通通知顺序播完不打断；仅标记 urgent 的通知才显式抢占
+    if (notification && notification.urgent) return 'interrupt';
+    return isShowing ? 'queued' : 'start';
   }
 
   return { routeIncomingNotification: routeIncomingNotification };

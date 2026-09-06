@@ -556,6 +556,25 @@ var speakStartTimer = null;
 var replyDismissTimer = null;
 var notifQueue = [];
 var notifShowing = false;
+var currentNotifId = null;
+var screenToken = '';
+try { screenToken = JSON.parse(localStorage.getItem('screenBind') || 'null')?.token || ''; } catch (e) {}
+
+function fetchMissedNotifications() {
+  if (!currentClass) return;
+  var token = '';
+  try { token = localStorage.getItem('screenToken:' + currentClass.id) || screenToken || '' } catch (e) {}
+  if (!token) return;
+  var lastId = Number(localStorage.getItem('lastNotifId:' + currentClass.id) || 0);
+  fetch('/api/screen/missed/' + currentClass.id + '?after=' + lastId, {
+    headers: { 'X-Screen-Token': token }
+  }).then(function(r) { return r.ok ? r.json() : null })
+    .then(function(d) {
+      if (!d || !d.notifications || !d.notifications.length) return;
+      d.notifications.forEach(function(n) { showNotification(n); });
+      showNextNotification();
+    }).catch(function() {});
+}
 var ttsRunId = 0;
 var activeAudio = null;
 var activeAudioSource = null;
@@ -952,6 +971,7 @@ function initSocket() {
 
   socket.on('bind-success', function(cls) {
     currentClass = cls;
+    try { if (cls.screen_token) { screenToken = cls.screen_token; localStorage.setItem('screenToken:' + cls.id, cls.screen_token); } } catch (e) {}
     savedBind = persistScreenBind(savedBind);
     document.getElementById('bindPage').style.display = 'none';
     document.getElementById('screenPage').style.display = 'block';
@@ -963,6 +983,7 @@ function initSocket() {
     updateQuote();
     updateStats();
     renderHistory();
+    fetchMissedNotifications();
     renderClassTimetable(cls.timetable);
     updateStatus(true);
     ClassroomPointsScreen.onBound(cls, savedBind);
@@ -1051,9 +1072,12 @@ function unbind() {
 function showNotification(data) {
   var action = ClassroomNotificationQueue.routeIncomingNotification(notifQueue, notifShowing, data);
   if (action === 'interrupt') {
-    // Acknowledgement is optional. New broadcasts always take priority over an
-    // older notice or a TTS request that has become stuck in the browser.
     dismissNotification(0);
+    return;
+  }
+  if (action === 'queued') {
+    var hint = document.getElementById('screenStatus');
+    if (hint) hint.textContent = '当前通知播报中，新通知已排队。';
     return;
   }
   showNextNotification();
@@ -1101,6 +1125,8 @@ function startNotificationPlayback(data, senderName, policy) {
 }
 
 function displayNotification(data) {
+  currentNotifId = data && data.id || null;
+  try { if (currentClass && currentNotifId) localStorage.setItem('lastNotifId:' + currentClass.id, String(currentNotifId)); } catch (e) {}
   var overlay = document.getElementById('notifOverlay');
   var charEl = document.getElementById('notifCharacter');
   var bubbleEl = document.getElementById('speechBubble');
@@ -1263,7 +1289,7 @@ function dismissNotification(nextDelay) {
 // ========== Quick Reply ==========
 function sendReply(text) {
   if (!socket || !currentClass) return;
-  socket.emit('screen-reply', { reply_text: text });
+  socket.emit('screen-reply', { reply_text: text, notification_id: currentNotifId || null });
   var btns = document.getElementById('quickReply').querySelectorAll('button');
   for (var i = 0; i < btns.length; i++) {
     if (btns[i].textContent === text) {
