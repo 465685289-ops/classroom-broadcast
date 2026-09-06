@@ -1,5 +1,8 @@
 'use strict';
 
+const dbStore = require('./db');
+const state = require('./state');
+
 function installCommentRoutes(app) {
 // 评语生成器路由：花名册 / 次数包购买 / 生成与改写。
 // @WIRE
@@ -115,7 +118,7 @@ app.post('/api/comment/payments/package', userAuth, async (req, res) => {
     created_at: new Date().toISOString(),
     source_product: 'comment'
   };
-  state.state.store.payments.push(payment);
+  state.store.payments.push(payment);
   dbStore.upsertPayment(payment);
 
   const requiredParams = {
@@ -206,7 +209,7 @@ app.post('/api/comment/generate', userAuth, async (req, res) => {
         if (inviterPaid || dbStore.countAppReferralUsageRewards('comment', ref.inviter_user_id) < COMMENT_REFERRAL_UNPAID_USAGE_CAP) {
           const claimed = dbStore.claimAppReferralReward('comment', req.user.id, 'usage_rewarded_at');
           if (claimed) {
-            const inviter = state.state.store.users.find(u => u.id === claimed.inviter_user_id);
+            const inviter = state.store.users.find(u => u.id === claimed.inviter_user_id);
             const bal = dbStore.addCommentReferralCredits(claimed.inviter_user_id, inviter && inviter.username, COMMENT_REFERRAL_USAGE_CREDITS, '邀请好友完成评语生成');
             const rewardPoints = COMMENT_REFERRAL_USAGE_CREDITS * POINT_COSTS.comment;
             createUserMessage(

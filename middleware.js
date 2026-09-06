@@ -1,6 +1,7 @@
 'use strict';
 // 中间件与会话层：用户/管理员鉴权 / 套餐校验 / 大屏绑定会话 / 学习会员门控。
 const crypto = require('crypto');
+const dbStore = require('./db');
 // @WIRE
 const {
   findUserByToken, getUserPlanStatus, refreshUserTokenExpiry, safeEqual

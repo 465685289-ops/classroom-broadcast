@@ -1,5 +1,7 @@
 'use strict';
 
+const dbStore = require('./db');
+
 function installLearningRoutes(app) {
 // 学习助手路由：生成 / 打卡 / 金句本 / OCR / 次数包。
 // @WIRE
