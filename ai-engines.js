@@ -7,7 +7,7 @@ const {
   commentHost, deviceCookieOptions, encodeInviteCookie, essayHost, learningHost, parseCookieHeader, referralCookieOptions, roundtableHost
 } = require('./http-utils');
 const {
-  DEEPSEEK_API_KEY, DEEPSEEK_MODEL, DEVICE_COOKIE_NAME, ESSAY_OCR_DAILY_LIMIT, INVITE_COOKIE_MAX_AGE_MS, INVITE_COOKIE_NAME, INVITE_COOKIE_SECRET, LEARNING_MODEL, MINIMAX_API_KEYS, MINIMAX_MODEL, QWEN_API_KEY, QWEN_OCR_MODEL
+  DEEPSEEK_API_KEY, DEEPSEEK_MODEL, DEVICE_COOKIE_NAME, ESSAY_OCR_DAILY_LIMIT, GLM_API_KEY, GLM_OCR_MODEL, INVITE_COOKIE_MAX_AGE_MS, INVITE_COOKIE_NAME, INVITE_COOKIE_SECRET, LEARNING_MODEL, MINIMAX_API_KEYS, MINIMAX_MODEL, QWEN_API_KEY, QWEN_OCR_MODEL
 } = require('./platform-config');
 
 function normalizeCommentStudent(input) {
@@ -760,7 +760,7 @@ function buildExamGradePrompt(questions, ocrText, meta) {
     + '3. 简答/赏析/翻译类：按点给分，踩到要点即给分，多答一般不扣分（评分标准另有说明除外）；翻译题重点看关键实词虚词和句意通顺。\n'
     + '4. OCR 可能漏行、串行或把字认错：内容疑似不完整时按可见部分从宽评分，并在 comment 注明"疑似识别不全"；□ 按错字处理。\n'
     + '5. 每题得分是 0 到该题满分之间的数，允许 0.5；禁止超出满分。\n'
-    + '6. 学生没有作答的题给 0 分，并把题号计入 unanswered。\n\n'
+    + '6. 【学生答题内容】里没有以【题N】出现的题一律 0 分并计入 unanswered，严禁根据题目或参考答案推测学生作答、严禁凭空给分。\n\n'
     + '【题目与评分标准】\n' + lines.join('\n') + '\n\n'
     + '【学生答题内容】\n' + String(ocrText || '').slice(0, 12000) + '\n\n'
     + '【输出要求】只输出一个 JSON 对象，不要解释、不要 markdown 代码块：\n'
@@ -837,6 +837,97 @@ function examAIConfigured() {
   return MINIMAX_API_KEYS.length > 0 || !!DEEPSEEK_API_KEY;
 }
 
+// ---------- 周测阅卷 GLM 视觉引擎（配置 glm_api_key 后优先，未配置回落 Qwen） ----------
+const GLM_VISION_PROBE_JPEG = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCABAAEADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD06iiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD//2Q==';
+const GLM_VISION_CANDIDATES = ['glm-5.3-flash', 'glm-5v', 'glm-4.6v', 'glm-4.5v'];
+let glmVisionModelCache = '';
+
+function glmVisionReady() {
+  return !!GLM_API_KEY;
+}
+
+// 探测可用的 GLM 视觉模型：显式配置 glm_ocr_model 优先，否则逐个试候选并缓存
+async function glmVisionModel() {
+  if (GLM_OCR_MODEL) return GLM_OCR_MODEL;
+  if (glmVisionModelCache) return glmVisionModelCache;
+  let lastErr = null;
+  for (const model of GLM_VISION_CANDIDATES) {
+    try {
+      await openAICompatChat({
+        label: 'GLM-探测', hostname: 'open.bigmodel.cn', apiPath: '/api/paas/v4/chat/completions',
+        apiKey: GLM_API_KEY, model, temperature: 0.01, maxTokens: 8, timeoutMs: 30000,
+        messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: GLM_VISION_PROBE_JPEG } }, { type: 'text', text: '图里是纯白方块，回复OK即可' }] }]
+      });
+      glmVisionModelCache = model;
+      console.log('[EXAM] GLM 视觉模型探测成功:', model);
+      return model;
+    } catch (e) {
+      lastErr = e;
+      console.log('[EXAM] GLM 模型不可用:', model, '-', e.message);
+    }
+  }
+  throw lastErr || new Error('GLM 没有可用视觉模型，请配置 glm_ocr_model');
+}
+
+async function glmVisionChat(imageDataUrl, promptText, maxTokens) {
+  const model = await glmVisionModel();
+  const result = await openAICompatChat({
+    label: 'GLM-周测', hostname: 'open.bigmodel.cn', apiPath: '/api/paas/v4/chat/completions',
+    apiKey: GLM_API_KEY, model, temperature: 0.05, maxTokens: maxTokens || 6000, timeoutMs: 150000,
+    messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: imageDataUrl } }, { type: 'text', text: promptText }] }]
+  });
+  return { result: stripThinkBlocks(result), model };
+}
+
+// 结构化识别：姓名 + 逐题手写内容 + 0-1000 归一化批阅框（可传题目清单做题号锚定）
+function buildExamOcrStructuredPrompt(questions) {
+  const list = (Array.isArray(questions) ? questions : [])
+    .map(q => '题' + q.no + (q.label ? '（' + q.label + '，' + (Number(q.score) || 0) + '分）' : ''))
+    .join('；');
+  return '你是阅卷助手。这是一张学生语文考试的答题照片（拍摄可能旋转，请按正确方向阅读）。请完成：\n'
+    + '1. 识别学生手写在卷面（通常在标题旁或右上角）的姓名：只要姓名文字本身；识别不到就给空串。\n'
+    + '2. 按卷面题号逐题抄录学生的手写作答内容：no 必须用照片里印刷的题号（不是按出现顺序编号）；只抄学生写的，不要抄题干印刷文字；一题内有多个空/小问用①②③分隔；看不清的字用□占位，不要猜；错别字照抄。\n'
+    + '3. 给每道有作答内容的题一个矩形框 bbox：[左, 上, 右, 下]，用 0-1000 归一化坐标（相对整张图：0是左/上边缘，1000是右/下边缘），框需包住该题学生的全部手写内容。\n'
+    + (list ? '4. 本卷的题目清单（题号以此为准）：' + list + '。照片里没有出现或没有作答的题不要输出。\n' : '4. 照片里没有作答的题不要输出。\n')
+    + '只输出一个 JSON 对象，禁止解释、禁止 markdown 代码块：\n'
+    + '{"name":"姓名或空串","answers":[{"no":"1","text":"学生作答","bbox":[10,80,900,160]}]}';
+}
+
+// 引擎选择：GLM 优先，Qwen 兜底；返回 { raw, model, engine }
+async function examVisionStructured(imageDataUrl, questions) {
+  const prompt = buildExamOcrStructuredPrompt(questions);
+  if (GLM_API_KEY) {
+    const r = await glmVisionChat(imageDataUrl, prompt, 6000);
+    return { raw: r.result, model: r.model, engine: 'glm' };
+  }
+  if (QWEN_API_KEY) {
+    const result = await openAICompatChat({
+      label: 'QWEN-周测', hostname: 'dashscope.aliyuncs.com', apiPath: '/compatible-mode/v1/chat/completions',
+      apiKey: QWEN_API_KEY, model: QWEN_OCR_MODEL, temperature: 0.05, maxTokens: 6000, timeoutMs: 120000,
+      messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: imageDataUrl } }, { type: 'text', text: prompt }] }]
+    });
+    return { raw: stripThinkBlocks(result), model: QWEN_OCR_MODEL, engine: 'qwen' };
+  }
+  throw new Error('未配置 GLM/Qwen 视觉引擎，请联系管理员');
+}
+
+// 试卷 docx + 答案 docx 文本 → 按内容对齐拆题（答案题号常与卷面不一致，禁止按号硬配）
+function buildExamParsePaperPrompt(paperText, answerText) {
+  return '你是试卷录入助手。下面给出一份语文测试卷的【试卷原文】和【参考答案原文】。答案可能导出自题库，其题号与试卷卷面题号不一致（例如答案里的14题实际对应试卷的6题），必须按题目内容对应，严禁按题号硬配。\n\n'
+    + '任务：按试卷卷面顺序提取所有需要学生作答的题目，并为每题匹配参考答案。\n\n'
+    + '要求：\n'
+    + '1. no 用试卷卷面题号原样（如 "1"、"6"、"10(1)"）\n'
+    + '2. label 用题型简称（如"字词运用""古诗文默写""诗歌鉴赏""文言文翻译""作文"）\n'
+    + '3. score 从试卷里该题的"（X分）"提取数字，没有就 0\n'
+    + '4. answer 用参考答案中该题的答案本身（不要解析文字）；一题多空按①②③列出；多条示例答案保留最标准的一条\n'
+    + '5. rubric 从答案的【X题详解】等解析中提炼给分点/扣分说明，一两句话；没有就空串\n'
+    + '6. 作文等无唯一答案的题也要列出，answer 写题目要求要点，rubric 写评分要点\n'
+    + '7. 只输出 JSON，禁止解释、禁止 markdown 代码块：\n'
+    + '{"questions":[{"no":"1","label":"字词运用","score":2,"answer":"辈、燃","rubric":"每空1分，错字不得分"}]}\n\n'
+    + '【试卷原文】\n' + String(paperText || '').slice(0, 14000) + '\n\n'
+    + '【参考答案原文】\n' + String(answerText || '').slice(0, 10000);
+}
+
 // ---------- Middleware ----------
 // limit 提高到 10mb：作文批改 OCR 要上传 base64 图片
 module.exports = {
@@ -885,4 +976,9 @@ module.exports = {
   examGradeAllowed,
   extractExamJson,
   examAIConfigured,
+  glmVisionReady,
+  glmVisionModel,
+  examVisionStructured,
+  buildExamOcrStructuredPrompt,
+  buildExamParsePaperPrompt,
 };

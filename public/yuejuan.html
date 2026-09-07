@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="师行周测 AI 阅卷：手机拍试卷，AI 逐题识别评分，老师复核改分，一键导出成绩表。">
+<meta name="description" content="师行周测 AI 阅卷：上传试卷答案 Word 自动拆卷，手机批量拍试卷，AI 逐题识别评分，老师复核改分，导出成绩表和每个学生的批阅痕迹 PDF。">
 <title>周测 AI 阅卷 - 师行</title>
 <script src="/vendor/vue.global.prod.min.js"></script>
 <script src="/vendor/xlsx.full.min.js"></script>
+<script src="/vendor/jszip.min.js"></script>
 <style>
 [v-cloak]{display:none}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -36,6 +37,7 @@ label.f{display:block;font-size:12px;color:#67788c;margin:10px 0 4px;font-weight
 .pill.none{background:#eceff3;color:#8894a3}
 .pill.graded{background:#e8f0fb;color:#2f5a8f}
 .pill.reviewed{background:#e5f3e8;color:#2e7d43}
+.pill.warn{background:#fdf5e4;color:#8a6116}
 .test-card{display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer}
 .test-card h3{font-size:15px;color:#22364d;margin-bottom:4px}
 .test-card .meta{font-size:12px;color:#8a97a5}
@@ -50,6 +52,7 @@ label.f{display:block;font-size:12px;color:#67788c;margin:10px 0 4px;font-weight
 .thumb{position:relative;width:86px;height:86px;border-radius:10px;overflow:hidden;border:1.5px solid #d8dee7}
 .thumb img{width:100%;height:100%;object-fit:cover}
 .thumb .rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer}
+.thumb .rot{position:absolute;bottom:2px;left:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer}
 .addimg{width:86px;height:86px;border-radius:10px;border:1.5px dashed #a9b6c6;background:#f6f8fb;color:#5c718a;display:grid;place-items:center;font-size:26px;cursor:pointer}
 .score-row{display:flex;gap:8px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed #e3e7ee}
 .score-row:last-child{border-bottom:none}
@@ -63,6 +66,7 @@ label.f{display:block;font-size:12px;color:#67788c;margin:10px 0 4px;font-weight
 .flag{margin:8px 0;padding:9px 12px;border-radius:9px;font-size:12px;line-height:1.6}
 .flag.warn{background:#fdf5e4;color:#8a6116}
 .flag.err{background:#fbeaea;color:#a33b3b}
+.flag.ok{background:#e5f3e8;color:#2e7d43}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .stats .s{background:#f6f8fb;border-radius:10px;padding:10px 6px;text-align:center}
 .stats .s b{display:block;font-size:17px;color:#1f3a5f}
@@ -90,6 +94,16 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .actions{display:flex;gap:10px;margin-top:14px}
 .actions .btn{flex:1}
+.docbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.docbtn{border:1.5px dashed #a9b6c6;border-radius:10px;background:#f6f8fb;padding:12px 10px;text-align:center;cursor:pointer;font-size:13px;color:#2f5a8f;font-weight:600}
+.docbtn input{display:none}
+.docbtn .done{color:#2e7d43}
+.tray-item{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px dashed #eef1f5}
+.tray-item img{width:64px;height:64px;object-fit:cover;border-radius:9px;border:1.5px solid #d8dee7}
+.tray-item .info{flex:1;min-width:0}
+.tray-item .info .nm{font-size:14px;font-weight:700;color:#22364d}
+.tray-item .info .sub{font-size:11px;color:#8a97a5;line-height:1.5}
+.tray-item select{max-width:130px;font-size:12px;padding:6px 8px}
 @media(max-width:480px){.qrow{grid-template-columns:70px 64px 1fr 26px}.score-row{flex-wrap:wrap}.score-row .cm{flex-basis:100%}}
 </style>
 </head>
@@ -103,8 +117,8 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
 
     <!-- 登录 -->
     <div class="card" v-if="!user">
-      <h3 style="color:#1f3a5f;margin-bottom:6px">手机拍试卷，AI 帮你阅卷</h3>
-      <p class="muted" style="margin-bottom:10px">拍照 → AI 逐题识别评分 → 你只做复核改分 → 一键导出 Excel 成绩表。使用师行教师账号登录，还没有账号可先在 <a href="https://zuowen.yingyuzuowen.asia/" style="color:#2f5a8f">作文批改助手</a> 注册。</p>
+      <h3 style="color:#1f3a5f;margin-bottom:6px">上传试卷 Word，批量拍照，AI 帮你阅卷</h3>
+      <p class="muted" style="margin-bottom:10px">试卷+答案 Word 自动拆题 → 批量上传学生答题照 → AI 逐题识别评分 → 复核改分 → 导出成绩表和每个学生的批阅痕迹 PDF。使用师行教师账号登录，还没有账号可先在 <a href="https://zuowen.yingyuzuowen.asia/" style="color:#2f5a8f">作文批改助手</a> 注册。</p>
       <label class="f">邮箱或用户名</label>
       <input v-model.trim="loginUser" autocomplete="username" @keyup.enter="doLogin">
       <label class="f">密码</label>
@@ -117,8 +131,7 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
       <!-- ============ 周测列表 ============ -->
       <template v-if="view==='tests'">
         <div class="card">
-          <button class="btn btn-main btn-block" @click="openCreate">＋ 新建周测</button>
-          <p class="muted" style="margin-top:8px">提示：每周周测题目结构基本固定，可在列表里「复制」上周周测，只改参考答案。</p>
+          <button class="btn btn-main btn-block" @click="openCreate">＋ 新建周测（上传试卷+答案 Word 自动拆题）</button>
         </div>
         <div class="card test-card" v-for="t in tests" :key="t.id" @click="openTest(t)">
           <div>
@@ -130,7 +143,7 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
             <button class="btn btn-danger btn-sm" @click="removeTest(t)">删除</button>
           </div>
         </div>
-        <div class="empty" v-if="!tests.length">还没有周测<br>点上面「新建周测」，把参考答案粘进来就能开始</div>
+        <div class="empty" v-if="!tests.length">还没有周测<br>点上面「新建周测」，把试卷和答案的 Word 传上来就行</div>
       </template>
 
       <!-- ============ 周测详情 ============ -->
@@ -173,6 +186,52 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
 
         <!-- 阅卷 -->
         <template v-if="tab==='grade'">
+          <div class="card" style="padding:12px 14px">
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+              <b style="color:#1f3a5f;font-size:14px">批量阅卷</b>
+              <span class="pill warn" v-if="ocrEngine==='qwen'">当前用 Qwen 识别，配置 GLM 后自动切换</span>
+              <span class="pill reviewed" v-else-if="ocrEngine==='glm'">GLM 识别</span>
+            </div>
+            <p class="muted">一次性选好所有学生的试卷照片（每人 1~4 张），AI 会认出卷面姓名自动对号入座；认不出的再手动指定。建议竖拍、光线充足。</p>
+            <div class="actions" style="margin-top:10px">
+              <label class="btn btn-main" style="text-align:center">📷 选择/拍摄照片
+                <input type="file" accept="image/*" multiple style="display:none" @change="onBatchPick">
+              </label>
+            </div>
+            <div class="progressbar" v-if="batchBusy"><i :style="{width: batchPct+'%'}"></i></div>
+            <div class="muted" v-if="batchBusy">{{ batchText }}</div>
+          </div>
+
+          <div class="card" v-if="batchItems.length">
+            <b style="color:#1f3a5f;font-size:14px">照片分卷（{{ batchItems.length }} 张）</b>
+            <p class="muted" style="margin:4px 0 8px">方向不对点「转」；识别出姓名后自动匹配名单，匹配不上的在右侧下拉里手动指定；同一学生可多张。</p>
+            <div class="tray-item" v-for="it in batchItems" :key="it.id">
+              <img :src="it.dataUrl">
+              <div class="info">
+                <div class="nm">
+                  <template v-if="it.status==='done'">{{ it.name ? '卷面姓名：「' + it.name + '」' : '没认出姓名' }} <span class="pill" :class="it.matchIndex>=0 ? 'graded' : 'warn'">{{ it.matchIndex>=0 ? '→ ' + (students[it.matchIndex] ? students[it.matchIndex].name : '') : '待指定' }}</span></template>
+                  <template v-else-if="it.status==='failed'"><span class="pill warn">识别失败</span> <span class="muted">{{ it.error }}</span></template>
+                  <template v-else-if="it.status==='ocr'"><span class="pill none">识别中…</span></template>
+                  <template v-else><span class="pill none">等待识别</span></template>
+                </div>
+                <div class="sub">识别到 {{ it.answerCount }} 题作答</div>
+              </div>
+              <select v-if="it.status==='done'" v-model.number="it.matchIndex">
+                <option :value="-1" disabled>指定学生</option>
+                <option v-for="(s,i) in students" :key="s.id" :value="i">{{ s.name }}{{ s.result ? '（已有分）' : '' }}</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" @click="rotateItem(it)" :disabled="batchBusy">转</button>
+              <button class="btn btn-danger btn-sm" @click="removeItem(it)" :disabled="batchBusy">删</button>
+            </div>
+            <div class="actions">
+              <button class="btn btn-danger" style="flex:0 0 auto" @click="clearBatch" :disabled="batchBusy">清空</button>
+              <button class="btn btn-main" :disabled="!assignedCount || batchBusy || gradingBusy" @click="startBatchGrade">
+                {{ gradingBusy ? '批阅中…' : '开始批阅（' + assignedStudentCount + ' 人）' }}
+              </button>
+            </div>
+            <div class="flag err" v-if="batchGradeError">{{ batchGradeError }}</div>
+          </div>
+
           <div class="card" style="padding:10px 12px">
             <div class="chips">
               <div class="chip" v-for="(s,i) in students" :key="s.id" :class="{on: i===gradeIndex}" @click="pickStudent(i)">
@@ -192,6 +251,7 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
               <div class="thumb" v-for="(img,ii) in gradeImages" :key="ii">
                 <img :src="img">
                 <button class="rm" @click="gradeImages.splice(ii,1)">×</button>
+                <button class="rot" @click="rotateGradeImage(ii)">⟳</button>
               </div>
               <label class="addimg">＋
                 <input type="file" accept="image/*" multiple style="display:none" @change="onPickImages">
@@ -242,7 +302,7 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
             <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
               <table class="grid">
                 <thead><tr>
-                  <th>姓名</th><th v-for="q in test.questions" :key="q.no">{{ q.no }}<br><small>{{ q.score }}分</small></th><th>总分</th>
+                  <th>姓名</th><th v-for="q in test.questions" :key="q.no">{{ q.no }}<br><small>{{ q.score }}分</small></th><th>总分</th><th>批阅</th>
                 </tr></thead>
                 <tbody>
                   <tr v-for="r in reportRows" :key="r.student_id">
@@ -254,6 +314,9 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
                       <span v-else class="muted">—</span>
                     </td>
                     <td class="total">{{ r.total }}</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm" :disabled="!hasMarks(r.student_id)" @click="downloadStudentPdf(r.student_id)">PDF</button>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -266,8 +329,10 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
               </div>
             </div>
             <div class="actions">
-              <button class="btn btn-main" @click="exportXlsx">导出 Excel 成绩表</button>
+              <button class="btn btn-ghost" @click="exportXlsx">导出 Excel 成绩表</button>
+              <button class="btn btn-main" :disabled="!marksCount" @click="downloadAllPdfs">打包下载批阅痕迹（{{ marksCount }} 人 zip）</button>
             </div>
+            <div class="flag warn" v-if="marksCount">批阅痕迹图暂存在当前页面：全部批完后先打包下载，刷新或关闭页面后需重新拍照识别。</div>
           </div>
           <div class="card" v-else><div class="empty">还没有成绩，先去「阅卷」</div></div>
         </template>
@@ -286,11 +351,28 @@ details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
         <div><label class="f">日期</label><input v-model.trim="editor.exam_date" placeholder="2026-09-07"></div>
       </div>
       <template v-if="!editingId">
-        <label class="f">粘贴参考答案 / 评分标准（可 AI 自动拆题）</label>
-        <textarea v-model="editor.pasteText" rows="5" placeholder="一、古诗文默写（每空1分共10分）&#10;1. …&#10;二、诗歌鉴赏（4分）&#10;3. 参考答案：… 评分标准：…"></textarea>
-        <div style="margin-top:8px"><button class="btn btn-ghost btn-sm" :disabled="parseBusy || !editor.pasteText" @click="aiParse">{{ parseBusy ? 'AI 拆题中…' : 'AI 自动拆题' }}</button></div>
+        <label class="f">上传试卷和答案的 Word（自动拆题，二选一或都传）</label>
+        <div class="docbtns">
+          <label class="docbtn">
+            <input type="file" accept=".docx" @change="e => onDocxPick(e,'paper')">
+            <template v-if="editor.paperText"><span class="done">✓ 试卷已读取（{{ Math.round(editor.paperText.length/1000) }}k字）</span></template>
+            <template v-else>📄 选择试卷 .docx</template>
+          </label>
+          <label class="docbtn">
+            <input type="file" accept=".docx" @change="e => onDocxPick(e,'answer')">
+            <template v-if="editor.answerText"><span class="done">✓ 答案已读取（{{ Math.round(editor.answerText.length/1000) }}k字）</span></template>
+            <template v-else>📄 选择答案 .docx</template>
+          </label>
+        </div>
+        <div style="margin-top:10px"><button class="btn btn-main btn-sm" :disabled="!editor.paperText || parseBusy" @click="aiParseDocx">{{ parseBusy ? 'AI 拆卷中，约需十几秒…' : 'AI 自动拆卷' }}</button></div>
+        <details style="margin-top:10px">
+          <summary class="muted" style="cursor:pointer">没有 Word？粘贴文字拆题 / 手动添加 →</summary>
+          <label class="f">粘贴参考答案 / 评分标准</label>
+          <textarea v-model="editor.pasteText" rows="4"></textarea>
+          <div style="margin-top:8px"><button class="btn btn-ghost btn-sm" :disabled="parseBusy || !editor.pasteText" @click="aiParsePaste">{{ parseBusy ? 'AI 拆题中…' : '按粘贴文本拆题' }}</button></div>
+        </details>
       </template>
-      <label class="f">题目（题号 / 满分 / 参考答案与评分标准）</label>
+      <label class="f">题目（题号 / 满分 / 参考答案与评分标准，拆完可核对修改）</label>
       <div class="qrow" v-for="(q,i) in editor.questions" :key="i">
         <input v-model.trim="q.no" placeholder="题号 如 1">
         <input type="number" step="0.5" min="0" v-model.number="q.score" placeholder="满分">
@@ -338,9 +420,10 @@ createApp({
     const user = ref(null);
     const view = ref('tests');
     const tab = ref('students');
+    const ocrEngine = ref('');
     const toast = ref('');
     let toastTimer = null;
-    function say(msg) { toast.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.value = '', 3200); }
+    function say(msg) { toast.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.value = '', 3600); }
 
     async function api(path, opts = {}) {
       const headers = { 'Content-Type': 'application/json' };
@@ -376,33 +459,77 @@ createApp({
       const d = await api('/api/exam/tests');
       tests.value = d.tests || [];
     }
-    function backToList() { view.value = 'tests'; loadTests().catch(() => {}); }
+    function backToList() { view.value = 'tests'; marks.value = {}; loadTests().catch(() => {}); }
 
     // ---------- 新建 / 编辑 ----------
     const showEditor = ref(false); const editingId = ref('');
-    const editor = ref({ name: '', class_name: '', exam_date: '', pasteText: '', questions: [] });
+    const editor = ref({ name: '', class_name: '', exam_date: '', pasteText: '', paperText: '', answerText: '', questions: [] });
     const editorError = ref(''); const editorBusy = ref(false); const parseBusy = ref(false);
     const editorTotal = computed(() => Math.round(editor.value.questions.reduce((n, q) => n + (Number(q.score) || 0), 0) * 10) / 10);
-    function freshEditor() { return { name: '', class_name: (tests.value[0] && tests.value[0].class_name) || '', exam_date: new Date().toISOString().slice(0, 10), pasteText: '', questions: [{ no: '1', label: '', score: 0, answer: '', rubric: '' }] }; }
+    function freshEditor() { return { name: '', class_name: (tests.value[0] && tests.value[0].class_name) || '', exam_date: new Date().toISOString().slice(0, 10), pasteText: '', paperText: '', answerText: '', questions: [{ no: '1', label: '', score: 0, answer: '', rubric: '' }] }; }
     function openCreate() { editingId.value = ''; editorError.value = ''; editor.value = freshEditor(); showEditor.value = true; }
     function openEdit() {
       editingId.value = test.value.id; editorError.value = '';
-      editor.value = { name: test.value.name, class_name: test.value.class_name, exam_date: test.value.exam_date, pasteText: '', questions: test.value.questions.map(q => ({ ...q })) };
+      editor.value = { name: test.value.name, class_name: test.value.class_name, exam_date: test.value.exam_date, pasteText: '', paperText: '', answerText: '', questions: test.value.questions.map(q => ({ ...q })) };
       showEditor.value = true;
     }
-    async function aiParse() {
+    function applyQuestions(list) {
+      editor.value.questions = list.map(q => ({ no: String(q.no || ''), label: q.label || '', score: Number(q.score) || 0, answer: q.answer || '', rubric: q.rubric || '' }));
+    }
+    async function aiParseDocx() {
       parseBusy.value = true;
       try {
-        const d = await api('/api/exam/parse-questions', { method: 'POST', body: JSON.stringify({ text: editor.value.pasteText }) });
-        if (d.questions && d.questions.length) editor.value.questions = d.questions.map(q => ({ no: String(q.no || ''), label: q.label || '', score: Number(q.score) || 0, answer: q.answer || '', rubric: q.rubric || '' }));
+        const d = await api('/api/exam/parse-paper', { method: 'POST', body: JSON.stringify({ paper_text: editor.value.paperText, answer_text: editor.value.answerText }) });
+        applyQuestions(d.questions);
         say('AI 拆出 ' + d.questions.length + ' 题，请核对题号、满分和答案');
       } catch (e) { say(e.message); }
       parseBusy.value = false;
     }
+    async function aiParsePaste() {
+      parseBusy.value = true;
+      try {
+        const d = await api('/api/exam/parse-questions', { method: 'POST', body: JSON.stringify({ text: editor.value.pasteText }) });
+        applyQuestions(d.questions);
+        say('AI 拆出 ' + d.questions.length + ' 题，请核对');
+      } catch (e) { say(e.message); }
+      parseBusy.value = false;
+    }
+    async function onDocxPick(ev, kind) {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+      if (!/\.docx$/i.test(file.name)) { say('请选择 .docx 文件（旧版 .doc 请先另存为 .docx）'); return; }
+      try {
+        const text = await docxToText(file);
+        if (!text || text.length < 10) { say('文档里没有读到文字内容'); return; }
+        if (kind === 'paper') {
+          editor.value.paperText = text;
+          if (!editor.value.name) editor.value.name = file.name.replace(/\.docx$/i, '').replace(/[（(]答案?[)）]?$/, '');
+        } else editor.value.answerText = text;
+      } catch (e) { say('读取 Word 失败：' + e.message); }
+    }
+    async function docxToText(file) {
+      const JSZipLib = window.JSZip;
+      const zip = await JSZipLib.loadAsync(await file.arrayBuffer());
+      const entry = zip.file('word/document.xml');
+      if (!entry) throw new Error('不是有效的 .docx');
+      const xml = await entry.async('string');
+      const doc = new DOMParser().parseFromString(xml, 'application/xml');
+      const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+      const lines = [];
+      const paras = Array.from(doc.getElementsByTagNameNS(W, 'p'));
+      for (const p of paras) {
+        let line = '';
+        for (const t of p.getElementsByTagNameNS(W, 't')) line += t.textContent;
+        line = line.trim();
+        if (line) lines.push(line);
+      }
+      return lines.join('\n');
+    }
     async function saveEditor() {
       const qs = editor.value.questions.filter(q => String(q.no).trim());
       if (!editor.value.name) { editorError.value = '请填写周测名称'; return; }
-      if (!qs.length) { editorError.value = '请至少添加一道题'; return; }
+      if (!qs.length) { editorError.value = '请先拆题或手动添加题目'; return; }
       editorBusy.value = true;
       try {
         if (editingId.value) {
@@ -448,6 +575,7 @@ createApp({
     function openTestRaw(t) {
       test.value = t; view.value = 'exam';
       gradeIndex.value = 0; scores.value = []; ocrText.value = ''; ocrIssues.value = ''; gradeImages.value = [];
+      batchItems.value = []; marks.value = {};
       tab.value = students.value.length ? 'grade' : 'students';
     }
     async function openTest(t) {
@@ -469,7 +597,6 @@ createApp({
         students.value = d.students;
         pickStudent(gradeIndex.value);
         say('导入 ' + d.added + ' 人' + (d.skipped ? '，跳过重复 ' + d.skipped + ' 人' : ''));
-        tab.value = 'grade';
       } catch (e) { say(e.message); }
       rosterBusy.value = false;
     }
@@ -481,7 +608,152 @@ createApp({
       } catch (e) { say(e.message); }
     }
 
-    // ---------- 阅卷 ----------
+    // ---------- 图片工具：压缩 / 旋转 ----------
+    function loadImageEl(url) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('图片加载失败')); i.src = url; }); }
+    function compressImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const max = 1600;
+            const scale = Math.min(1, max / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.onerror = () => reject(new Error('图片读取失败（HEIC 原图请先在手机里转成 JPG）'));
+          img.src = reader.result;
+        };
+        reader.onerror = () => reject(new Error('文件读取失败'));
+        reader.readAsDataURL(file);
+      });
+    }
+    async function rotateDataUrl(url) {
+      const img = await loadImageEl(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalHeight; canvas.height = img.naturalWidth;
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+      return canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    // ---------- 批量上传 + 自动对号 ----------
+    let batchSeq = 0;
+    const batchItems = ref([]); // {id, dataUrl, status, name, matchIndex, answers, answerCount, error}
+    const batchBusy = ref(false); const batchPct = ref(0); const batchText = ref('');
+    const gradingBusy = ref(false); const batchGradeError = ref('');
+    const assignedCount = computed(() => batchItems.value.filter(i => i.status === 'done' && i.matchIndex >= 0).length);
+    function assignedGroups() {
+      const map = new Map();
+      batchItems.value.forEach(it => {
+        if (it.status !== 'done' || it.matchIndex < 0) return;
+        const sid = students.value[it.matchIndex].id;
+        if (!map.has(sid)) map.set(sid, []);
+        map.get(sid).push(it);
+      });
+      return map;
+    }
+    const assignedStudentCount = computed(() => assignedGroups().size);
+    function matchStudentIndex(name) {
+      const norm = s => String(s || '').replace(/[\s·・'']/g, '');
+      const n = norm(name);
+      if (!n) return -1;
+      let idx = students.value.findIndex(s => norm(s.name) === n);
+      if (idx >= 0) return idx;
+      if (n.length >= 2) idx = students.value.findIndex(s => { const m = norm(s.name); return m && (m.includes(n) || n.includes(m)); });
+      return idx;
+    }
+    async function onBatchPick(ev) {
+      const files = Array.from(ev.target.files || []);
+      ev.target.value = '';
+      if (!files.length) return;
+      const pend = [];
+      for (const f of files) {
+        try { pend.push({ id: ++batchSeq, dataUrl: await compressImage(f), status: 'pending', name: '', matchIndex: -1, answers: [], answerCount: 0, error: '' }); }
+        catch (e) { say(f.name + '：' + e.message); }
+      }
+      batchItems.value.push(...pend);
+      await runBatchOcr();
+    }
+    async function runBatchOcr() {
+      batchBusy.value = true; batchGradeError.value = '';
+      const queue = batchItems.value.filter(i => i.status === 'pending');
+      let done = 0;
+      for (const it of queue) {
+        batchText.value = '识别第 ' + (++done) + '/' + queue.length + ' 张…';
+        batchPct.value = Math.round(done / queue.length * 100);
+        it.status = 'ocr';
+        try {
+          const d = await api('/api/exam/ocr', { method: 'POST', body: JSON.stringify({ image: it.dataUrl, questions: test.value.questions }) });
+          it.answers = d.answers || [];
+          it.answerCount = it.answers.filter(a => a.text).length;
+          it.name = d.name || '';
+          it.status = 'done';
+          it.matchIndex = matchStudentIndex(it.name);
+          if (it.matchIndex >= 0) say('「' + it.name + '」→ ' + students.value[it.matchIndex].name);
+        } catch (e) {
+          it.status = 'failed'; it.error = e.message;
+        }
+      }
+      batchBusy.value = false; batchPct.value = 0; batchText.value = '';
+      const unmatched = batchItems.value.filter(i => i.status === 'done' && i.matchIndex < 0).length;
+      if (unmatched) say(unmatched + ' 张照片没认出姓名，请在列表里手动指定学生');
+    }
+    async function rotateItem(it) {
+      try {
+        it.dataUrl = await rotateDataUrl(it.dataUrl);
+        if (it.status === 'done' || it.status === 'failed') { it.status = 'pending'; it.name = ''; it.answers = []; it.matchIndex = -1; await runBatchOcr(); }
+      } catch (e) { say(e.message); }
+    }
+    function removeItem(it) { batchItems.value = batchItems.value.filter(x => x !== it); }
+    function clearBatch() { batchItems.value = []; }
+
+    // ---------- 批量批阅 ----------
+    const marks = ref({}); // studentId -> { name, pages: [{dataUrl, answers}] }
+    const marksCount = computed(() => Object.keys(marks.value).length);
+    function hasMarks(sid) { return !!marks.value[sid] && marks.value[sid].pages.length; }
+    function addMarkPage(sid, name, dataUrl, answers) {
+      if (!marks.value[sid]) marks.value[sid] = { name, pages: [] };
+      marks.value[sid].pages.push({ dataUrl, answers: answers.filter(a => a.bbox) });
+    }
+    async function startBatchGrade() {
+      const groups = assignedGroups();
+      if (!groups.size) { say('没有可批阅的照片'); return; }
+      if (!confirm('开始批阅 ' + groups.size + ' 名学生？已有分数的学生会被重新评分覆盖。')) return;
+      gradingBusy.value = true; batchGradeError.value = '';
+      let i = 0; let fail = 0;
+      for (const [sid, items] of groups) {
+        i++;
+        const st = students.value.find(s => s.id === sid);
+        batchText.value = '批阅 ' + i + '/' + groups.size + '：' + (st ? st.name : '');
+        batchPct.value = Math.round((i - 1) / groups.size * 100);
+        try {
+          const ocrTextAll = items.flatMap(it => it.answers.filter(a => a.text).map(a => '【题' + a.no + '】' + a.text)).join('\n');
+          const d = await api('/api/exam/grade', { method: 'POST', body: JSON.stringify({ test_id: test.value.id, student_id: sid, ocr_text: ocrTextAll }) });
+          // 把 bbox 合并进分数并立即保存（无需人工复核也先落库）
+          const bboxByNo = new Map();
+          items.forEach(it => it.answers.forEach(a => { if (a.bbox && !bboxByNo.has(String(a.no).trim())) bboxByNo.set(String(a.no).trim(), a.bbox); }));
+          const withBbox = d.scores.map(s => ({ ...s, bbox: bboxByNo.get(String(s.no).trim()) || undefined }));
+          const saved = await api('/api/exam/results/' + d.result.id, { method: 'PATCH', body: JSON.stringify({ scores: withBbox, status: 'graded' }) });
+          if (st) st.result = saved.result;
+          marks.value[sid] = { name: st ? st.name : '', pages: items.map(it => ({ dataUrl: it.dataUrl, answers: it.answers.filter(a => a.bbox) })) };
+        } catch (e) {
+          fail++;
+          batchGradeError.value = '批阅失败（' + (st ? st.name : '') + '）：' + e.message;
+        }
+      }
+      batchPct.value = 100;
+      batchText.value = '';
+      gradingBusy.value = false;
+      const doneCount = groups.size - fail;
+      say('批阅完成 ' + doneCount + '/' + groups.size + (fail ? '，' + fail + ' 人失败可重试' : '') + '。可到「成绩」查看并打包批阅痕迹');
+    }
+
+    // ---------- 单个学生手动阅卷 ----------
     const gradeIndex = ref(0);
     const curStudent = computed(() => students.value[gradeIndex.value] || null);
     const gradeImages = ref([]); const ocrText = ref(''); const scores = ref([]);
@@ -495,47 +767,50 @@ createApp({
       ocrIssues.value = (r && r.ai_raw) || '';
       gradeImages.value = [];
     }
-    function onPickImages(ev) {
+    async function onPickImages(ev) {
       const files = Array.from(ev.target.files || []).slice(0, 4);
-      files.forEach(f => compressImage(f, url => gradeImages.value.push(url)));
+      for (const f of files) {
+        try { gradeImages.value.push(await compressImage(f)); }
+        catch (e) { say(e.message); }
+      }
       ev.target.value = '';
     }
-    function compressImage(file, cb) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          const max = 1600;
-          const scale = Math.min(1, max / Math.max(img.width, img.height));
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          cb(canvas.toDataURL('image/jpeg', 0.85));
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+    async function rotateGradeImage(ii) {
+      try { gradeImages.value[ii] = await rotateDataUrl(gradeImages.value[ii]); } catch (e) { say(e.message); }
     }
     async function ocrAndGrade() {
       ocrBusy.value = true; gradeBusy.value = false; ocrIssues.value = '';
       let all = '';
+      const pages = [];
       try {
         for (let i = 0; i < gradeImages.value.length; i++) {
           busyText.value = 'AI 识别第 ' + (i + 1) + '/' + gradeImages.value.length + ' 张…';
           progressPct.value = Math.round((i / (gradeImages.value.length + 1)) * 100);
-          const d = await api('/api/exam/ocr', { method: 'POST', body: JSON.stringify({ image: gradeImages.value[i] }) });
-          all += (all ? '\n' : '') + d.text;
+          const d = await api('/api/exam/ocr', { method: 'POST', body: JSON.stringify({ image: gradeImages.value[i], questions: test.value.questions }) });
+          all += (d.ocr_text ? (all ? '\n' : '') + d.ocr_text : '');
+          pages.push({ dataUrl: gradeImages.value[i], answers: (d.answers || []).filter(a => a.bbox) });
+          if (i === 0 && d.name) {
+            const mi = matchStudentIndex(d.name);
+            if (mi !== gradeIndex.value) say('注意：卷面手写姓名识别为「' + d.name + '」，与当前学生「' + curStudent.value.name + '」不一致，请确认没有拿错照片');
+          }
         }
         ocrText.value = all;
       } catch (e) { say(e.message); ocrBusy.value = false; progressPct.value = 0; return; }
       ocrBusy.value = false;
+      if (curStudent.value) {
+        marks.value[curStudent.value.id] = { name: curStudent.value.name, pages };
+      }
       await gradeOnly();
     }
     async function gradeOnly() {
       gradeBusy.value = true; busyText.value = 'AI 逐题评分中…'; progressPct.value = 85;
       try {
         const d = await api('/api/exam/grade', { method: 'POST', body: JSON.stringify({ test_id: test.value.id, student_id: curStudent.value.id, ocr_text: ocrText.value }) });
-        scores.value = d.scores.map(x => ({ ...x }));
+        // 合并本会话的 bbox（手动流程里刚识别过才有）
+        const m = marks.value[curStudent.value.id];
+        const bboxByNo = new Map();
+        if (m) m.pages.forEach(p => p.answers.forEach(a => { if (!bboxByNo.has(String(a.no).trim())) bboxByNo.set(String(a.no).trim(), a.bbox); }));
+        scores.value = d.scores.map(x => ({ ...x, bbox: bboxByNo.get(String(x.no).trim()) }));
         ocrIssues.value = d.ocr_issues || '';
         curStudent.value.result = d.result;
         say('AI 已评 ' + d.total + ' 分，请核对每题依据');
@@ -549,13 +824,13 @@ createApp({
       saving.value = true;
       try {
         const r = curStudent.value.result;
-        const d = await api('/api/exam/results/' + r.id, { method: 'PATCH', body: JSON.stringify({ scores: scores.value.map(s => ({ no: s.no, score: s.score, comment: s.comment })), status }) });
+        const d = await api('/api/exam/results/' + r.id, { method: 'PATCH', body: JSON.stringify({ scores: scores.value.map(s => ({ no: s.no, score: s.score, comment: s.comment, bbox: s.bbox || undefined })), status }) });
         curStudent.value.result = d.result;
         if (status === 'reviewed') {
           const next = students.value.findIndex((s, i) => i > gradeIndex.value && !s.result);
           const wrap = next < 0 ? students.value.findIndex(s => !s.result) : next;
           if (wrap >= 0) { pickStudent(wrap); say('已保存复核，现在阅：' + students.value[wrap].name); }
-          else { say('全部阅完！可到「成绩」导出表格'); }
+          else { say('全部阅完！可到「成绩」导出表格和批阅痕迹'); }
         } else { say('已保存'); }
       } catch (e) { say(e.message); }
       saving.value = false;
@@ -602,12 +877,146 @@ createApp({
       XLSX.writeFile(wb, (test.value.name || '周测') + '-成绩.xlsx');
     }
 
+    // ---------- 批阅痕迹：画布标注 + 图像 PDF + zip ----------
+    function scoreMapOf(sid) {
+      const st = students.value.find(s => s.id === sid);
+      const map = new Map();
+      (st && st.result && st.result.scores || []).forEach(s => map.set(String(s.no).trim(), s));
+      return map;
+    }
+    async function renderAnnotatedPage(page, scoreMap) {
+      const img = await loadImageEl(page.dataUrl);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const W = canvas.width, H = canvas.height;
+      const lw = Math.max(3, Math.round(W / 320));
+      const fs = Math.max(18, Math.round(W / 40));
+      page.answers.forEach(a => {
+        if (!a.bbox) return;
+        const x1 = a.bbox[0] / 1000 * W, y1 = a.bbox[1] / 1000 * H, x2 = a.bbox[2] / 1000 * W, y2 = a.bbox[3] / 1000 * H;
+        ctx.strokeStyle = '#d93025'; ctx.lineWidth = lw;
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        const sc = scoreMap.get(String(a.no).trim());
+        const label = sc ? ('题' + a.no + '：' + sc.score + '/' + sc.full) : ('题' + a.no);
+        ctx.font = 'bold ' + fs + 'px -apple-system,PingFang SC,sans-serif';
+        const tw = ctx.measureText(label).width + fs * 0.8, th = fs * 1.35;
+        let cx = x1, cy = y1 - th - lw * 2;
+        if (cy < 2) cy = Math.min(H - th - 2, y2 + lw * 2);
+        if (cx + tw > W - 2) cx = Math.max(2, W - 2 - tw);
+        ctx.fillStyle = 'rgba(217,48,37,.94)';
+        ctx.beginPath();
+        ctx.moveTo(cx + 6, cy); ctx.arcTo(cx + tw, cy, cx + tw, cy + th, 6); ctx.arcTo(cx + tw, cy + th, cx, cy + th, 6);
+        ctx.arcTo(cx, cy + th, cx, cy, 6); ctx.arcTo(cx, cy, cx + tw, cy, 6); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, cx + fs * 0.4, cy + th / 2 + 1);
+        if (sc && sc.comment) {
+          const short = sc.comment.length > 14 ? sc.comment.slice(0, 14) + '…' : sc.comment;
+          ctx.font = Math.round(fs * 0.72) + 'px -apple-system,PingFang SC,sans-serif';
+          ctx.textBaseline = 'top';
+          const cy2 = cy + th + 4;
+          ctx.lineWidth = fs * 0.16; ctx.strokeStyle = 'rgba(255,255,255,.85)';
+          ctx.strokeText(short, cx, cy2);
+          ctx.fillStyle = '#b3261e';
+          ctx.fillText(short, cx, cy2);
+        }
+      });
+      return canvas.toDataURL('image/jpeg', 0.75);
+    }
+    function dataUrlToBytes(url) {
+      const b64 = url.slice(url.indexOf(',') + 1);
+      const bin = atob(b64);
+      const u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return u8;
+    }
+    // 极简图像 PDF：每页一张 JPEG（DCTDecode），无需字体嵌入
+    async function pagesToPdf(jpegDataUrls) {
+      const imgs = [];
+      for (const url of jpegDataUrls) {
+        const img = await loadImageEl(url);
+        imgs.push({ bytes: dataUrlToBytes(url), w: img.naturalWidth, h: img.naturalHeight });
+      }
+      const chunks = []; const offsets = {}; let offset = 0;
+      const enc = new TextEncoder();
+      function push(u8) { chunks.push(u8); offset += u8.length; }
+      function pushStr(s) { push(enc.encode(s)); }
+      pushStr('%PDF-1.4\n');
+      const n = imgs.length;
+      const objNum = i => 3 + i * 3;
+      offsets[1] = offset; pushStr('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+      offsets[2] = offset; pushStr('2 0 obj\n<< /Type /Pages /Kids [' + imgs.map((_, i) => objNum(i) + ' 0 R').join(' ') + '] /Count ' + n + ' >>\nendobj\n');
+      imgs.forEach((im, i) => {
+        const p = objNum(i);
+        const scale = Math.min(595 / im.w, 842 / im.h);
+        const w = (im.w * scale).toFixed(2), h = (im.h * scale).toFixed(2);
+        offsets[p] = offset; pushStr(p + ' 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents ' + (p + 1) + ' 0 R /Resources << /XObject << /Im' + i + ' ' + (p + 2) + ' 0 R >> >> >>\nendobj\n');
+        const content = 'q ' + w + ' 0 0 ' + h + ' 0 0 cm /Im' + i + ' Do Q\n';
+        offsets[p + 1] = offset; pushStr((p + 1) + ' 0 obj\n<< /Length ' + content.length + ' >>\nstream\n' + content + 'endstream\nendobj\n');
+        offsets[p + 2] = offset;
+        pushStr((p + 2) + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + im.w + ' /Height ' + im.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + im.bytes.length + ' >>\nstream\n');
+        push(im.bytes);
+        pushStr('\nendstream\nendobj\n');
+      });
+      const xrefPos = offset;
+      const total = 3 + n * 3;
+      let xref = 'xref\n0 ' + total + '\n0000000000 65535 f \n';
+      for (let i = 1; i < total; i++) xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+      xref += 'trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF';
+      pushStr(xref);
+      return new Blob(chunks, { type: 'application/pdf' });
+    }
+    function saveBlob(blob, filename) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    }
+    async function studentPdfBlob(sid) {
+      const m = marks.value[sid];
+      if (!m || !m.pages.length) throw new Error('该学生没有本会话的批阅痕迹');
+      const scoreMap = scoreMapOf(sid);
+      const pages = [];
+      for (const p of m.pages) pages.push(await renderAnnotatedPage(p, scoreMap));
+      return pagesToPdf(pages);
+    }
+    async function downloadStudentPdf(sid) {
+      try {
+        const m = marks.value[sid];
+        saveBlob(await studentPdfBlob(sid), (m ? m.name : '学生') + '-' + (test.value.name || '周测') + '-批阅.pdf');
+      } catch (e) { say(e.message); }
+    }
+    let marksExported = false;
+    async function downloadAllPdfs() {
+      try {
+        const zip = new JSZip();
+        let n = 0;
+        for (const sid of Object.keys(marks.value)) {
+          const m = marks.value[sid];
+          if (!m.pages.length) continue;
+          const blob = await studentPdfBlob(sid);
+          zip.file((n + 1).toString().padStart(2, '0') + '-' + m.name + '-' + (test.value.name || '周测') + '-批阅.pdf', blob);
+          n++;
+        }
+        if (!n) { say('还没有可导出的批阅痕迹'); return; }
+        saveBlob(await zip.generateAsync({ type: 'blob' }), (test.value.name || '周测') + '-批阅痕迹.zip');
+        marksExported = true;
+        say('已打包 ' + n + ' 名学生的批阅痕迹');
+      } catch (e) { say('打包失败：' + e.message); }
+    }
+    window.addEventListener('beforeunload', e => {
+      if (marksCount.value && !marksExported) { e.preventDefault(); e.returnValue = ''; }
+    });
+
     onMounted(async () => {
       if (!token.value) return;
       try {
         const d = await api('/api/profile');
         user.value = d.username ? d : { username: '' };
         const c = await api('/api/exam/config');
+        ocrEngine.value = c.ocr_engine || '';
         if (!c.ocr_enabled || !c.ai_enabled) say('提示：AI 服务未完全配置，识别/评分可能不可用');
         await loadTests();
       } catch (e) {
@@ -617,16 +1026,19 @@ createApp({
     });
 
     return {
-      user, view, tab, toast, say, api,
+      user, view, tab, toast, say, ocrEngine,
       loginUser, loginPass, loginError, loginBusy, doLogin, logout,
       tests, loadTests, backToList,
-      showEditor, editingId, editor, editorError, editorBusy, parseBusy, editorTotal, openCreate, openEdit, aiParse, saveEditor,
+      showEditor, editingId, editor, editorError, editorBusy, parseBusy, editorTotal, openCreate, openEdit, aiParseDocx, aiParsePaste, onDocxPick, saveEditor,
       showClone, cloneSrc, cloneName, cloneWithStudents, cloneBusy, openClone, doClone, removeTest,
       test, students, openTest, loadDetail,
       rosterText, rosterBusy, importRoster, removeStudent,
+      batchItems, batchBusy, batchPct, batchText, gradingBusy, batchGradeError, assignedCount, assignedStudentCount,
+      onBatchPick, rotateItem, removeItem, clearBatch, startBatchGrade,
       gradeIndex, curStudent, gradeImages, ocrText, scores, ocrIssues, ocrBusy, gradeBusy, saving, busyText, progressPct,
-      pickStudent, onPickImages, ocrAndGrade, gradeOnly, totalOf, saveResult,
-      reportRows, cellOf, patchCell, reportAvg, reportMax, reportMin, questionAnalysis, exportXlsx
+      pickStudent, onPickImages, rotateGradeImage, ocrAndGrade, gradeOnly, totalOf, saveResult,
+      reportRows, cellOf, patchCell, reportAvg, reportMax, reportMin, questionAnalysis, exportXlsx,
+      marksCount, hasMarks, downloadStudentPdf, downloadAllPdfs
     };
   }
 }).mount('#app');

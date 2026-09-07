@@ -116,6 +116,64 @@ test('exam test deletion cascades students and results', () => {
   assert.equal(dbStore.deleteExamTest('exam-user', t.id), false);
 });
 
+test('exam ocr bbox normalization and answer assembly', () => {
+  const { examNormalizeBbox, examNormalizeOcrAnswers, examApplyScores, examCleanNo } = require('../exam-routes');
+  assert.equal(examCleanNo('题1'), '1', 'AI 返回的“题1”前缀应剥掉');
+  assert.equal(examCleanNo(' 6(1) '), '6(1)');
+  // “题1”式题号也能对位给分
+  const scores = examApplyScores([{ no: '1', label: '默写', score: 10 }], [{ no: '题1', score: 8, comment: '对位测试' }]);
+  assert.equal(scores[0].score, 8);
+  // OCR 文本里没出现的题强制 0 分（防止 AI 给没拍到的题凭空判分）
+  const { examAnsweredNos } = require('../exam-routes');
+  const answered = examAnsweredNos('【题1】倍 燃\n【题2】qū\n【题3】（空白）');
+  assert.deepEqual(Array.from(answered), ['1', '2']);
+  const guarded = examApplyScores(
+    [{ no: '1', score: 2 }, { no: '6', score: 4 }],
+    [{ no: '1', score: 2, comment: '对' }, { no: '6', score: 4, comment: 'AI 凭空给分' }],
+    answered
+  );
+  assert.equal(guarded[0].score, 2);
+  assert.equal(guarded[1].score, 0);
+  assert.match(guarded[1].comment, /未识别到该题作答/);
+  assert.deepEqual(examNormalizeBbox([10, 80.4, 900.9, 160]), [10, 80, 901, 160]);
+  assert.equal(examNormalizeBbox([500, 500, 500, 600]), null, '宽度过小应为 null');
+  assert.deepEqual(examNormalizeBbox([-5, 0, 2000, 300]), [0, 0, 1000, 300], '越界坐标夹紧');
+  assert.equal(examNormalizeBbox([1, 2, 3]), null);
+  assert.equal(examNormalizeBbox(['a', 'b', 'c', 'd']), null);
+
+  const norm = examNormalizeOcrAnswers({
+    name: '姓名：谭芳燃',
+    answers: [
+      { no: '1', text: '①辈 ②燃', bbox: [10, 80, 900, 160] },
+      { no: '2', text: 'qū', bbox: [5, 5, 8, 8] },
+      { no: '3', text: '', bbox: [1, 1, 900, 200] }
+    ]
+  });
+  assert.equal(norm.name, '谭芳燃', '姓名应去掉“姓名：”前缀');
+  assert.equal(norm.answers[0].bbox[2], 900);
+  assert.equal(norm.answers[1].bbox, null, '过小的框应被丢弃');
+  assert.equal(norm.answers[2].text, '');
+  assert.equal(norm.ocrText, '【题1】①辈 ②燃\n【题2】qū', '锚点文本只含有作答的题');
+});
+
+test('exam docx pipeline prompt and glm engine wiring exist', () => {
+  const enginesSrc = fs.readFileSync(path.join(ROOT, 'ai-engines.js'), 'utf8');
+  for (const fn of ['glmVisionModel', 'examVisionStructured', 'buildExamOcrStructuredPrompt', 'buildExamParsePaperPrompt']) {
+    assert.ok(enginesSrc.includes('function ' + fn) || enginesSrc.includes('async function ' + fn), 'ai-engines 缺少 ' + fn);
+  }
+  assert.match(enginesSrc, /open\.bigmodel\.cn/);
+  assert.match(enginesSrc, /glm-5\.3-flash/);
+  const routesSrc = fs.readFileSync(path.join(ROOT, 'exam-routes.js'), 'utf8');
+  assert.ok(routesSrc.includes('/api/exam/parse-paper'), '缺少 docx 拆卷端点');
+  assert.ok(routesSrc.includes('examNormalizeBbox'), '缺少 bbox 校验');
+  const pageSrc = fs.readFileSync(path.join(ROOT, 'public', 'yuejuan.html'), 'utf8');
+  assert.match(pageSrc, /jszip\.min\.js/);
+  assert.match(pageSrc, /docxToText/);
+  assert.match(pageSrc, /renderAnnotatedPage/);
+  assert.match(pageSrc, /pagesToPdf/);
+  assert.match(pageSrc, /打包下载批阅痕迹/);
+});
+
 test('yuejuan page and route wiring exist', () => {
   const serverSrc = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
   assert.match(serverSrc, /require\('\.\/exam-routes\.js'\)/);
