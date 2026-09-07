@@ -246,6 +246,18 @@ test('only the class owner can begin a new score period', async () => {
   assert.equal(newLeaderboard.body.items[0].score, 0);
 });
 
+test('batch synchronization is authenticated, subscription-gated, class-scoped and idempotent', async () => {
+  const endpoint = '/api/classes/' + CLASS_ID + '/students/sync';
+  const body = { students: [{ name: '批量测试学生', student_no: 'batch-test' }] };
+  assert.equal((await request(endpoint, { method: 'POST', token: null, body })).status, 401);
+  assert.equal((await request(endpoint, { method: 'POST', token: EXPIRED_TOKEN, body })).status, 403);
+  assert.notEqual((await request('/api/classes/not-owned/students/sync', { method: 'POST', body })).status, 200);
+  const first = await request(endpoint, { method: 'POST', body });
+  assert.equal(first.status, 200);
+  assert.deepEqual(first.body, { added: 1, updated: 0 });
+  assert.deepEqual((await request(endpoint, { method: 'POST', body })).body, { added: 0, updated: 0 });
+});
+
 test('deleting a managed class archives its history and removes it from active classes', async () => {
   const removed = await request('/api/classes/' + CLASS_ID, { method: 'DELETE' });
   assert.equal(removed.status, 200);
