@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="师行周测 AI 阅卷：手机拍试卷，AI 逐题识别评分，老师复核改分，一键导出成绩表。">
+<title>周测 AI 阅卷 - 师行</title>
+<script src="/vendor/vue.global.prod.min.js"></script>
+<script src="/vendor/xlsx.full.min.js"></script>
+<style>
+[v-cloak]{display:none}
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;background:#f2f0ea;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#2d3a4a}
+.shell{max-width:860px;margin:0 auto;padding:14px 14px 60px}
+header.top{display:flex;align-items:center;justify-content:space-between;padding:10px 2px 14px}
+header.top h1{font-size:19px;color:#1f3a5f;font-family:"Songti SC","STSong",serif;letter-spacing:1px}
+header.top .who{font-size:12px;color:#7b8794;display:flex;gap:10px;align-items:center}
+.card{background:#fff;border-radius:14px;box-shadow:0 4px 18px rgba(31,58,95,.07);padding:16px;margin-bottom:14px}
+.btn{border:none;border-radius:9px;padding:9px 16px;font-size:14px;cursor:pointer;font-weight:600;transition:all .2s;line-height:1.4}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-main{background:#2f5a8f;color:#fff}
+.btn-main:hover:not(:disabled){background:#264a79}
+.btn-ghost{background:#eef2f7;color:#2f5a8f}
+.btn-danger{background:#fbeaea;color:#b04343}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:7px}
+.btn-block{display:block;width:100%}
+input,select,textarea{font-family:inherit;font-size:14px;border:1.5px solid #d8dee7;border-radius:9px;padding:9px 10px;width:100%;background:#fff;color:#2d3a4a}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#2f5a8f}
+textarea{resize:vertical}
+label.f{display:block;font-size:12px;color:#67788c;margin:10px 0 4px;font-weight:600}
+.muted{color:#8a97a5;font-size:12px;line-height:1.6}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tabs .tab{flex:1;text-align:center;padding:10px 4px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;background:#e8e6df;color:#6d7686;border:1.5px solid transparent;user-select:none}
+.tabs .tab.active{background:#2f5a8f;color:#fff}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700}
+.pill.none{background:#eceff3;color:#8894a3}
+.pill.graded{background:#e8f0fb;color:#2f5a8f}
+.pill.reviewed{background:#e5f3e8;color:#2e7d43}
+.test-card{display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer}
+.test-card h3{font-size:15px;color:#22364d;margin-bottom:4px}
+.test-card .meta{font-size:12px;color:#8a97a5}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;-webkit-overflow-scrolling:touch}
+.chip{flex:0 0 auto;padding:7px 14px;border-radius:99px;background:#fff;border:1.5px solid #d8dee7;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.chip.on{background:#2f5a8f;color:#fff;border-color:#2f5a8f}
+.chip .st{font-size:10px;opacity:.75;font-weight:400;margin-left:4px}
+.qrow{display:grid;grid-template-columns:78px 74px 1fr 30px;gap:6px;align-items:start;margin-bottom:8px}
+.qrow input,.qrow textarea{padding:7px 8px;font-size:13px}
+.qdetail textarea{margin-top:4px;min-height:52px}
+.imgpick{display:flex;gap:10px;flex-wrap:wrap}
+.thumb{position:relative;width:86px;height:86px;border-radius:10px;overflow:hidden;border:1.5px solid #d8dee7}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer}
+.addimg{width:86px;height:86px;border-radius:10px;border:1.5px dashed #a9b6c6;background:#f6f8fb;color:#5c718a;display:grid;place-items:center;font-size:26px;cursor:pointer}
+.score-row{display:flex;gap:8px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed #e3e7ee}
+.score-row:last-child{border-bottom:none}
+.score-row .qno{flex:0 0 92px;font-size:12px;color:#52657c;font-weight:700;padding-top:8px;line-height:1.5}
+.score-row .qno small{display:block;color:#93a1b1;font-weight:400}
+.score-in{display:flex;align-items:center;gap:4px;flex:0 0 110px}
+.score-in input{width:74px;text-align:center;font-weight:800;font-size:16px;color:#1f3a5f;padding:7px 4px}
+.score-in .full{font-size:12px;color:#93a1b1;white-space:nowrap}
+.score-row .cm{flex:1;min-width:0}
+.score-row .cm textarea{min-height:38px;font-size:12px}
+.flag{margin:8px 0;padding:9px 12px;border-radius:9px;font-size:12px;line-height:1.6}
+.flag.warn{background:#fdf5e4;color:#8a6116}
+.flag.err{background:#fbeaea;color:#a33b3b}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stats .s{background:#f6f8fb;border-radius:10px;padding:10px 6px;text-align:center}
+.stats .s b{display:block;font-size:17px;color:#1f3a5f}
+.stats .s span{font-size:11px;color:#8a97a5}
+table.grid{border-collapse:collapse;width:100%;font-size:13px}
+table.grid th,table.grid td{border:1px solid #e3e7ee;padding:7px 8px;text-align:center;white-space:nowrap}
+table.grid th{background:#f2f5f9;color:#52657c;font-size:12px}
+table.grid td.name{font-weight:700;color:#22364d}
+table.grid td.total{font-weight:800;color:#1f3a5f}
+table.grid input{width:52px;padding:4px;text-align:center;font-size:13px;border:1.5px solid transparent;background:transparent}
+table.grid input:hover,table.grid input:focus{border-color:#2f5a8f;background:#fff}
+.qrate{height:8px;border-radius:99px;background:#e8edf3;overflow:hidden;min-width:60px}
+.qrate i{display:block;height:100%;border-radius:99px}
+.modal-mask{position:fixed;inset:0;background:rgba(23,34,48,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:640px){.modal-mask{align-items:center}}
+.modal{background:#fff;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:18px;-webkit-overflow-scrolling:touch}
+@media(min-width:640px){.modal{border-radius:18px}}
+.modal h3{font-size:16px;color:#1f3a5f;margin-bottom:4px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:36px;background:#22364d;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;z-index:99;max-width:86vw;text-align:center}
+.progressbar{height:6px;border-radius:99px;background:#e8edf3;overflow:hidden;margin:10px 0}
+.progressbar i{display:block;height:100%;background:#2f5a8f;transition:width .3s}
+.empty{text-align:center;padding:36px 10px;color:#93a1b1;font-size:13px;line-height:2}
+details.ocr summary{cursor:pointer;font-size:13px;color:#2f5a8f;font-weight:600;padding:6px 0}
+details.ocr textarea{min-height:120px;font-size:13px;line-height:1.7}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions{display:flex;gap:10px;margin-top:14px}
+.actions .btn{flex:1}
+@media(max-width:480px){.qrow{grid-template-columns:70px 64px 1fr 26px}.score-row{flex-wrap:wrap}.score-row .cm{flex-basis:100%}}
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+  <div class="shell">
+    <header class="top">
+      <h1>周测 AI 阅卷</h1>
+      <div class="who" v-if="user"><span>{{ user.display_name || user.username }}</span><a href="#" @click.prevent="logout" style="color:#7b8794">退出</a></div>
+    </header>
+
+    <!-- 登录 -->
+    <div class="card" v-if="!user">
+      <h3 style="color:#1f3a5f;margin-bottom:6px">手机拍试卷，AI 帮你阅卷</h3>
+      <p class="muted" style="margin-bottom:10px">拍照 → AI 逐题识别评分 → 你只做复核改分 → 一键导出 Excel 成绩表。使用师行教师账号登录，还没有账号可先在 <a href="https://zuowen.yingyuzuowen.asia/" style="color:#2f5a8f">作文批改助手</a> 注册。</p>
+      <label class="f">邮箱或用户名</label>
+      <input v-model.trim="loginUser" autocomplete="username" @keyup.enter="doLogin">
+      <label class="f">密码</label>
+      <input type="password" v-model="loginPass" autocomplete="current-password" @keyup.enter="doLogin">
+      <div class="flag err" v-if="loginError">{{ loginError }}</div>
+      <div style="margin-top:14px"><button class="btn btn-main btn-block" :disabled="loginBusy" @click="doLogin">{{ loginBusy ? '登录中…' : '登录' }}</button></div>
+    </div>
+
+    <template v-else>
+      <!-- ============ 周测列表 ============ -->
+      <template v-if="view==='tests'">
+        <div class="card">
+          <button class="btn btn-main btn-block" @click="openCreate">＋ 新建周测</button>
+          <p class="muted" style="margin-top:8px">提示：每周周测题目结构基本固定，可在列表里「复制」上周周测，只改参考答案。</p>
+        </div>
+        <div class="card test-card" v-for="t in tests" :key="t.id" @click="openTest(t)">
+          <div>
+            <h3>{{ t.name }} <span class="pill graded" v-if="t.class_name">{{ t.class_name }}</span></h3>
+            <div class="meta">{{ t.exam_date || '未设日期' }} · 共 {{ t.total_score }} 分 · {{ t.questions.length }} 题 · 名单 {{ t.student_count }} 人 · 已阅 {{ t.graded_count }} 人</div>
+          </div>
+          <div style="display:flex;gap:6px;flex:0 0 auto" @click.stop>
+            <button class="btn btn-ghost btn-sm" @click="openClone(t)">复制</button>
+            <button class="btn btn-danger btn-sm" @click="removeTest(t)">删除</button>
+          </div>
+        </div>
+        <div class="empty" v-if="!tests.length">还没有周测<br>点上面「新建周测」，把参考答案粘进来就能开始</div>
+      </template>
+
+      <!-- ============ 周测详情 ============ -->
+      <template v-if="view==='exam'">
+        <div class="card" style="padding:12px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+            <div>
+              <h3 style="color:#1f3a5f;font-size:16px">{{ test.name }}</h3>
+              <div class="muted">共 {{ test.total_score }} 分 · {{ test.questions.length }} 题
+                <a href="#" @click.prevent="openEdit" style="color:#2f5a8f;margin-left:6px">编辑题目/信息</a>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" @click="backToList">← 返回</button>
+          </div>
+        </div>
+        <div class="tabs">
+          <div class="tab" :class="{active:tab==='students'}" @click="tab='students'">名单</div>
+          <div class="tab" :class="{active:tab==='grade'}" @click="tab='grade'">阅卷</div>
+          <div class="tab" :class="{active:tab==='report'}" @click="tab='report'">成绩</div>
+        </div>
+
+        <!-- 名单 -->
+        <div class="card" v-if="tab==='students'">
+          <label class="f" style="margin-top:0">粘贴名单（一行一个姓名）</label>
+          <textarea v-model="rosterText" rows="4" placeholder="张三&#10;李四&#10;王五"></textarea>
+          <div style="margin-top:10px;display:flex;gap:10px">
+            <button class="btn btn-main" style="flex:1" :disabled="rosterBusy" @click="importRoster">{{ rosterBusy ? '导入中…' : '导入名单' }}</button>
+          </div>
+          <hr style="border:none;border-top:1px dashed #e3e7ee;margin:14px 0">
+          <div v-for="s in students" :key="s.id" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed #eef1f5">
+            <div style="font-size:14px;font-weight:600">{{ s.name }}
+              <span class="pill none" v-if="!s.result">未阅</span>
+              <span class="pill graded" v-else-if="s.result.status!=='reviewed'">已阅 {{ s.result.total }} 分</span>
+              <span class="pill reviewed" v-else>已复核 {{ s.result.total }} 分</span>
+            </div>
+            <button class="btn btn-danger btn-sm" @click="removeStudent(s)">移除</button>
+          </div>
+          <div class="empty" v-if="!students.length">还没有学生名单</div>
+        </div>
+
+        <!-- 阅卷 -->
+        <template v-if="tab==='grade'">
+          <div class="card" style="padding:10px 12px">
+            <div class="chips">
+              <div class="chip" v-for="(s,i) in students" :key="s.id" :class="{on: i===gradeIndex}" @click="pickStudent(i)">
+                {{ s.name }}<span class="st" v-if="s.result">{{ s.result.total }}分</span><span class="st" v-else>未阅</span>
+              </div>
+              <div class="chip" v-if="!students.length" style="border-style:dashed">请先到「名单」导入学生</div>
+            </div>
+          </div>
+          <div class="card" v-if="curStudent">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <b style="color:#1f3a5f;font-size:16px">{{ curStudent.name }}</b>
+              <span class="pill" :class="curStudent.result ? (curStudent.result.status==='reviewed'?'reviewed':'graded') : 'none'">
+                {{ curStudent.result ? (curStudent.result.status==='reviewed' ? '已复核 '+curStudent.result.total+' 分' : 'AI 已评 '+curStudent.result.total+' 分') : '未阅' }}
+              </span>
+            </div>
+            <div class="imgpick">
+              <div class="thumb" v-for="(img,ii) in gradeImages" :key="ii">
+                <img :src="img">
+                <button class="rm" @click="gradeImages.splice(ii,1)">×</button>
+              </div>
+              <label class="addimg">＋
+                <input type="file" accept="image/*" multiple style="display:none" @change="onPickImages">
+              </label>
+            </div>
+            <div class="progressbar" v-if="ocrBusy||gradeBusy"><i :style="{width: progressPct+'%'}"></i></div>
+            <div class="muted" style="margin:8px 0" v-if="ocrBusy||gradeBusy">{{ busyText }}</div>
+            <div class="flag warn" v-if="ocrIssues">{{ ocrIssues }}</div>
+            <div class="actions">
+              <button class="btn btn-main" :disabled="!gradeImages.length || ocrBusy || gradeBusy" @click="ocrAndGrade">{{ curStudent.result ? '重新识别评分' : '识别并评分' }}</button>
+            </div>
+            <details class="ocr" v-if="ocrText || curStudent.result">
+              <summary>识别原文（可手动修正后再评分）</summary>
+              <textarea v-model="ocrText" rows="7"></textarea>
+              <div style="margin-top:8px"><button class="btn btn-ghost btn-sm" :disabled="!ocrText || gradeBusy" @click="gradeOnly">只按这份文本评分</button></div>
+            </details>
+            <template v-if="scores.length">
+              <hr style="border:none;border-top:1px dashed #e3e7ee;margin:12px 0 4px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0">
+                <b style="color:#1f3a5f">逐题得分（可直接改）</b>
+                <b style="color:#1f3a5f;font-size:17px">总分 {{ totalOf(scores) }} <span class="muted" style="font-weight:400">/ {{ test.total_score }}</span></b>
+              </div>
+              <div class="score-row" v-for="sc in scores" :key="sc.no">
+                <div class="qno">题{{ sc.no }}<small>{{ sc.label || '第'+sc.no+'题' }} · 满分{{ sc.full }}</small></div>
+                <div class="score-in">
+                  <input type="number" step="0.5" min="0" :max="sc.full" v-model.number="sc.score">
+                  <span class="full">/ {{ sc.full }}</span>
+                </div>
+                <div class="cm"><textarea v-model="sc.comment" rows="2" placeholder="给分/扣分依据"></textarea></div>
+              </div>
+              <div class="actions">
+                <button class="btn btn-ghost" :disabled="saving" @click="saveResult('graded')">保存</button>
+                <button class="btn btn-main" :disabled="saving" @click="saveResult('reviewed')">复核无误，下一人 →</button>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- 成绩 -->
+        <template v-if="tab==='report'">
+          <div class="card" v-if="reportRows.length">
+            <div class="stats">
+              <div class="s"><b>{{ reportRows.length }}</b><span>已阅人数</span></div>
+              <div class="s"><b>{{ reportAvg }}</b><span>平均分</span></div>
+              <div class="s"><b>{{ reportMax }}</b><span>最高分</span></div>
+              <div class="s"><b>{{ reportMin }}</b><span>最低分</span></div>
+            </div>
+            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+              <table class="grid">
+                <thead><tr>
+                  <th>姓名</th><th v-for="q in test.questions" :key="q.no">{{ q.no }}<br><small>{{ q.score }}分</small></th><th>总分</th>
+                </tr></thead>
+                <tbody>
+                  <tr v-for="r in reportRows" :key="r.student_id">
+                    <td class="name">{{ r.name }}</td>
+                    <td v-for="q in test.questions" :key="q.no">
+                      <template v-if="cellOf(r,q) !== null">
+                        <input type="number" step="0.5" min="0" :max="q.score" :value="cellOf(r,q)" @change="patchCell(r,q,$event)">
+                      </template>
+                      <span v-else class="muted">—</span>
+                    </td>
+                    <td class="total">{{ r.total }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="margin-top:16px">
+              <b style="color:#1f3a5f;font-size:14px">每题得分率（讲评重点）</b>
+              <div v-for="qa in questionAnalysis" :key="qa.no" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+                <span style="flex:0 0 90px;font-size:12px;color:#52657c;font-weight:600">题{{ qa.no }} <span class="muted">{{ Math.round(qa.rate*100) }}%</span></span>
+                <div class="qrate" style="flex:1"><i :style="{width:(qa.rate*100)+'%', background: qa.rate>=0.7?'#3e8e5a':(qa.rate>=0.4?'#d09a3e':'#c0564f')}"></i></div>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn btn-main" @click="exportXlsx">导出 Excel 成绩表</button>
+            </div>
+          </div>
+          <div class="card" v-else><div class="empty">还没有成绩，先去「阅卷」</div></div>
+        </template>
+      </template>
+    </template>
+  </div>
+
+  <!-- 新建/编辑周测弹层 -->
+  <div class="modal-mask" v-if="showEditor" @click.self="showEditor=false">
+    <div class="modal">
+      <h3>{{ editingId ? '编辑周测' : '新建周测' }}</h3>
+      <label class="f">周测名称</label>
+      <input v-model.trim="editor.name" placeholder="如：第三周语文周测">
+      <div class="row2">
+        <div><label class="f">班级</label><input v-model.trim="editor.class_name" placeholder="初三(2)班"></div>
+        <div><label class="f">日期</label><input v-model.trim="editor.exam_date" placeholder="2026-09-07"></div>
+      </div>
+      <template v-if="!editingId">
+        <label class="f">粘贴参考答案 / 评分标准（可 AI 自动拆题）</label>
+        <textarea v-model="editor.pasteText" rows="5" placeholder="一、古诗文默写（每空1分共10分）&#10;1. …&#10;二、诗歌鉴赏（4分）&#10;3. 参考答案：… 评分标准：…"></textarea>
+        <div style="margin-top:8px"><button class="btn btn-ghost btn-sm" :disabled="parseBusy || !editor.pasteText" @click="aiParse">{{ parseBusy ? 'AI 拆题中…' : 'AI 自动拆题' }}</button></div>
+      </template>
+      <label class="f">题目（题号 / 满分 / 参考答案与评分标准）</label>
+      <div class="qrow" v-for="(q,i) in editor.questions" :key="i">
+        <input v-model.trim="q.no" placeholder="题号 如 1">
+        <input type="number" step="0.5" min="0" v-model.number="q.score" placeholder="满分">
+        <div class="qdetail">
+          <input v-model.trim="q.label" placeholder="题型，如 古诗文默写">
+          <textarea v-model="q.answer" placeholder="参考答案（选填但强烈建议）"></textarea>
+          <input v-model="q.rubric" placeholder="评分标准，如 每空1分，错字该空不得分（选填）">
+        </div>
+        <button class="btn btn-danger btn-sm" style="padding:5px 8px" @click="editor.questions.splice(i,1)">×</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" @click="editor.questions.push({no:'',label:'',score:0,answer:'',rubric:''})">＋ 加一题</button>
+      <div class="muted" style="margin-top:8px">当前合计 {{ editorTotal }} 分 · {{ editor.questions.length }} 题</div>
+      <div class="flag err" v-if="editorError">{{ editorError }}</div>
+      <div class="actions">
+        <button class="btn btn-ghost" @click="showEditor=false">取消</button>
+        <button class="btn btn-main" :disabled="editorBusy" @click="saveEditor">{{ editorBusy ? '保存中…' : '保存' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 复制周测弹层 -->
+  <div class="modal-mask" v-if="showClone" @click.self="showClone=false">
+    <div class="modal">
+      <h3>复制「{{ cloneSrc.name }}」</h3>
+      <p class="muted">题目和班级会一并复制，改个名字就是本周周测。</p>
+      <label class="f">新周测名称</label>
+      <input v-model.trim="cloneName">
+      <label class="f" style="display:flex;gap:8px;align-items:center;margin-top:14px">
+        <input type="checkbox" v-model="cloneWithStudents" style="width:auto"> 同时复制学生名单
+      </label>
+      <div class="actions">
+        <button class="btn btn-ghost" @click="showClone=false">取消</button>
+        <button class="btn btn-main" :disabled="cloneBusy" @click="doClone">复制</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" v-if="toast">{{ toast }}</div>
+</div>
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+createApp({
+  setup() {
+    const token = ref(localStorage.getItem('yuejuan_token') || localStorage.getItem('broadcast_token') || '');
+    const user = ref(null);
+    const view = ref('tests');
+    const tab = ref('students');
+    const toast = ref('');
+    let toastTimer = null;
+    function say(msg) { toast.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.value = '', 3200); }
+
+    async function api(path, opts = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token.value) headers['x-token'] = token.value;
+      const res = await fetch(path, { ...opts, headers });
+      let data = {};
+      try { data = await res.json(); } catch (e) {}
+      if (res.status === 401) { user.value = null; token.value = ''; localStorage.removeItem('yuejuan_token'); throw new Error('登录已过期，请重新登录'); }
+      if (!res.ok || data.ok === false) throw new Error(data.error || ('请求失败 ' + res.status));
+      return data;
+    }
+
+    // ---------- 登录 ----------
+    const loginUser = ref(''); const loginPass = ref(''); const loginError = ref(''); const loginBusy = ref(false);
+    async function doLogin() {
+      if (!loginUser.value.trim() || !loginPass.value) { loginError.value = '请输入账号和密码'; return; }
+      loginBusy.value = true; loginError.value = '';
+      try {
+        const d = await api('/api/login', { method: 'POST', body: JSON.stringify({ username: loginUser.value.trim(), password: loginPass.value }) });
+        token.value = d.token;
+        localStorage.setItem('yuejuan_token', d.token);
+        localStorage.setItem('broadcast_token', d.token);
+        user.value = d.user || { username: loginUser.value };
+        await loadTests();
+      } catch (e) { loginError.value = e.message; }
+      loginBusy.value = false;
+    }
+    function logout() { token.value = ''; user.value = null; localStorage.removeItem('yuejuan_token'); localStorage.removeItem('broadcast_token'); }
+
+    // ---------- 周测列表 ----------
+    const tests = ref([]);
+    async function loadTests() {
+      const d = await api('/api/exam/tests');
+      tests.value = d.tests || [];
+    }
+    function backToList() { view.value = 'tests'; loadTests().catch(() => {}); }
+
+    // ---------- 新建 / 编辑 ----------
+    const showEditor = ref(false); const editingId = ref('');
+    const editor = ref({ name: '', class_name: '', exam_date: '', pasteText: '', questions: [] });
+    const editorError = ref(''); const editorBusy = ref(false); const parseBusy = ref(false);
+    const editorTotal = computed(() => Math.round(editor.value.questions.reduce((n, q) => n + (Number(q.score) || 0), 0) * 10) / 10);
+    function freshEditor() { return { name: '', class_name: (tests.value[0] && tests.value[0].class_name) || '', exam_date: new Date().toISOString().slice(0, 10), pasteText: '', questions: [{ no: '1', label: '', score: 0, answer: '', rubric: '' }] }; }
+    function openCreate() { editingId.value = ''; editorError.value = ''; editor.value = freshEditor(); showEditor.value = true; }
+    function openEdit() {
+      editingId.value = test.value.id; editorError.value = '';
+      editor.value = { name: test.value.name, class_name: test.value.class_name, exam_date: test.value.exam_date, pasteText: '', questions: test.value.questions.map(q => ({ ...q })) };
+      showEditor.value = true;
+    }
+    async function aiParse() {
+      parseBusy.value = true;
+      try {
+        const d = await api('/api/exam/parse-questions', { method: 'POST', body: JSON.stringify({ text: editor.value.pasteText }) });
+        if (d.questions && d.questions.length) editor.value.questions = d.questions.map(q => ({ no: String(q.no || ''), label: q.label || '', score: Number(q.score) || 0, answer: q.answer || '', rubric: q.rubric || '' }));
+        say('AI 拆出 ' + d.questions.length + ' 题，请核对题号、满分和答案');
+      } catch (e) { say(e.message); }
+      parseBusy.value = false;
+    }
+    async function saveEditor() {
+      const qs = editor.value.questions.filter(q => String(q.no).trim());
+      if (!editor.value.name) { editorError.value = '请填写周测名称'; return; }
+      if (!qs.length) { editorError.value = '请至少添加一道题'; return; }
+      editorBusy.value = true;
+      try {
+        if (editingId.value) {
+          const d = await api('/api/exam/tests/' + editingId.value, { method: 'PATCH', body: JSON.stringify({ name: editor.value.name, class_name: editor.value.class_name, exam_date: editor.value.exam_date, questions: qs }) });
+          test.value = d.test; await loadDetail(editingId.value);
+        } else {
+          const d = await api('/api/exam/tests', { method: 'POST', body: JSON.stringify({ name: editor.value.name, class_name: editor.value.class_name, exam_date: editor.value.exam_date, questions: qs }) });
+          showEditor.value = false;
+          await loadTests();
+          await loadDetail(d.test.id);
+          openTestRaw(d.test);
+          say('周测已创建，先去「名单」导入学生');
+          return;
+        }
+        showEditor.value = false;
+      } catch (e) { editorError.value = e.message; }
+      editorBusy.value = false;
+    }
+
+    // ---------- 复制 / 删除 ----------
+    const showClone = ref(false); const cloneSrc = ref(null); const cloneName = ref(''); const cloneWithStudents = ref(true); const cloneBusy = ref(false);
+    function openClone(t) { cloneSrc.value = t; cloneName.value = t.name.replace(/（副本）$/, '') + '（副本）'; cloneWithStudents.value = true; showClone.value = true; }
+    async function doClone() {
+      cloneBusy.value = true;
+      try {
+        const d = await api('/api/exam/tests/' + cloneSrc.value.id + '/clone', { method: 'POST', body: JSON.stringify({ name: cloneName.value, with_students: cloneWithStudents.value }) });
+        showClone.value = false;
+        await loadTests();
+        await loadDetail(d.test.id);
+        openTestRaw(d.test);
+        say('已复制，可以直接开始阅卷');
+        return;
+      } catch (e) { say(e.message); }
+      cloneBusy.value = false;
+    }
+    async function removeTest(t) {
+      if (!confirm('删除「' + t.name + '」？名单和成绩会一并删除，不可恢复。')) return;
+      try { await api('/api/exam/tests/' + t.id, { method: 'DELETE' }); await loadTests(); } catch (e) { say(e.message); }
+    }
+
+    // ---------- 周测详情 ----------
+    const test = ref(null); const students = ref([]);
+    function openTestRaw(t) {
+      test.value = t; view.value = 'exam';
+      gradeIndex.value = 0; scores.value = []; ocrText.value = ''; ocrIssues.value = ''; gradeImages.value = [];
+      tab.value = students.value.length ? 'grade' : 'students';
+    }
+    async function openTest(t) {
+      try { await loadDetail(t.id); openTestRaw(test.value); } catch (e) { say(e.message); }
+    }
+    async function loadDetail(id) {
+      const d = await api('/api/exam/tests/' + id);
+      test.value = d.test; students.value = d.students;
+      if (gradeIndex.value >= students.value.length) gradeIndex.value = 0;
+    }
+
+    // ---------- 名单 ----------
+    const rosterText = ref(''); const rosterBusy = ref(false);
+    async function importRoster() {
+      rosterBusy.value = true;
+      try {
+        const d = await api('/api/exam/tests/' + test.value.id + '/students', { method: 'POST', body: JSON.stringify({ names_text: rosterText.value }) });
+        rosterText.value = '';
+        students.value = d.students;
+        pickStudent(gradeIndex.value);
+        say('导入 ' + d.added + ' 人' + (d.skipped ? '，跳过重复 ' + d.skipped + ' 人' : ''));
+        tab.value = 'grade';
+      } catch (e) { say(e.message); }
+      rosterBusy.value = false;
+    }
+    async function removeStudent(s) {
+      if (!confirm('移除 ' + s.name + '？其成绩会一并删除。')) return;
+      try {
+        await api('/api/exam/tests/' + test.value.id + '/students/' + s.id, { method: 'DELETE' });
+        await loadDetail(test.value.id);
+      } catch (e) { say(e.message); }
+    }
+
+    // ---------- 阅卷 ----------
+    const gradeIndex = ref(0);
+    const curStudent = computed(() => students.value[gradeIndex.value] || null);
+    const gradeImages = ref([]); const ocrText = ref(''); const scores = ref([]);
+    const ocrIssues = ref(''); const ocrBusy = ref(false); const gradeBusy = ref(false); const saving = ref(false);
+    const busyText = ref(''); const progressPct = ref(0);
+    function pickStudent(i) {
+      gradeIndex.value = i;
+      const r = curStudent.value && curStudent.value.result;
+      scores.value = r && r.scores ? r.scores.map(x => ({ ...x })) : [];
+      ocrText.value = r && r.ocr_text || '';
+      ocrIssues.value = (r && r.ai_raw) || '';
+      gradeImages.value = [];
+    }
+    function onPickImages(ev) {
+      const files = Array.from(ev.target.files || []).slice(0, 4);
+      files.forEach(f => compressImage(f, url => gradeImages.value.push(url)));
+      ev.target.value = '';
+    }
+    function compressImage(file, cb) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const max = 1600;
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          cb(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    async function ocrAndGrade() {
+      ocrBusy.value = true; gradeBusy.value = false; ocrIssues.value = '';
+      let all = '';
+      try {
+        for (let i = 0; i < gradeImages.value.length; i++) {
+          busyText.value = 'AI 识别第 ' + (i + 1) + '/' + gradeImages.value.length + ' 张…';
+          progressPct.value = Math.round((i / (gradeImages.value.length + 1)) * 100);
+          const d = await api('/api/exam/ocr', { method: 'POST', body: JSON.stringify({ image: gradeImages.value[i] }) });
+          all += (all ? '\n' : '') + d.text;
+        }
+        ocrText.value = all;
+      } catch (e) { say(e.message); ocrBusy.value = false; progressPct.value = 0; return; }
+      ocrBusy.value = false;
+      await gradeOnly();
+    }
+    async function gradeOnly() {
+      gradeBusy.value = true; busyText.value = 'AI 逐题评分中…'; progressPct.value = 85;
+      try {
+        const d = await api('/api/exam/grade', { method: 'POST', body: JSON.stringify({ test_id: test.value.id, student_id: curStudent.value.id, ocr_text: ocrText.value }) });
+        scores.value = d.scores.map(x => ({ ...x }));
+        ocrIssues.value = d.ocr_issues || '';
+        curStudent.value.result = d.result;
+        say('AI 已评 ' + d.total + ' 分，请核对每题依据');
+      } catch (e) { say(e.message); }
+      progressPct.value = 0;
+      gradeBusy.value = false;
+    }
+    function totalOf(list) { return Math.round((list || []).reduce((n, s) => n + (Number(s.score) || 0), 0) * 10) / 10; }
+    async function saveResult(status) {
+      if (!scores.value.length) { say('还没有可保存的评分'); return; }
+      saving.value = true;
+      try {
+        const r = curStudent.value.result;
+        const d = await api('/api/exam/results/' + r.id, { method: 'PATCH', body: JSON.stringify({ scores: scores.value.map(s => ({ no: s.no, score: s.score, comment: s.comment })), status }) });
+        curStudent.value.result = d.result;
+        if (status === 'reviewed') {
+          const next = students.value.findIndex((s, i) => i > gradeIndex.value && !s.result);
+          const wrap = next < 0 ? students.value.findIndex(s => !s.result) : next;
+          if (wrap >= 0) { pickStudent(wrap); say('已保存复核，现在阅：' + students.value[wrap].name); }
+          else { say('全部阅完！可到「成绩」导出表格'); }
+        } else { say('已保存'); }
+      } catch (e) { say(e.message); }
+      saving.value = false;
+    }
+
+    // ---------- 成绩 ----------
+    const reportRows = computed(() => students.value
+      .filter(s => s.result && s.result.total !== null && s.result.total !== undefined)
+      .map(s => ({ student_id: s.id, result_id: s.result.id, name: s.name, total: s.result.total, scores: s.result.scores || [] }))
+      .sort((a, b) => b.total - a.total));
+    function cellOf(r, q) {
+      const hit = (r.scores || []).find(s => String(s.no).trim() === String(q.no).trim());
+      return hit ? hit.score : null;
+    }
+    async function patchCell(r, q, ev) {
+      const n = Number(ev.target.value);
+      if (!Number.isFinite(n)) return;
+      try {
+        const d = await api('/api/exam/results/' + r.result_id, { method: 'PATCH', body: JSON.stringify({ scores: [{ no: q.no, score: n }], status: 'reviewed' }) });
+        r.total = d.total;
+        const fixed = d.scores.find(s => String(s.no).trim() === String(q.no).trim());
+        const idx = r.scores.findIndex(s => String(s.no).trim() === String(q.no).trim());
+        if (fixed && idx >= 0) r.scores[idx].score = fixed.score;
+        const st = students.value.find(s => s.id === r.student_id);
+        if (st) st.result = d.result;
+        say('已改：' + r.name + ' 题' + q.no);
+      } catch (e) { say(e.message); }
+    }
+    const reportAvg = computed(() => reportRows.value.length ? Math.round(reportRows.value.reduce((n, r) => n + r.total, 0) / reportRows.value.length * 10) / 10 : 0);
+    const reportMax = computed(() => reportRows.value.length ? Math.max(...reportRows.value.map(r => r.total)) : 0);
+    const reportMin = computed(() => reportRows.value.length ? Math.min(...reportRows.value.map(r => r.total)) : 0);
+    const questionAnalysis = computed(() => (test.value ? test.value.questions : []).map(q => {
+      const vals = reportRows.value.map(r => cellOf(r, q)).filter(v => v !== null).map(Number);
+      const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+      return { no: q.no, full: q.score, avg: Math.round(avg * 10) / 10, rate: q.score ? avg / q.score : 0 };
+    }));
+    function exportXlsx() {
+      const head = ['姓名'].concat(test.value.questions.map(q => q.no + '(' + q.score + ')')).concat(['总分']);
+      const rows = reportRows.value.map(r => [r.name].concat(test.value.questions.map(q => { const v = cellOf(r, q); return v === null ? '' : v; })).concat([r.total]));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([head].concat(rows)), '成绩单');
+      const ana = [['题号', '满分', '平均分', '得分率']].concat(questionAnalysis.value.map(q => [q.no, q.full, q.avg, Math.round(q.rate * 100) + '%']));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ana), '题目分析');
+      XLSX.writeFile(wb, (test.value.name || '周测') + '-成绩.xlsx');
+    }
+
+    onMounted(async () => {
+      if (!token.value) return;
+      try {
+        const d = await api('/api/profile');
+        user.value = d.username ? d : { username: '' };
+        const c = await api('/api/exam/config');
+        if (!c.ocr_enabled || !c.ai_enabled) say('提示：AI 服务未完全配置，识别/评分可能不可用');
+        await loadTests();
+      } catch (e) {
+        if (String(e.message).indexOf('登录') >= 0) return;
+        say(e.message);
+      }
+    });
+
+    return {
+      user, view, tab, toast, say, api,
+      loginUser, loginPass, loginError, loginBusy, doLogin, logout,
+      tests, loadTests, backToList,
+      showEditor, editingId, editor, editorError, editorBusy, parseBusy, editorTotal, openCreate, openEdit, aiParse, saveEditor,
+      showClone, cloneSrc, cloneName, cloneWithStudents, cloneBusy, openClone, doClone, removeTest,
+      test, students, openTest, loadDetail,
+      rosterText, rosterBusy, importRoster, removeStudent,
+      gradeIndex, curStudent, gradeImages, ocrText, scores, ocrIssues, ocrBusy, gradeBusy, saving, busyText, progressPct,
+      pickStudent, onPickImages, ocrAndGrade, gradeOnly, totalOf, saveResult,
+      reportRows, cellOf, patchCell, reportAvg, reportMax, reportMin, questionAnalysis, exportXlsx
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

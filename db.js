@@ -723,6 +723,44 @@ function ensureSchema() {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_roundtable_credit_payment ON roundtable_credit_ledger(out_trade_no) WHERE out_trade_no IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS idx_roundtable_credit_card ON roundtable_credit_ledger(card_code) WHERE card_code IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_roundtable_cards_status ON roundtable_cards(status, created_at DESC);
+    CREATE TABLE IF NOT EXISTS exam_tests (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      class_name TEXT,
+      exam_date TEXT,
+      questions_json TEXT NOT NULL DEFAULT '[]',
+      total_score REAL NOT NULL DEFAULT 0,
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS exam_students (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      test_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      student_no TEXT,
+      sort_no INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS exam_results (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      test_id TEXT NOT NULL,
+      student_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'graded',
+      scores_json TEXT NOT NULL DEFAULT '[]',
+      total REAL,
+      ocr_text TEXT,
+      model TEXT,
+      ai_raw TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_exam_tests_user ON exam_tests(user_id, archived, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_exam_students_test ON exam_students(user_id, test_id, sort_no);
+    CREATE INDEX IF NOT EXISTS idx_exam_results_test ON exam_results(user_id, test_id, updated_at DESC);
   `);
   ensureColumn('users', 'contact_type', 'TEXT');
   ensureColumn('users', 'contact_value', 'TEXT');
@@ -4067,6 +4105,178 @@ function getSharedPointAdminStats() {
   };
 }
 
+// ==================== 周测阅卷 exam ====================
+function examId(prefix) {
+  return prefix + '_' + crypto.randomBytes(10).toString('hex');
+}
+
+function normalizeExamQuestions(input) {
+  if (!Array.isArray(input)) return [];
+  return input.slice(0, 40).map((raw, index) => {
+    const no = String(raw && raw.no !== undefined && raw.no !== null ? raw.no : index + 1).trim().slice(0, 20) || String(index + 1);
+    const scoreNum = Number(raw && raw.score);
+    const score = Math.round((Number.isFinite(scoreNum) ? Math.max(0, Math.min(100, scoreNum)) : 0) * 10) / 10;
+    return {
+      no,
+      label: String(raw && raw.label || '').trim().slice(0, 60),
+      score,
+      answer: String(raw && raw.answer || '').trim().slice(0, 2000),
+      rubric: String(raw && raw.rubric || '').trim().slice(0, 1000)
+    };
+  }).filter(q => q.no);
+}
+
+function examTestTotalScore(questions) {
+  return Math.round((Array.isArray(questions) ? questions : []).reduce((sum, q) => sum + (Number(q && q.score) || 0), 0) * 10) / 10;
+}
+
+function mapExamTest(row) {
+  if (!row) return null;
+  const mapped = { ...row, questions: safeJsonParse(row.questions_json, []), archived: !!row.archived };
+  delete mapped.questions_json;
+  return mapped;
+}
+
+function createExamTest(row) {
+  const now = new Date().toISOString();
+  const questions = normalizeExamQuestions(row.questions);
+  const item = {
+    id: examId('ext'), user_id: row.user_id,
+    name: String(row.name || '').trim().slice(0, 80) || '未命名周测',
+    class_name: String(row.class_name || '').trim().slice(0, 40),
+    exam_date: String(row.exam_date || '').trim().slice(0, 20),
+    total_score: examTestTotalScore(questions),
+    archived: 0, created_at: now, updated_at: now
+  };
+  item.questions_json = JSON.stringify(questions);
+  db.prepare(`INSERT INTO exam_tests (id,user_id,name,class_name,exam_date,questions_json,total_score,archived,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?)`).run(item.id, item.user_id, item.name, item.class_name, item.exam_date, item.questions_json, item.total_score, item.archived, item.created_at, item.updated_at);
+  return mapExamTest(db.prepare('SELECT * FROM exam_tests WHERE id = ? AND user_id = ?').get(item.id, row.user_id));
+}
+
+function listExamTests(userId) {
+  return db.prepare(`
+    SELECT t.*, (SELECT COUNT(*) FROM exam_students s WHERE s.test_id = t.id) AS student_count,
+           (SELECT COUNT(*) FROM exam_results r WHERE r.test_id = t.id AND r.total IS NOT NULL) AS graded_count
+    FROM exam_tests t WHERE t.user_id = ? AND t.archived = 0 ORDER BY t.updated_at DESC`).all(userId).map(mapExamTest);
+}
+
+function getExamTest(userId, id) {
+  return mapExamTest(db.prepare('SELECT * FROM exam_tests WHERE id = ? AND user_id = ?').get(id, userId));
+}
+
+function updateExamTest(userId, id, patch) {
+  const current = db.prepare('SELECT * FROM exam_tests WHERE id = ? AND user_id = ?').get(id, userId);
+  if (!current) return null;
+  const questions = patch.questions === undefined ? safeJsonParse(current.questions_json, []) : normalizeExamQuestions(patch.questions);
+  db.prepare(`UPDATE exam_tests SET name=?, class_name=?, exam_date=?, questions_json=?, total_score=?, archived=?, updated_at=? WHERE id=? AND user_id=?`).run(
+    String(patch.name == null ? current.name : patch.name).trim().slice(0, 80) || current.name,
+    String(patch.class_name == null ? current.class_name : patch.class_name).trim().slice(0, 40),
+    String(patch.exam_date == null ? current.exam_date : patch.exam_date).trim().slice(0, 20),
+    JSON.stringify(questions),
+    examTestTotalScore(questions),
+    patch.archived == null ? current.archived : (patch.archived ? 1 : 0),
+    new Date().toISOString(), id, userId
+  );
+  return getExamTest(userId, id);
+}
+
+function deleteExamTest(userId, id) {
+  const current = db.prepare('SELECT id FROM exam_tests WHERE id = ? AND user_id = ?').get(id, userId);
+  if (!current) return false;
+  db.prepare('DELETE FROM exam_results WHERE test_id = ? AND user_id = ?').run(id, userId);
+  db.prepare('DELETE FROM exam_students WHERE test_id = ? AND user_id = ?').run(id, userId);
+  db.prepare('DELETE FROM exam_tests WHERE id = ? AND user_id = ?').run(id, userId);
+  return true;
+}
+
+function addExamStudents(userId, testId, rows) {
+  const test = db.prepare('SELECT id FROM exam_tests WHERE id = ? AND user_id = ?').get(testId, userId);
+  if (!test) return null;
+  const existing = new Set(db.prepare('SELECT name FROM exam_students WHERE test_id = ? AND user_id = ?').all(testId, userId).map(r => r.name));
+  const now = new Date().toISOString();
+  const base = db.prepare('SELECT COUNT(*) AS n FROM exam_students WHERE test_id = ? AND user_id = ?').get(testId, userId).n;
+  let added = 0; let skipped = 0;
+  (Array.isArray(rows) ? rows : []).slice(0, 200).forEach((raw, index) => {
+    const name = String(typeof raw === 'string' ? raw : (raw && raw.name) || '').trim().slice(0, 40);
+    if (!name || existing.has(name)) { skipped++; return; }
+    const studentNo = String(typeof raw === 'object' && raw && raw.student_no || '').trim().slice(0, 40);
+    db.prepare('INSERT INTO exam_students (id,user_id,test_id,name,student_no,sort_no,created_at) VALUES (?,?,?,?,?,?,?)')
+      .run(examId('exs'), userId, testId, name, studentNo, base + index, now);
+    existing.add(name);
+    added++;
+  });
+  return { added, skipped };
+}
+
+function listExamStudents(userId, testId) {
+  return db.prepare('SELECT * FROM exam_students WHERE test_id = ? AND user_id = ? ORDER BY sort_no, created_at').all(testId, userId);
+}
+
+function getExamStudent(userId, testId, studentId) {
+  return db.prepare('SELECT * FROM exam_students WHERE id = ? AND test_id = ? AND user_id = ?').get(studentId, testId, userId) || null;
+}
+
+function deleteExamStudent(userId, testId, studentId) {
+  const current = db.prepare('SELECT id FROM exam_students WHERE id = ? AND test_id = ? AND user_id = ?').get(studentId, testId, userId);
+  if (!current) return false;
+  db.prepare('DELETE FROM exam_results WHERE student_id = ? AND test_id = ? AND user_id = ?').run(studentId, testId, userId);
+  db.prepare('DELETE FROM exam_students WHERE id = ? AND user_id = ?').run(studentId, userId);
+  return true;
+}
+
+function mapExamResult(row) {
+  if (!row) return null;
+  return { ...row, scores: safeJsonParse(row.scores_json, []), status: row.status || 'graded' };
+}
+
+function saveExamResult(row) {
+  const existing = db.prepare('SELECT * FROM exam_results WHERE test_id = ? AND student_id = ? AND user_id = ?').get(row.test_id, row.student_id, row.user_id);
+  const now = new Date().toISOString();
+  const scoresJson = JSON.stringify(Array.isArray(row.scores) ? row.scores : []);
+  if (existing) {
+    db.prepare(`UPDATE exam_results SET status=?, scores_json=?, total=?, ocr_text=?, model=?, ai_raw=?, updated_at=? WHERE id=?`).run(
+      String(row.status || existing.status || 'graded').slice(0, 20), scoresJson,
+      row.total === undefined ? existing.total : row.total,
+      row.ocr_text === undefined ? existing.ocr_text : String(row.ocr_text || '').slice(0, 30000),
+      row.model === undefined ? existing.model : String(row.model || '').slice(0, 80),
+      row.ai_raw === undefined ? existing.ai_raw : String(row.ai_raw || '').slice(0, 30000),
+      now, existing.id);
+    return mapExamResult(db.prepare('SELECT * FROM exam_results WHERE id = ?').get(existing.id));
+  }
+  const item = {
+    id: examId('exr'), user_id: row.user_id, test_id: row.test_id, student_id: row.student_id,
+    status: String(row.status || 'graded').slice(0, 20), scores_json: scoresJson,
+    total: row.total === undefined ? null : row.total,
+    ocr_text: String(row.ocr_text || '').slice(0, 30000),
+    model: String(row.model || '').slice(0, 80),
+    ai_raw: String(row.ai_raw || '').slice(0, 30000),
+    created_at: now, updated_at: now
+  };
+  db.prepare(`INSERT INTO exam_results (id,user_id,test_id,student_id,status,scores_json,total,ocr_text,model,ai_raw,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(item.id, item.user_id, item.test_id, item.student_id, item.status, item.scores_json, item.total, item.ocr_text, item.model, item.ai_raw, item.created_at, item.updated_at);
+  return mapExamResult(db.prepare('SELECT * FROM exam_results WHERE id = ?').get(item.id));
+}
+
+function getExamResult(userId, resultId) {
+  return mapExamResult(db.prepare('SELECT * FROM exam_results WHERE id = ? AND user_id = ?').get(resultId, userId));
+}
+
+function listExamResults(userId, testId) {
+  return db.prepare('SELECT * FROM exam_results WHERE test_id = ? AND user_id = ?').all(testId, userId).map(mapExamResult);
+}
+
+function updateExamResult(userId, resultId, patch) {
+  const current = db.prepare('SELECT * FROM exam_results WHERE id = ? AND user_id = ?').get(resultId, userId);
+  if (!current) return null;
+  db.prepare('UPDATE exam_results SET status=?, scores_json=?, total=?, updated_at=? WHERE id=?').run(
+    String(patch.status || current.status || 'reviewed').slice(0, 20),
+    patch.scores === undefined ? current.scores_json : JSON.stringify(Array.isArray(patch.scores) ? patch.scores : []),
+    patch.total === undefined ? current.total : patch.total,
+    new Date().toISOString(), resultId);
+  return mapExamResult(db.prepare('SELECT * FROM exam_results WHERE id = ?').get(resultId));
+}
+
 module.exports = {
   SQLITE_FILE,
   LEGACY_JSON_FILE,
@@ -4273,5 +4483,18 @@ module.exports = {
   listRoundtableCards,
   redeemRoundtableCard,
   listRoundtableAdminUsage,
-  getRoundtableAdminStats
+  getRoundtableAdminStats,
+  createExamTest,
+  listExamTests,
+  getExamTest,
+  updateExamTest,
+  deleteExamTest,
+  addExamStudents,
+  listExamStudents,
+  getExamStudent,
+  deleteExamStudent,
+  saveExamResult,
+  getExamResult,
+  listExamResults,
+  updateExamResult
 };
