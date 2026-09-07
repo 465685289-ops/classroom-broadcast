@@ -158,11 +158,15 @@ test('exam ocr bbox normalization and answer assembly', () => {
 
 test('exam docx pipeline prompt and glm engine wiring exist', () => {
   const enginesSrc = fs.readFileSync(path.join(ROOT, 'ai-engines.js'), 'utf8');
-  for (const fn of ['glmVisionModel', 'examVisionStructured', 'buildExamOcrStructuredPrompt', 'buildExamParsePaperPrompt']) {
+  for (const fn of ['glmVisionModel', 'examVisionStructured', 'buildExamOcrStructuredPrompt', 'buildExamParsePaperPrompt', 'deepseekVisionChat', 'deepseekVisionReady', 'buildExamOcrCompactPrompt']) {
     assert.ok(enginesSrc.includes('function ' + fn) || enginesSrc.includes('async function ' + fn), 'ai-engines 缺少 ' + fn);
   }
   assert.match(enginesSrc, /open\.bigmodel\.cn/);
-  assert.match(enginesSrc, /glm-5\.3-flash/);
+  assert.match(enginesSrc, /api\.deepseek\.com/);
+  assert.match(enginesSrc, /glm-4\.6v/, 'GLM 候选应以视觉模型 glm-4.6v 优先');
+  // 识别链：GLM 失败时转 DeepSeek 视觉/Qwen 兜底
+  assert.match(enginesSrc, /\[EXAM\] GLM 识别失败:/);
+  assert.match(enginesSrc, /if \(deepseekVisionReady\(\)\) \{\s*\n\s*try \{\s*\n\s*const r = await deepseekVisionChat\(imageDataUrl, buildExamOcrCompactPrompt\(\)/, 'DS 分支必须用精简提示词且失败不挡 Qwen');
   const routesSrc = fs.readFileSync(path.join(ROOT, 'exam-routes.js'), 'utf8');
   assert.ok(routesSrc.includes('/api/exam/parse-paper'), '缺少 docx 拆卷端点');
   assert.ok(routesSrc.includes('examNormalizeBbox'), '缺少 bbox 校验');
