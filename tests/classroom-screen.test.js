@@ -77,6 +77,8 @@ test('classroom broadcast requests the server voice first and keeps browser spee
     calls,
     ttsRunId: 0,
     stopCurrentTTS() {},
+    armTtsWatchdog() {},
+    disarmTtsWatchdog() {},
     speakTextFallback(text, repeatCount, onDone, runId) {
       calls.push({ text, repeatCount, onDone, runId });
     }
@@ -89,6 +91,20 @@ test('classroom broadcast requests the server voice first and keeps browser spee
   assert.match(page, /function\s+speakWithBrowserTTS\s*\(/);
   assert.doesNotMatch(page, /tts\.baidu\.com/);
   assert.doesNotMatch(page, /gainNode\.gain\.value\s*=\s*(?:[2-9]|[1-9]\d)/);
+});
+
+test('tts playback has a watchdog that forces the next notice when audio stalls', () => {
+  assert.match(page, /function\s+armTtsWatchdog\s*\(/);
+  assert.match(page, /function\s+disarmTtsWatchdog\s*\(/);
+  const speakBlock = page.match(/function\s+speakText\s*\([\s\S]*?(?=\/\/ 服务器精品语音方案)/);
+  assert.ok(speakBlock, '缺少 speakText 实现');
+  assert.match(speakBlock[0], /armTtsWatchdog\(text,\s*repeatCount,\s*guardedDone,\s*runId\)/, 'speakText 必须先布防看门狗');
+  assert.match(speakBlock[0], /disarmTtsWatchdog\(\)/, '正常播完必须撤防');
+  const armBlock = page.match(/function\s+armTtsWatchdog\s*\([\s\S]*?\n\}/);
+  assert.ok(armBlock, '缺少看门狗实现');
+  assert.match(armBlock[0], /Math\.min\(120000,/ , '兜底上限 120 秒');
+  assert.match(armBlock[0], /if\s*\(runId\s*!==\s*ttsRunId\)\s*return/, '过期布防不触发');
+  assert.match(armBlock[0], /stopCurrentTTS\(\)/, '超时先停当前播放再切下一条');
 });
 
 test('text-only notices stay silent while legacy notices still use voice playback', () => {
