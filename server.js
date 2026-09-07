@@ -1313,6 +1313,18 @@ app.put('/api/classes/:classId/management', userAuth, requireActivePlan, (req, r
   }
 });
 
+app.post('/api/classes/:classId/students/sync', userAuth, requireActivePlan, (req, res) => {
+  const cls = enabledManagementClass(req, res);
+  if (!cls) return;
+  try {
+    const result = dbStore.syncClassStudents(cls.id, req.body);
+    if (result.added || result.updated) io.to(`class:${cls.id}`).emit('class-roster-update', { class_id: cls.id });
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 app.post('/api/classes/:classId/students', userAuth, requireActivePlan, (req, res) => {
   const cls = enabledManagementClass(req, res);
   if (!cls) return;

@@ -1,0 +1,28 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const test = require('node:test');
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'roster-batch-'));
+process.env.SQLITE_FILE = path.join(tmp, 'test.db');
+process.env.LEGACY_JSON_FILE = path.join(tmp, 'missing.json');
+process.env.BACKUP_DIR = path.join(tmp, 'backups');
+const store = require('../db');
+test.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+test('batch roster is idempotent, retains extra students, and seats roll back atomically', () => {
+  store.upsertClass({ id: 'c1', user_id: 'u1', name: '虚构班', grade: 'junior', bind_code: 'BATCH1', member_ids: [], created_at: new Date().toISOString() });
+  store.createClassStudent({ id: 'extra', class_id: 'c1', name: '原有学生', student_no: 'old' });
+  const body = { students: [{ name: '同名学生', student_no: 's1' }, { name: '同名学生', student_no: 's2' }] };
+  assert.deepEqual(store.syncClassStudents('c1', body), { added: 2, updated: 0 });
+  assert.deepEqual(store.syncClassStudents('c1', body), { added: 0, updated: 0 });
+  assert.equal(store.listClassStudents('c1').length, 3);
+  const first = store.listClassStudents('c1').find(s => s.student_no === 's1');
+  assert.throws(() => store.syncClassStudents('c1', { seats: [{ id: first.id, seat_row: 1, seat_col: 1 }, { id: 'foreign', seat_row: 2, seat_col: 1 }] }), /不属于/);
+  assert.equal(store.getClassStudent('c1', first.id).seat_row, null);
+  const seats = { seats: [{ id: first.id, seat_row: 1, seat_col: 1 }] };
+  assert.deepEqual(store.syncClassStudents('c1', seats), { added: 0, updated: 1 });
+  assert.deepEqual(store.syncClassStudents('c1', seats), { added: 0, updated: 0 });
+  assert.throws(() => store.syncClassStudents('c1', { students: [{ name: '有效', student_no: 'new' }, { name: '冲突', student_no: 's1' }] }), /不唯一/);
+  assert.equal(store.listClassStudents('c1').length, 3);
+  assert.throws(() => store.syncClassStudents('c1', { students: Array(1001).fill({}) }), /1000/);
+});

@@ -1407,6 +1407,37 @@ function createClassStudent(input) {
   return getClassStudent(row.class_id, row.id);
 }
 
+function syncClassStudents(classId, input) {
+  const students = input.students || [];
+  const seats = input.seats || [];
+  if (!Array.isArray(students) || !Array.isArray(seats) || students.length + seats.length > 1000) throw new Error('每次最多同步 1000 项');
+  return db.transaction(() => {
+    let added = 0, updated = 0;
+    const numbers = new Set();
+    for (const raw of students) {
+      const student = classroomPoints.normalizeStudentInput(raw);
+      if (!student.student_no || numbers.has(student.student_no)) throw new Error('同步学生必须有唯一学号');
+      numbers.add(student.student_no);
+      const matches = db.prepare('SELECT * FROM class_students WHERE class_id = ? AND student_no = ? AND archived = 0').all(classId, student.student_no);
+      if (matches.length > 1 || (matches[0] && matches[0].name !== student.name)) throw new Error('学号对应学生不唯一，请先核对花名册');
+      if (!matches.length) { createClassStudent({ ...student, class_id: classId }); added++; }
+    }
+    const ids = new Set();
+    for (const seat of seats) {
+      if (!seat || ids.has(seat.id)) throw new Error('座位学生重复');
+      ids.add(seat.id);
+      const current = getClassStudent(classId, seat.id);
+      if (!current || current.archived) throw new Error('座位学生不属于当前班级');
+      const normalized = classroomPoints.normalizeStudentInput({ ...current, seat_row: seat.seat_row, seat_col: seat.seat_col });
+      if (current.seat_row !== normalized.seat_row || current.seat_col !== normalized.seat_col) {
+        updateClassStudent(classId, seat.id, { seat_row: normalized.seat_row, seat_col: normalized.seat_col });
+        updated++;
+      }
+    }
+    return { added, updated };
+  })();
+}
+
 function getClassStudent(classId, studentId) {
   return mapClassStudent(db.prepare('SELECT * FROM class_students WHERE class_id = ? AND id = ?').get(classId, studentId));
 }
@@ -4067,6 +4098,7 @@ module.exports = {
   getClassManagement,
   setClassManagement,
   createClassStudent,
+  syncClassStudents,
   getClassStudent,
   listClassStudents,
   updateClassStudent,
