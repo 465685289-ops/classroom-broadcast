@@ -84,3 +84,19 @@ test('class timetable persists through the classes extra_json field', () => {
   assert.equal(cls.timetable.entries.fri.length, 12);
   assert.equal(cls.timetable.updated_at, NOW);
 });
+
+test('class timetable keeps a teacher-controlled visible flag defaulting to shown', () => {
+  assert.equal(normalizeClassTimetable({ entries: { mon: ['语文'] } }).visible, true, '缺省视为对大屏显示');
+  assert.equal(normalizeClassTimetable({ entries: {}, visible: false }).visible, false);
+  assert.equal(normalizeClassTimetable({ visible: 'no' }).visible, true, '非布尔一律视为显示');
+
+  const saved = dbStore.saveClassTimetable('class-1', {
+    entries: { mon: ['语文'], fri: ['', '班会'] },
+    visible: false,
+    updated_at: NOW
+  });
+  assert.equal(saved.visible, false);
+  const cls = dbStore.loadClasses().find(item => item.id === 'class-1');
+  assert.equal(cls.timetable.visible, false);
+  assert.equal(cls.timetable.entries.fri[1], '班会', '隐藏开关不影响课表内容');
+});

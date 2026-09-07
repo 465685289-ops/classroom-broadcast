@@ -29,6 +29,7 @@ function normalizeClassTimetable(value = {}) {
   return {
     version: 1,
     entries,
+    visible: input.visible !== false,
     updated_at: typeof input.updated_at === 'string' ? input.updated_at : null
   };
 }

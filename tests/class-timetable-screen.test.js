@@ -41,3 +41,41 @@ test('weekly timetable loads after binding and follows live teacher updates', ()
   assert.match(page, /socket\.on\('bind-success',[\s\S]*?renderClassTimetable\(cls\.timetable\)/);
   assert.match(page, /socket\.on\('class-timetable-update',[\s\S]*?renderClassTimetable\(timetable\)/);
 });
+
+test('teacher visibility toggle hides the timetable board on the classroom screen', () => {
+  const helpers = page.match(/var SCREEN_TIMETABLE_DAYS[\s\S]*?(?=function\s+renderClassTimetable)/);
+  const render = page.match(/function\s+renderClassTimetable\s*\([\s\S]*?\n\}/);
+  assert.ok(helpers && render, '缺少教室端课表渲染函数');
+
+  const elements = {};
+  function element(id) {
+    if (!elements[id]) {
+      elements[id] = {
+        id,
+        hidden: false,
+        innerHTML: '',
+        classList: {
+          classes: new Set(),
+          add(name) { this.classes.add(name); },
+          remove(name) { this.classes.delete(name); },
+          contains(name) { return this.classes.has(name); },
+        },
+      };
+    }
+    return elements[id];
+  }
+  const context = { document: { getElementById: element } };
+  vm.runInNewContext(`${helpers[0]}${render[0]};
+    show = renderClassTimetable({ entries: { mon: ['语文'] }, visible: true }, 1);
+    hide = renderClassTimetable({ entries: { mon: ['语文'] }, visible: false }, 1);`, context);
+
+  assert.equal(elements.classTimetableBoard.hidden, true, '教师关闭后大屏不展示课表');
+  assert.equal(elements.screenTimetableGrid.innerHTML, '');
+  assert.equal(elements.idleRight.classList.contains('has-timetable'), false);
+
+  context.document.getElementById = element;
+  vm.runInNewContext('renderClassTimetable({ entries: { mon: ["语文"] }, visible: true }, 1)', context);
+  assert.equal(elements.classTimetableBoard.hidden, false, '重新开启后课表恢复展示');
+  assert.match(elements.screenTimetableGrid.innerHTML, /语文/);
+  assert.equal(elements.idleRight.classList.contains('has-timetable'), true);
+});
