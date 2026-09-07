@@ -1381,10 +1381,32 @@ function playAudioElement(audio, runId, onPlayError) {
   }
 }
 
+var ttsWatchdog = null;
+function disarmTtsWatchdog() { if (ttsWatchdog) { clearTimeout(ttsWatchdog); ttsWatchdog = null; } }
+function armTtsWatchdog(text, repeatCount, onDone, runId) {
+  disarmTtsWatchdog();
+  // 审查 F07：TTS 请求或音频卡死时的兜底时长上限，超时自动切下一条
+  var estimate = Math.min(120000, 15000 + repeatCount * (String(text).length * 350 + 2000));
+  ttsWatchdog = setTimeout(function() {
+    if (runId !== ttsRunId) return;
+    ttsWatchdog = null;
+    stopCurrentTTS();
+    onDone();
+  }, estimate);
+}
+
 function speakText(text, repeatCount, onDone) {
   stopCurrentTTS();
   var runId = ++ttsRunId;
-  speakTextFallback(text, repeatCount, onDone, runId);
+  var done = false;
+  var guardedDone = function() {
+    if (done) return;
+    done = true;
+    disarmTtsWatchdog();
+    onDone();
+  };
+  armTtsWatchdog(text, repeatCount, guardedDone, runId);
+  speakTextFallback(text, repeatCount, guardedDone, runId);
 }
 
 // 服务器精品语音方案

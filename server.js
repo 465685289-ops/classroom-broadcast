@@ -82,6 +82,10 @@ const {
 } = require('./essay-routes.js');
 
 const {
+  installExamRoutes
+} = require('./exam-routes.js');
+
+const {
   installTtsRoutes
 } = require('./tts-routes.js');
 
@@ -455,6 +459,7 @@ installEnglishRoutes(app);
 installReferralRoutes(app);
 installRoundtableRoutes(app);
 installEssayRoutes(app);
+installExamRoutes(app);
 installTtsRoutes(app);
 installTimetableRoutes(app, { requireActivePlan });
 installClassroomOnboardingRoutes(app);
