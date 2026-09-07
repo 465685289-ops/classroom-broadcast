@@ -688,7 +688,16 @@ createApp({
         batchPct.value = Math.round(done / queue.length * 100);
         it.status = 'ocr';
         try {
-          const d = await api('/api/exam/ocr', { method: 'POST', body: JSON.stringify({ image: it.dataUrl, questions: test.value.questions }) });
+          let d = await api('/api/exam/ocr', { method: 'POST', body: JSON.stringify({ image: it.dataUrl, questions: test.value.questions }) });
+          // 方向不对时模型可能什么都认不出：自动转 90° 重试一次，取有效作答更多的结果
+          if (!(d.answers || []).some(a => a.text)) {
+            batchText.value = '第 ' + done + ' 张没认出内容，转 90° 重试…';
+            try {
+              const rotated = await rotateDataUrl(it.dataUrl);
+              const d2 = await api('/api/exam/ocr', { method: 'POST', body: JSON.stringify({ image: rotated, questions: test.value.questions }) });
+              if ((d2.answers || []).some(a => a.text)) { d = d2; it.dataUrl = rotated; }
+            } catch (e2) {}
+          }
           it.answers = d.answers || [];
           it.answerCount = it.answers.filter(a => a.text).length;
           it.name = d.name || '';
