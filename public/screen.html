@@ -666,7 +666,8 @@ function renderClassTimetable(timetable, currentDayIndex) {
   var dayIndex = typeof currentDayIndex === 'number' ? currentDayIndex : new Date().getDay();
   var view = buildScreenTimetableHtml(timetable, dayIndex);
   renderedTimetableDay = dayIndex;
-  if (!view.hasEntries) {
+  // 教师端「教室与班级」可关闭课程表展示（visible === false），关闭后大屏不渲染
+  if (!view.hasEntries || (timetable && timetable.visible === false)) {
     board.hidden = true;
     grid.innerHTML = '';
     right.classList.remove('has-timetable');

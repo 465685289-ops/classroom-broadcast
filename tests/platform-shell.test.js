@@ -42,7 +42,8 @@ test('homepage navigation stays in the current tab and comment can return home',
   assert.match(home, /href="https:\/\/notice\.yingyuzuowen\.asia\/english\.html"[^>]*aria-label="进入英语作文批改"/);
   assert.match(home, /按今天的任务，选一件工具/);
   assert.match(home, /进入教师工作台 →/);
-  assert.match(home, /<b>1<\/b> 个工作台 · <b>6<\/b> 件教学工具/);
+  assert.match(home, /<b>1<\/b> 个工作台 · <b>7<\/b> 件教学工具/);
+  assert.match(home, /aria-label="进入周测 AI 阅卷"/);
   assert.match(comment, /class="shixing-home-link"[^>]+href="https:\/\/shixing\.yingyuzuowen\.asia\/"/);
 });
 

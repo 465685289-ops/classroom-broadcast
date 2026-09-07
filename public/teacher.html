@@ -197,6 +197,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","Segoe UI",s
 .timetable-actions{display:flex;gap:10px;margin-top:14px}
 .timetable-actions button{padding:11px 18px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
 .timetable-actions .save{border:1px solid #8a6228;background:linear-gradient(180deg,#a9793a,#8a6228);color:#fffaf0}
+.timetable-actions .toggle{border:1px solid #b8a06a;background:#f7f1e3;color:#6d5426}
+.timetable-actions .toggle.off{border:1px solid #c9b9a2;background:#f1ece2;color:#9a8a72}
 .timetable-actions .clear{border:1px solid var(--v-line,#e0d4bd);background:transparent;color:var(--v-ink-faint,#999)}
 @media(max-width:600px){
   .timetable-card-head{display:block}
@@ -832,6 +834,7 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
         </div>
         <div class="timetable-actions" id="classTimetableActions" style="display:none">
           <button type="button" class="save" onclick="saveClassTimetable()">保存课程表</button>
+          <button type="button" class="toggle" id="timetableVisibleBtn" onclick="toggleTimetableVisibility()">教室大屏显示中</button>
           <button type="button" class="clear" onclick="clearClassTimetable()">清空本班课表</button>
         </div>
       </div>
@@ -1106,6 +1109,7 @@ var forgotResetToken = '';
 var forgotCooldownTimer = null;
 var emailReminderShownForUser = '';
 var currentTimetableOwner = false;
+var currentTimetableVisible = true;
 var currentClassTimetable = null;
 
 // ========== Persistent Classroom Links ==========
@@ -1794,15 +1798,46 @@ function renderTimetableClassSelect() {
 function renderClassTimetable(payload) {
   currentTimetableOwner = !!(payload && payload.is_owner);
   currentClassTimetable = payload && payload.timetable ? payload.timetable : { entries: {} };
+  currentTimetableVisible = !(currentClassTimetable && currentClassTimetable.visible === false);
+  renderTimetableVisibleButton();
   var editor = document.getElementById('classTimetableEditor');
   var status = document.getElementById('classTimetableStatus');
   var actions = document.getElementById('classTimetableActions');
   editor.className = '';
   editor.innerHTML = buildTimetableEditorHtml(currentClassTimetable, currentTimetableOwner);
   status.textContent = currentTimetableOwner
-    ? '填写课程或安排后保存，空白单元格不会显示内容。'
+    ? (currentTimetableVisible ? '填写课程或安排后保存，空白单元格不会显示内容。' : '课程表已隐藏，教室大屏暂不展示。')
     : '只有班级创建者可以维护课程表；你目前可以查看。';
   actions.style.display = currentTimetableOwner ? 'flex' : 'none';
+}
+
+function renderTimetableVisibleButton() {
+  var btn = document.getElementById('timetableVisibleBtn');
+  if (!btn) return;
+  btn.className = 'toggle' + (currentTimetableVisible ? '' : ' off');
+  btn.textContent = currentTimetableVisible ? '教室大屏显示中' : '已在大屏隐藏';
+}
+
+function toggleTimetableVisibility() {
+  if (!currentTimetableOwner) return;
+  var classId = document.getElementById('timetableClassSelect').value;
+  if (!classId) return;
+  var nextVisible = !currentTimetableVisible;
+  var btn = document.getElementById('timetableVisibleBtn');
+  if (btn) btn.disabled = true;
+  fetch(API + '/api/classes/' + classId + '/timetable/visibility', {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({ visible: nextVisible })
+  })
+  .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+  .then(function(result) {
+    if (!result.ok) { toast(result.data.error || '课程表显示设置失败', 'error'); return; }
+    renderClassTimetable(result.data);
+    toast(nextVisible ? '课程表已恢复到教室大屏显示' : '课程表已在大屏隐藏，不再展示', 'success');
+  })
+  .catch(function() { toast('网络错误，课程表显示设置失败', 'error'); })
+  .finally(function() { if (btn) btn.disabled = false; });
 }
 
 function timetableEntriesFromEditor() {
@@ -1824,6 +1859,7 @@ function loadClassTimetable() {
   var status = document.getElementById('classTimetableStatus');
   var actions = document.getElementById('classTimetableActions');
   currentTimetableOwner = false;
+  currentTimetableVisible = true;
   currentClassTimetable = null;
   actions.style.display = 'none';
   if (!classId) {

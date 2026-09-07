@@ -153,3 +153,51 @@ test('only an active class owner can save the shared timetable', async () => {
   });
   assert.equal(expired.status, 403);
 });
+
+test('class owner can toggle timetable visibility and entries-only saves preserve it', async () => {
+  const ownerSave = await request('/api/classes/' + CLASS_ID + '/timetable', {
+    method: 'PUT',
+    body: { entries: { mon: ['语文'] } }
+  });
+  assert.equal(ownerSave.status, 200);
+  assert.equal(ownerSave.body.timetable.visible, true, '默认对大屏显示');
+
+  const memberToggle = await request('/api/classes/' + CLASS_ID + '/timetable/visibility', {
+    method: 'PUT',
+    token: MEMBER_TOKEN,
+    body: { visible: false }
+  });
+  assert.equal(memberToggle.status, 403);
+
+  const invalidToggle = await request('/api/classes/' + CLASS_ID + '/timetable/visibility', {
+    method: 'PUT',
+    body: { visible: 'no' }
+  });
+  assert.equal(invalidToggle.status, 400);
+
+  const hidden = await request('/api/classes/' + CLASS_ID + '/timetable/visibility', {
+    method: 'PUT',
+    body: { visible: false }
+  });
+  assert.equal(hidden.status, 200);
+  assert.equal(hidden.body.timetable.visible, false);
+  assert.equal(hidden.body.timetable.entries.mon[0], '语文', '隐藏不应清空课表内容');
+
+  const memberView = await request('/api/classes/' + CLASS_ID + '/timetable', { token: MEMBER_TOKEN });
+  assert.equal(memberView.body.timetable.visible, false, '协作老师也能看到当前显示状态');
+
+  const entriesOnly = await request('/api/classes/' + CLASS_ID + '/timetable', {
+    method: 'PUT',
+    body: { entries: { mon: ['数学'] } }
+  });
+  assert.equal(entriesOnly.status, 200);
+  assert.equal(entriesOnly.body.timetable.visible, false, '只保存课程内容不得重置显示开关');
+  assert.equal(entriesOnly.body.timetable.entries.mon[0], '数学');
+
+  const restored = await request('/api/classes/' + CLASS_ID + '/timetable/visibility', {
+    method: 'PUT',
+    body: { visible: true }
+  });
+  assert.equal(restored.status, 200);
+  assert.equal(restored.body.timetable.visible, true);
+});

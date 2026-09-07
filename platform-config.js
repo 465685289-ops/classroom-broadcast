@@ -134,6 +134,9 @@ const ESSAY_BASE_URL = essayConfigValue('ESSAY_BASE_URL', 'essay_base_url', '').
 const ENGLISH_BASE_URL = essayConfigValue('ENGLISH_BASE_URL', 'english_base_url', 'https://notice.yingyuzuowen.asia').replace(/\/+$/, '');
 const QWEN_API_KEY = essayConfigValue('QWEN_API_KEY', 'qwen_api_key', '');
 const QWEN_OCR_MODEL = essayConfigValue('QWEN_OCR_MODEL', 'qwen_ocr_model', 'qwen-vl-max') || 'qwen-vl-max';
+// 周测阅卷 GLM 视觉引擎：配置 glm_api_key 后优先生效，未配置回落 Qwen
+const GLM_API_KEY = essayConfigValue('GLM_API_KEY', 'glm_api_key', '');
+const GLM_OCR_MODEL = essayConfigValue('GLM_OCR_MODEL', 'glm_ocr_model', '') || '';
 const MINIMAX_API_KEYS = essayConfigValue('MINIMAX_API_KEYS', 'minimax_api_keys', '').split(/[,\s]+/).filter(Boolean);
 const MINIMAX_MODEL = essayConfigValue('MINIMAX_MODEL', 'minimax_model', 'MiniMax-M2.7') || 'MiniMax-M2.7';
 const FREE_ESSAY_CREDITS = 10;
@@ -250,6 +253,8 @@ module.exports = {
   ENGLISH_BASE_URL,
   QWEN_API_KEY,
   QWEN_OCR_MODEL,
+  GLM_API_KEY,
+  GLM_OCR_MODEL,
   MINIMAX_API_KEYS,
   MINIMAX_MODEL,
   FREE_ESSAY_CREDITS,

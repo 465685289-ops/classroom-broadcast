@@ -56,6 +56,15 @@ test('timetable uses the class API and keeps collaborator editing server-enforce
   assert.match(page, /if\s*\(!currentTimetableOwner\)\s*return/);
 });
 
+test('timetable card exposes a screen visibility toggle for the class owner', () => {
+  assert.match(page, /id="timetableVisibleBtn"/);
+  assert.match(page, /function\s+toggleTimetableVisibility\s*\(/);
+  assert.match(page, /function\s+renderTimetableVisibleButton\s*\(/);
+  assert.match(page, /\/api\/classes\/' \+ classId \+ '\/timetable\/visibility'/);
+  assert.match(page, /JSON\.stringify\(\{\s*visible:\s*nextVisible\s*\}\)/);
+  assert.match(page, /timetable-actions \.toggle/);
+});
+
 test('teacher page keeps syntactically valid inline JavaScript after timetable controls', () => {
   inlineScripts(page).forEach((source, index) => {
     new vm.Script(source, { filename: `public/teacher.html#inline-${index}` });
