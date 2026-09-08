@@ -13,11 +13,35 @@
   var currentLeaderboard = [];
   var ledger = [];
   var selectedStudentIds = [];
+  var selectedSeatStudentId = '';
   var rankingScope = 'term';
   var ledgerScope = 'term';
   var selectedPeriodId = '';
   var booted = false;
   var loading = false;
+
+  function buildSeatMove(students, selectedId, row, col) {
+    var seatRow = Number(row);
+    var seatCol = Number(col);
+    if (!Number.isInteger(seatRow) || !Number.isInteger(seatCol) || seatRow < 1 || seatCol < 1 || seatRow > 30 || seatCol > 30) {
+      throw new Error('座位位置无效');
+    }
+    var list = Array.isArray(students) ? students : [];
+    var selected = list.find(function(student) { return student.id === selectedId; });
+    if (!selected) throw new Error('请先选择学生');
+    var occupant = list.find(function(student) {
+      return student.id !== selectedId && Number(student.seat_row) === seatRow && Number(student.seat_col) === seatCol;
+    });
+    var updates = [{ id: selected.id, seat_row: seatRow, seat_col: seatCol }];
+    if (occupant) {
+      updates.push({
+        id: occupant.id,
+        seat_row: selected.seat_row === null || selected.seat_row === undefined ? null : Number(selected.seat_row),
+        seat_col: selected.seat_col === null || selected.seat_col === undefined ? null : Number(selected.seat_col)
+      });
+    }
+    return updates;
+  }
 
   function byId(id) { return root && root.document ? root.document.getElementById(id) : null; }
   function esc(value) {
@@ -82,7 +106,7 @@
     if (!select) return;
     var previous = selectedClassId || select.value;
     select.innerHTML = '<option value="">选择要管理的班级</option>' + classes.map(function(item) {
-      var suffix = item.management_enabled ? ' · 已开启班级管理' : ' · 仅广播';
+      var suffix = item.management_enabled ? ' · 教室端座位积分已开启' : ' · 仅广播';
       return '<option value="' + esc(item.id) + '">' + esc(item.name + suffix) + '</option>';
     }).join('');
     if (classById(previous)) {
@@ -118,14 +142,14 @@
     var ownerAction = '';
     if (cls.is_owner) {
       ownerAction = '<button class="ctp-primary" type="button" onclick="ClassroomPointsTeacher.toggleManagement(' + (!enabled) + ')">' +
-        (enabled ? '关闭班级管理' : '开启班级管理') + '</button>';
+        (enabled ? '关闭教室端座位积分' : '开启教室端座位积分') + '</button>';
     } else {
       ownerAction = '<span class="ctp-role-note">你是协作老师，开启或关闭由班级创建者操作</span>';
     }
     panel.innerHTML = '<div class="ctp-enable-copy"><span class="ctp-status-dot ' + (enabled ? 'on' : '') + '"></span><div><strong>' + esc(cls.name) +
-      (enabled ? '已开启班级管理' : '目前仅使用广播') + '</strong><p>' + (enabled
-        ? '教室端与教师端可以共同加扣分，全部操作都会进入不可改写的流水。'
-        : '开启后才会出现学生、座位、积分规则和排行榜；不需要的班级不受影响。') +
+      (enabled ? '已开启教室端座位积分' : '目前仅使用广播') + '</strong><p>' + (enabled
+        ? '教室端侧边栏会出现“座位积分”入口，点击后才显示座位表和加扣分区。'
+        : '开启后，教室端才会出现座位积分入口；日常广播页面不会常驻显示座位表。') +
       '</p><small>包含在班级广播订阅中，不消耗师行积分。</small></div></div><div class="ctp-enable-actions">' + ownerAction + '</div>';
     workspace.hidden = !enabled;
     if (enabled) {
@@ -166,6 +190,54 @@
       '<div class="ctp-student-chips">' + studentHtml + '</div><div class="ctp-rule-strip">' + (ruleHtml || '<span class="ctp-muted">请先添加积分规则</span>') + '</div>';
   }
 
+  function renderSeatLayout() {
+    var map = byId('pointsTeacherSeatMap');
+    var unseated = byId('pointsTeacherUnseated');
+    var hint = byId('pointsTeacherSeatHint');
+    if (!map || !unseated || !managementState) return;
+    var management = managementState.management || {};
+    var rows = Number(management.seat_rows) || 8;
+    var cols = Number(management.seat_cols) || 6;
+    var students = managementState.students || [];
+    if (!students.some(function(student) { return student.id === selectedSeatStudentId; })) selectedSeatStudentId = '';
+    var rowInput = byId('pointsTeacherSeatRows');
+    var colInput = byId('pointsTeacherSeatCols');
+    var saveButton = byId('pointsTeacherSeatLayoutSave');
+    var cls = currentClass();
+    if (rowInput) { rowInput.value = rows; rowInput.disabled = !cls || !cls.is_owner; }
+    if (colInput) { colInput.value = cols; colInput.disabled = !cls || !cls.is_owner; }
+    if (saveButton) saveButton.hidden = !cls || !cls.is_owner;
+    var occupied = {};
+    var waitingIds = {};
+    students.forEach(function(student) {
+      if (student.seat_row && student.seat_col && student.seat_row <= rows && student.seat_col <= cols) {
+        var key = student.seat_row + ':' + student.seat_col;
+        if (occupied[key]) waitingIds[student.id] = true;
+        else occupied[key] = student;
+      } else {
+        waitingIds[student.id] = true;
+      }
+    });
+    var cells = '';
+    for (var row = 1; row <= rows; row++) {
+      for (var col = 1; col <= cols; col++) {
+        var student = occupied[row + ':' + col];
+        var selected = student && student.id === selectedSeatStudentId;
+        cells += '<button type="button" class="ctp-seat-cell' + (student ? ' occupied' : '') + (selected ? ' selected' : '') + '" ' +
+          'onclick="ClassroomPointsTeacher.placeSeat(' + row + ',' + col + ')" aria-label="' + row + '排' + col + '列' + (student ? ' ' + esc(student.name) : ' 空位') + '">' +
+          (student ? '<strong>' + esc(student.name) + '</strong>' : '<span>' + row + '-' + col + '</span>') + '</button>';
+      }
+    }
+    map.style.setProperty('--ctp-seat-cols', cols);
+    map.innerHTML = cells;
+    var waiting = students.filter(function(student) { return !!waitingIds[student.id]; });
+    unseated.innerHTML = waiting.length ? '<span>待排座</span>' + waiting.map(function(student) {
+      return '<button type="button" class="' + (student.id === selectedSeatStudentId ? 'selected' : '') + '" onclick="ClassroomPointsTeacher.selectSeatStudent(\'' + esc(student.id) + '\')">' + esc(student.name) + '</button>';
+    }).join('') : '<span>全部学生已排座</span>';
+    var selectedStudent = students.find(function(student) { return student.id === selectedSeatStudentId; });
+    if (hint) hint.textContent = selectedStudent ? '已选择 ' + selectedStudent.name + '，点击目标座位；点已占座位会交换。' : '先点一名学生，再点目标座位。';
+  }
+
   function renderStudents() {
     var container = byId('pointsTeacherStudents');
     if (!container || !managementState) return;
@@ -177,7 +249,8 @@
     container.innerHTML = students.map(function(student) {
       var seat = student.seat_row && student.seat_col ? student.seat_row + ' 排 ' + student.seat_col + ' 列' : '未排座位';
       return '<div class="ctp-row"><div><strong>' + esc(student.name) + '</strong><small>' + esc(student.student_no || '无学号') + ' · ' + seat + '</small></div>' +
-        '<div class="ctp-row-actions"><button type="button" onclick="ClassroomPointsTeacher.editStudent(\'' + esc(student.id) + '\')">编辑</button>' +
+        '<div class="ctp-row-actions">' + (student.seat_row && student.seat_col ? '<button type="button" onclick="ClassroomPointsTeacher.clearSeat(\'' + esc(student.id) + '\')">清座</button>' : '') +
+        '<button type="button" onclick="ClassroomPointsTeacher.editStudent(\'' + esc(student.id) + '\')">编辑</button>' +
         '<button class="danger" type="button" onclick="ClassroomPointsTeacher.archiveStudent(\'' + esc(student.id) + '\')">移出</button></div></div>';
     }).join('');
   }
@@ -245,6 +318,7 @@
     renderEnablePanel();
     if (!managementState || !managementState.management || !managementState.management.enabled) return;
     renderQuickScore();
+    renderSeatLayout();
     renderStudents();
     renderRules();
     renderPeriods();
@@ -304,6 +378,7 @@
     var select = byId('pointsTeacherClassSelect');
     selectedClassId = classId || (select && select.value) || '';
     selectedStudentIds = [];
+    selectedSeatStudentId = '';
     rankingScope = 'term';
     ledgerScope = 'term';
     selectedPeriodId = '';
@@ -344,7 +419,7 @@
       return Promise.resolve();
     }
     var action = enabled ? '开启' : '关闭';
-    if (!root.confirm(action + '「' + cls.name + '」的班级管理？')) return Promise.resolve();
+    if (!root.confirm(action + '「' + cls.name + '」的教室端座位积分？')) return Promise.resolve();
     return request('/api/classes/' + encodeURIComponent(cls.id) + '/management', {
       method: 'PUT',
       body: { enabled: !!enabled, sound_enabled: !!cls.points_sound_enabled }
@@ -367,6 +442,61 @@
       managementState = state;
       notify(enabled ? '教室端积分提示音已开启' : '教室端积分提示音已关闭', 'success');
       renderAll();
+    }).catch(function(error) { notify(error.message, 'error'); });
+  }
+
+  function saveSeatLayout() {
+    var cls = currentClass();
+    if (!cls || !cls.is_owner || !managementState) return;
+    var rows = Number(byId('pointsTeacherSeatRows').value);
+    var cols = Number(byId('pointsTeacherSeatCols').value);
+    if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1 || rows > 30 || cols > 30) {
+      return notify('座位行列必须是 1 到 30 的整数', 'error');
+    }
+    request('/api/classes/' + encodeURIComponent(cls.id) + '/management', {
+      method: 'PUT',
+      body: { enabled: true, sound_enabled: !!managementState.management.sound_enabled, seat_rows: rows, seat_cols: cols }
+    }).then(function(state) {
+      managementState = state;
+      cls.seat_rows = state.management.seat_rows;
+      cls.seat_cols = state.management.seat_cols;
+      notify('座位表已设置为 ' + rows + ' 行 × ' + cols + ' 列，教室端将自动同步', 'success');
+      renderAll();
+    }).catch(function(error) { notify(error.message, 'error'); renderSeatLayout(); });
+  }
+
+  function selectSeatStudent(studentId) {
+    selectedSeatStudentId = selectedSeatStudentId === studentId ? '' : studentId;
+    renderSeatLayout();
+  }
+
+  function placeSeat(row, col) {
+    if (!managementState) return;
+    var students = managementState.students || [];
+    if (!selectedSeatStudentId) {
+      var occupant = students.find(function(student) { return Number(student.seat_row) === Number(row) && Number(student.seat_col) === Number(col); });
+      if (occupant) return selectSeatStudent(occupant.id);
+      return notify('请先在座位表或待排座名单中选择学生', 'error');
+    }
+    var seats;
+    try { seats = buildSeatMove(students, selectedSeatStudentId, row, col); }
+    catch (error) { return notify(error.message, 'error'); }
+    request('/api/classes/' + encodeURIComponent(selectedClassId) + '/students/sync', {
+      method: 'POST', body: { students: [], seats: seats }
+    }).then(function() {
+      selectedSeatStudentId = '';
+      notify(seats.length > 1 ? '座位已交换，教室端将自动同步' : '座位已更新，教室端将自动同步', 'success');
+      return refreshClass(selectedClassId);
+    }).catch(function(error) { notify(error.message, 'error'); });
+  }
+
+  function clearSeat(studentId) {
+    request('/api/classes/' + encodeURIComponent(selectedClassId) + '/students/sync', {
+      method: 'POST', body: { students: [], seats: [{ id: studentId, seat_row: null, seat_col: null }] }
+    }).then(function() {
+      if (selectedSeatStudentId === studentId) selectedSeatStudentId = '';
+      notify('已清除座位，教室端将自动同步', 'success');
+      return refreshClass(selectedClassId);
     }).catch(function(error) { notify(error.message, 'error'); });
   }
 
@@ -396,13 +526,11 @@
     if (!name) return notify('请输入学生姓名', 'error');
     var body = {
       name: name,
-      student_no: byId('pointsTeacherStudentNo').value.trim(),
-      seat_row: byId('pointsTeacherSeatRow').value || null,
-      seat_col: byId('pointsTeacherSeatCol').value || null
+      student_no: byId('pointsTeacherStudentNo').value.trim()
     };
     request('/api/classes/' + encodeURIComponent(selectedClassId) + '/students', { method: 'POST', body: body })
       .then(function() {
-        ['pointsTeacherStudentName','pointsTeacherStudentNo','pointsTeacherSeatRow','pointsTeacherSeatCol'].forEach(function(id) { byId(id).value = ''; });
+        ['pointsTeacherStudentName','pointsTeacherStudentNo'].forEach(function(id) { byId(id).value = ''; });
         notify('学生已添加', 'success');
         return refreshClass(selectedClassId);
       }).catch(function(error) { notify(error.message, 'error'); });
@@ -415,12 +543,8 @@
     if (name === null) return;
     var studentNo = root.prompt('学号（可留空）', student.student_no || '');
     if (studentNo === null) return;
-    var row = root.prompt('座位排数（可留空）', student.seat_row || '');
-    if (row === null) return;
-    var col = root.prompt('座位列数（可留空）', student.seat_col || '');
-    if (col === null) return;
     request('/api/classes/' + encodeURIComponent(selectedClassId) + '/students/' + encodeURIComponent(studentId), {
-      method: 'PATCH', body: { name: name, student_no: studentNo, seat_row: row || null, seat_col: col || null }
+      method: 'PATCH', body: { name: name, student_no: studentNo }
     }).then(function() { notify('学生信息已更新', 'success'); return refreshClass(selectedClassId); })
       .catch(function(error) { notify(error.message, 'error'); });
   }
@@ -518,6 +642,7 @@
   }
 
   return {
+    buildSeatMove: buildSeatMove,
     boot: boot,
     setClasses: setClasses,
     openClass: openClass,
@@ -525,6 +650,10 @@
     toggleFromClassList: toggleFromClassList,
     toggleManagement: toggleManagement,
     toggleSound: toggleSound,
+    saveSeatLayout: saveSeatLayout,
+    selectSeatStudent: selectSeatStudent,
+    placeSeat: placeSeat,
+    clearSeat: clearSeat,
     selectStudent: selectStudent,
     clearSelection: clearSelection,
     applyRule: applyRule,

@@ -368,12 +368,9 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
         </div>
       </div>
     </div>
-    <div class="points-idle-actions" id="pointsIdleActions" hidden>
-      <span id="pointsDailyStat">今日积分变动：0 次</span>
-      <button type="button" onclick="ClassroomPointsScreen.openMode('score')">加扣分</button>
-      <button type="button" onclick="ClassroomPointsScreen.openMode('rank')">积分榜</button>
-      <button type="button" onclick="ClassroomPointsScreen.openMode('ledger')">流水记录</button>
-    </div>
+    <aside class="points-idle-actions" id="pointsIdleActions" aria-label="教室工具侧边栏" hidden>
+      <button type="button" onclick="ClassroomPointsScreen.openMode('score')"><b>座</b><span>座位积分</span></button>
+    </aside>
   </div>
 
   <div class="points-mode" id="pointsScoreMode" hidden>
@@ -385,13 +382,17 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
         </div>
         <div class="points-toolbar">
           <span class="points-sync-status" id="pointsSyncStatus">已同步</span>
+          <button type="button" onclick="ClassroomPointsScreen.openMode('rank')">积分榜</button>
+          <button type="button" onclick="ClassroomPointsScreen.openMode('ledger')">流水记录</button>
           <button id="pointsBatchToggle" type="button" onclick="ClassroomPointsScreen.toggleBatchMode()">批量登记</button>
           <button type="button" onclick="ClassroomPointsScreen.undoLatest()">撤销上一条</button>
         </div>
       </header>
       <div class="points-score-layout">
         <main class="points-seat-area">
+          <div class="points-podium">讲台</div>
           <div class="points-seat-grid" id="pointsSeatGrid"></div>
+          <div class="points-unseated" id="pointsUnseatedStudents"></div>
         </main>
         <aside class="points-score-side">
           <div class="points-rule-panel" id="pointsRulePanel"></div>
@@ -600,6 +601,33 @@ var SCREEN_TIMETABLE_DAYS = [
 ];
 var SCREEN_TIMETABLE_SLOTS = ['早读','第1节','第2节','第3节','第4节','第5节','第6节','第7节','第8节','晚自习1','晚自习2','晚自习3'];
 
+function screenTimetableStructure(value) {
+  var input = value && value.structure && typeof value.structure === 'object' ? value.structure : null;
+  if (!input) return { configured:true, morning_reading:true, regular_count:8, evening_study_count:3 };
+  var regularCount = Number(input.regular_count);
+  var eveningCount = Number(input.evening_study_count);
+  return {
+    configured: input.configured !== false,
+    morning_reading: input.morning_reading !== false,
+    regular_count: Number.isInteger(regularCount) && regularCount >= 1 && regularCount <= 8 ? regularCount : 8,
+    evening_study_count: Number.isInteger(eveningCount) && eveningCount >= 0 && eveningCount <= 3 ? eveningCount : 3
+  };
+}
+
+function screenTimetableSlots(value) {
+  var structure = screenTimetableStructure(value);
+  var slots = [];
+  if (!structure.configured) return slots;
+  if (structure.morning_reading) slots.push({ index:0, label:SCREEN_TIMETABLE_SLOTS[0] });
+  for (var regular = 1; regular <= structure.regular_count; regular++) {
+    slots.push({ index:regular, label:SCREEN_TIMETABLE_SLOTS[regular] });
+  }
+  for (var evening = 0; evening < structure.evening_study_count; evening++) {
+    slots.push({ index:9 + evening, label:SCREEN_TIMETABLE_SLOTS[9 + evening] });
+  }
+  return slots;
+}
+
 function escapeScreenTimetableText(value) {
   return String(value == null ? '' : value)
     .replace(/&/g, '&amp;')
@@ -613,6 +641,7 @@ function normalizeScreenTimetable(value) {
   var source = value && value.entries && typeof value.entries === 'object' ? value.entries : {};
   var entries = {};
   var hasEntries = false;
+  var slots = screenTimetableSlots(value);
   for (var dayIndex = 0; dayIndex < SCREEN_TIMETABLE_DAYS.length; dayIndex++) {
     var key = SCREEN_TIMETABLE_DAYS[dayIndex].key;
     var sourceCells = Array.isArray(source[key]) ? source[key] : [];
@@ -620,10 +649,10 @@ function normalizeScreenTimetable(value) {
     for (var slotIndex = 0; slotIndex < SCREEN_TIMETABLE_SLOTS.length; slotIndex++) {
       var course = String(sourceCells[slotIndex] == null ? '' : sourceCells[slotIndex]).trim().slice(0, 30);
       entries[key].push(course);
-      if (course) hasEntries = true;
+      if (course && slots.some(function(slot) { return slot.index === slotIndex; })) hasEntries = true;
     }
   }
-  return { entries:entries, hasEntries:hasEntries };
+  return { entries:entries, hasEntries:hasEntries, slots:slots };
 }
 
 function buildScreenTimetableHtml(timetable, currentDayIndex) {
@@ -643,11 +672,12 @@ function buildScreenTimetableHtml(timetable, currentDayIndex) {
   }
   html += '</tr></thead><tbody>';
 
-  for (var slot = 0; slot < SCREEN_TIMETABLE_SLOTS.length; slot++) {
-    html += '<tr><th scope="row">' + SCREEN_TIMETABLE_SLOTS[slot] + '</th>';
+  for (var slot = 0; slot < normalized.slots.length; slot++) {
+    var slotInfo = normalized.slots[slot];
+    html += '<tr><th scope="row">' + slotInfo.label + '</th>';
     for (var column = 0; column < SCREEN_TIMETABLE_DAYS.length; column++) {
       var columnKey = SCREEN_TIMETABLE_DAYS[column].key;
-      var value = normalized.entries[columnKey][slot];
+      var value = normalized.entries[columnKey][slotInfo.index];
       html += '<td' + (columnKey === todayKey ? ' class="today"' : '') + '>';
       html += value ? escapeScreenTimetableText(value) : '<span class="course-empty">—</span>';
       html += '</td>';

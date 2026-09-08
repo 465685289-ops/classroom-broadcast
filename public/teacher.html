@@ -847,7 +847,7 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
           <div>
             <div class="ctp-kicker">CLASSROOM POINTS</div>
             <h2>班级积分工作台</h2>
-            <p>教师端和教室大屏共用一份学生名单、规则、排行榜与流水。</p>
+            <p>由老师按班级开启；座位表、规则、排行榜与流水和教室大屏实时同步。</p>
           </div>
           <div class="ctp-class-picker">
             <label for="pointsTeacherClassSelect">当前班级</label>
@@ -861,7 +861,7 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
           <div class="ctp-empty-state"><strong>还没有班级</strong><span>先到“班级管理”新建班级，再回来开启积分管理。</span></div>
         </div>
         <section class="ctp-enable-panel" id="pointsTeacherEnablePanel">
-          <div class="ctp-empty-state"><strong>选择一个班级</strong><span>班级管理按班级单独开启，不需要的班级仍保持纯广播。</span></div>
+          <div class="ctp-empty-state"><strong>选择一个班级</strong><span>教室端座位积分按班级单独开启，不需要的班级仍保持纯广播。</span></div>
         </section>
 
         <div class="ctp-workspace" id="pointsTeacherWorkspace" hidden>
@@ -882,11 +882,25 @@ h1,h2,h3,h4,.auth-box h1,.profile-name,.modal-box h3,.letter-card h3{
                 <div class="ctp-inline-form">
                   <input id="pointsTeacherStudentName" type="text" placeholder="学生姓名">
                   <input id="pointsTeacherStudentNo" type="text" placeholder="学号（可选）">
-                  <input id="pointsTeacherSeatRow" type="number" min="1" max="30" placeholder="排">
-                  <input id="pointsTeacherSeatCol" type="number" min="1" max="30" placeholder="列">
                   <button type="button" onclick="ClassroomPointsTeacher.addStudent()">添加</button>
                 </div>
                 <div class="ctp-scroll-list" id="pointsTeacherStudents"></div>
+              </section>
+
+              <section class="ctp-card ctp-seat-card">
+                <div class="ctp-card-head">
+                  <div><h3>教室端座位表</h3><p>先设置行列，再选择学生并点击座位；保存后教室端实时同步</p></div>
+                  <div class="ctp-seat-size">
+                    <label>行 <input id="pointsTeacherSeatRows" type="number" min="1" max="30" value="8"></label>
+                    <span>×</span>
+                    <label>列 <input id="pointsTeacherSeatCols" type="number" min="1" max="30" value="6"></label>
+                    <button id="pointsTeacherSeatLayoutSave" type="button" onclick="ClassroomPointsTeacher.saveSeatLayout()">保存行列</button>
+                  </div>
+                </div>
+                <div class="ctp-seat-hint" id="pointsTeacherSeatHint">先点一名学生，再点目标座位。</div>
+                <div class="ctp-podium">讲台</div>
+                <div class="ctp-seat-map" id="pointsTeacherSeatMap"></div>
+                <div class="ctp-unseated" id="pointsTeacherUnseated"></div>
               </section>
 
               <section class="ctp-card">
@@ -1757,7 +1771,20 @@ function normalizeTimetableForEditor(timetable) {
       return String(cells[index] || '').slice(0, 30);
     });
   });
-  return { entries: entries };
+  var structureSource = timetable && timetable.structure && typeof timetable.structure === 'object' ? timetable.structure : null;
+  var structure = structureSource ? {
+    configured: structureSource.configured !== false,
+    morning_reading: structureSource.morning_reading !== false,
+    regular_count: Number.isInteger(Number(structureSource.regular_count)) && Number(structureSource.regular_count) >= 1 && Number(structureSource.regular_count) <= 8 ? Number(structureSource.regular_count) : 8,
+    evening_study_count: Number.isInteger(Number(structureSource.evening_study_count)) && Number(structureSource.evening_study_count) >= 0 && Number(structureSource.evening_study_count) <= 3 ? Number(structureSource.evening_study_count) : 3
+  } : { configured:true, morning_reading:true, regular_count:8, evening_study_count:3 };
+  var slots = [];
+  if (structure.configured && structure.morning_reading) slots.push({ index:0, label:CLASS_TIMETABLE_SLOTS[0] });
+  if (structure.configured) {
+    for (var regular = 1; regular <= structure.regular_count; regular++) slots.push({ index:regular, label:CLASS_TIMETABLE_SLOTS[regular] });
+    for (var evening = 0; evening < structure.evening_study_count; evening++) slots.push({ index:9 + evening, label:CLASS_TIMETABLE_SLOTS[9 + evening] });
+  }
+  return { entries: entries, structure:structure, slots:slots };
 }
 
 function escapeTimetableAttribute(value) {
@@ -1766,16 +1793,18 @@ function escapeTimetableAttribute(value) {
 
 function buildTimetableEditorHtml(timetable, isOwner) {
   var normalized = normalizeTimetableForEditor(timetable);
+  if (!normalized.structure.configured) return '<div class="timetable-empty">请先到师行教师工作台确认本班课程结构。</div>';
   var html = '<table class="class-timetable-table"><thead><tr><th class="slot-head">时段</th>';
   CLASS_TIMETABLE_DAYS.forEach(function(day) {
     html += '<th' + (day.weekend ? ' class="weekend-col"' : '') + '>' + day.label + '</th>';
   });
   html += '</tr></thead><tbody>';
-  CLASS_TIMETABLE_SLOTS.forEach(function(slot, slotIndex) {
-    html += '<tr><th class="slot-head">' + slot + '</th>';
+  normalized.slots.forEach(function(slot) {
+    var slotIndex = slot.index;
+    html += '<tr><th class="slot-head">' + slot.label + '</th>';
     CLASS_TIMETABLE_DAYS.forEach(function(day) {
       var value = normalized.entries[day.key][slotIndex];
-      html += '<td' + (day.weekend ? ' class="weekend-col"' : '') + '><input type="text" maxlength="30" data-day="' + day.key + '" data-slot="' + slotIndex + '" value="' + escapeTimetableAttribute(value) + '" aria-label="' + day.label + ' ' + slot + '"' + (isOwner ? '' : ' readonly') + '></td>';
+      html += '<td' + (day.weekend ? ' class="weekend-col"' : '') + '><input type="text" maxlength="30" data-day="' + day.key + '" data-slot="' + slotIndex + '" value="' + escapeTimetableAttribute(value) + '" aria-label="' + day.label + ' ' + slot.label + '"' + (isOwner ? '' : ' readonly') + '></td>';
     });
     html += '</tr>';
   });
@@ -1805,10 +1834,11 @@ function renderClassTimetable(payload) {
   var actions = document.getElementById('classTimetableActions');
   editor.className = '';
   editor.innerHTML = buildTimetableEditorHtml(currentClassTimetable, currentTimetableOwner);
+  var timetableConfigured = !(currentClassTimetable.structure && currentClassTimetable.structure.configured === false);
   status.textContent = currentTimetableOwner
-    ? (currentTimetableVisible ? '填写课程或安排后保存，空白单元格不会显示内容。' : '课程表已隐藏，教室大屏暂不展示。')
+    ? (!timetableConfigured ? '请先到师行教师工作台确认本班课程结构。' : (currentTimetableVisible ? '填写课程或安排后保存，空白单元格不会显示内容。' : '课程表已隐藏，教室大屏暂不展示。'))
     : '只有班级创建者可以维护课程表；你目前可以查看。';
-  actions.style.display = currentTimetableOwner ? 'flex' : 'none';
+  actions.style.display = currentTimetableOwner && timetableConfigured ? 'flex' : 'none';
 }
 
 function renderTimetableVisibleButton() {
@@ -1844,9 +1874,10 @@ function timetableEntriesFromEditor() {
   var editor = document.getElementById('classTimetableEditor');
   var entries = {};
   CLASS_TIMETABLE_DAYS.forEach(function(day) {
+    var currentCells = currentClassTimetable && currentClassTimetable.entries && Array.isArray(currentClassTimetable.entries[day.key]) ? currentClassTimetable.entries[day.key] : [];
     entries[day.key] = CLASS_TIMETABLE_SLOTS.map(function(_, slotIndex) {
       var input = editor.querySelector('[data-day="' + day.key + '"][data-slot="' + slotIndex + '"]');
-      return input ? input.value.trim().slice(0, 30) : '';
+      return input ? input.value.trim().slice(0, 30) : String(currentCells[slotIndex] || '').trim().slice(0, 30);
     });
   });
   return entries;

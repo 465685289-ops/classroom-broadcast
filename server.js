@@ -102,6 +102,7 @@ const {
 } = require('./classroom-onboarding-routes.js');
 
 const {
+  emptyClassTimetable,
   normalizeClassTimetable
 } = require('./class-timetable.js');
 
@@ -238,6 +239,8 @@ function classResponse(cls, userId, onlineCounts) {
     members: getClassUsers(cls),
     management_enabled: !!cls.management_enabled,
     points_sound_enabled: !!cls.points_sound_enabled,
+    seat_rows: Number(cls.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
+    seat_cols: Number(cls.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS,
     online: onlineCounts ? (onlineCounts[cls.id] || 0) : 0
   };
 }
@@ -273,6 +276,8 @@ function classManagementPayload(cls) {
     class_id: cls.id,
     enabled: false,
     sound_enabled: false,
+    seat_rows: classroomPoints.DEFAULT_SEAT_ROWS,
+    seat_cols: classroomPoints.DEFAULT_SEAT_COLS,
     archived_at: null
   };
   const periods = management.enabled ? dbStore.listClassScorePeriods(cls.id) : [];
@@ -1226,6 +1231,7 @@ app.post('/api/classes', userAuth, requireActivePlan, (req, res) => {
     management_enabled: false,
     points_sound_enabled: false,
     archived_at: null,
+    timetable: emptyClassTimetable(),
     created_at: new Date().toISOString()
   };
   store.classes.push(cls);
@@ -1302,10 +1308,14 @@ app.put('/api/classes/:classId/management', userAuth, requireActivePlan, (req, r
     const management = dbStore.setClassManagement(cls.id, {
       enabled: req.body.enabled,
       sound_enabled: req.body.sound_enabled,
+      seat_rows: req.body.seat_rows,
+      seat_cols: req.body.seat_cols,
       updated_at: new Date().toISOString()
     });
     cls.management_enabled = management.enabled;
     cls.points_sound_enabled = management.sound_enabled;
+    cls.seat_rows = management.seat_rows;
+    cls.seat_cols = management.seat_cols;
     if (management.enabled) {
       ensureDefaultClassScoreRules(cls.id);
       dbStore.ensureCurrentClassScorePeriod(cls.id, new Date().toISOString());
@@ -1516,7 +1526,9 @@ app.post('/api/screen/session', (req, res) => {
       name: cls.name,
       grade: cls.grade || 'junior',
       management_enabled: !!cls.management_enabled,
-      points_sound_enabled: !!cls.points_sound_enabled
+      points_sound_enabled: !!cls.points_sound_enabled,
+      seat_rows: Number(cls.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
+      seat_cols: Number(cls.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS
     }
   });
 });
@@ -2417,6 +2429,8 @@ io.on('connection', (socket) => {
       grade: cls.grade || 'junior',
       management_enabled: !!cls.management_enabled,
       points_sound_enabled: !!cls.points_sound_enabled,
+      seat_rows: Number(cls.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
+      seat_cols: Number(cls.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS,
       timetable: normalizeClassTimetable(cls.timetable),
       screen_token: issueScreenSession(cls)
     });

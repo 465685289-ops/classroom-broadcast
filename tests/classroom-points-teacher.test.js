@@ -40,6 +40,31 @@ test('teacher workspace contains real scoring, roster, rules, period, ranking an
   new Function(source);
 });
 
+test('teacher can configure a visual seat grid and swap two occupied seats', () => {
+  ['pointsTeacherSeatRows', 'pointsTeacherSeatCols', 'pointsTeacherSeatMap', 'pointsTeacherUnseated'].forEach((id) => {
+    assert.match(html, new RegExp(`id="${id}"`));
+  });
+  const teacher = require('../public/classroom-points-teacher');
+  assert.deepEqual(teacher.buildSeatMove([
+    { id: 'a', seat_row: 2, seat_col: 3 },
+    { id: 'b', seat_row: 2, seat_col: 4 }
+  ], 'a', 2, 4), [
+    { id: 'a', seat_row: 2, seat_col: 4 },
+    { id: 'b', seat_row: 2, seat_col: 3 }
+  ]);
+  assert.deepEqual(teacher.buildSeatMove([
+    { id: 'a', seat_row: null, seat_col: null },
+    { id: 'b', seat_row: 2, seat_col: 4 }
+  ], 'a', 2, 4), [
+    { id: 'a', seat_row: 2, seat_col: 4 },
+    { id: 'b', seat_row: null, seat_col: null }
+  ]);
+
+  const source = fs.readFileSync(path.join(ROOT, 'public', 'classroom-points-teacher.js'), 'utf8');
+  assert.match(source, /ClassroomPointsTeacher\.clearSeat/);
+  assert.match(source, />清座</);
+});
+
 test('existing tabs delegate the points tab lifecycle without changing broadcast billing', () => {
   assert.match(html, /ClassroomPointsTeacher\.boot/);
   assert.match(html, /ClassroomPointsTeacher\.setClasses/);

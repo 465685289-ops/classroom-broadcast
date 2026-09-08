@@ -70,8 +70,24 @@
     };
   }
 
+  function buildSeatGridModel(students, rows, cols) {
+    var seatRows = Math.max(1, Math.min(30, Number(rows) || 8));
+    var seatCols = Math.max(1, Math.min(30, Number(cols) || 6));
+    var cells = new Array(seatRows * seatCols).fill(null);
+    var unseated = [];
+    (Array.isArray(students) ? students : []).forEach(function(student) {
+      var row = Number(student && student.seat_row);
+      var col = Number(student && student.seat_col);
+      var valid = Number.isInteger(row) && Number.isInteger(col) && row >= 1 && col >= 1 && row <= seatRows && col <= seatCols;
+      var index = valid ? (row - 1) * seatCols + col - 1 : -1;
+      if (!valid || cells[index] !== null) unseated.push(student.id);
+      else cells[index] = student.id;
+    });
+    return { cells: cells, unseated: unseated };
+  }
+
   if (!root || !root.document) {
-    return { IDLE_TIMEOUT_MS: IDLE_TIMEOUT_MS, createModeController: createModeController };
+    return { IDLE_TIMEOUT_MS: IDLE_TIMEOUT_MS, createModeController: createModeController, buildSeatGridModel: buildSeatGridModel };
   }
 
   var document = root.document;
@@ -157,7 +173,7 @@
     var actions = byId('pointsIdleActions');
     if (!actions) return;
     actions.hidden = !managementEnabled();
-    actions.style.display = managementEnabled() ? 'flex' : 'none';
+    actions.style.display = managementEnabled() ? 'block' : 'none';
     var daily = byId('pointsDailyStat');
     if (daily) {
       var count = classroomState && Number(classroomState.today_entry_count) || 0;
@@ -179,30 +195,51 @@
 
   function renderSeatGrid() {
     var grid = byId('pointsSeatGrid');
+    var unseated = byId('pointsUnseatedStudents');
     if (!grid) return;
     var students = classroomState && classroomState.students || [];
     var scores = rankingMap();
     if (!students.length) {
       grid.innerHTML = '<div class="points-empty">还没有学生名单<br><small>请老师先在教师端添加学生并安排座位</small></div>';
+      if (unseated) unseated.innerHTML = '';
       return;
     }
+    var management = classroomState && classroomState.management || {};
+    var rows = Number(management.seat_rows) || 8;
+    var cols = Number(management.seat_cols) || 6;
+    var model = buildSeatGridModel(students, rows, cols);
+    var studentMap = {};
+    students.forEach(function(student) { studentMap[student.id] = student; });
     var html = '';
-    students.forEach(function(student) {
+    model.cells.forEach(function(studentId, index) {
+      if (!studentId) {
+        html += '<div class="points-seat-empty" aria-label="空座位"><span>' + (Math.floor(index / cols) + 1) + '-' + (index % cols + 1) + '</span></div>';
+        return;
+      }
+      var student = studentMap[studentId];
       var score = scores[student.id] ? scores[student.id].score : 0;
       var selected = selectedStudentIds.indexOf(student.id) >= 0;
-      var style = '';
-      if (student.seat_row && student.seat_col) {
-        style = ' style="grid-row:' + Number(student.seat_row) + ';grid-column:' + Number(student.seat_col) + '"';
-      }
-      html += '<button type="button" class="points-student-card' + (selected ? ' selected' : '') + '" data-student-id="' + escapeHtml(student.id) + '"' + style + '>';
+      html += '<button type="button" class="points-student-card' + (selected ? ' selected' : '') + '" data-student-id="' + escapeHtml(student.id) + '">';
       html += '<span class="points-student-name">' + escapeHtml(student.name) + '</span>';
       html += '<span class="points-student-score">' + (score > 0 ? '+' : '') + score + '</span>';
       html += '</button>';
     });
+    grid.style.setProperty('--points-seat-cols', cols);
+    grid.setAttribute('aria-label', rows + ' 行 ' + cols + ' 列座位表');
     grid.innerHTML = html;
     grid.querySelectorAll('[data-student-id]').forEach(function(button) {
       button.addEventListener('click', function() { selectStudent(button.getAttribute('data-student-id')); });
     });
+    if (unseated) {
+      unseated.innerHTML = model.unseated.length ? '<span>待排座</span>' + model.unseated.map(function(studentId) {
+        var student = studentMap[studentId];
+        var score = scores[studentId] ? scores[studentId].score : 0;
+        return '<button type="button" data-student-id="' + escapeHtml(studentId) + '"><strong>' + escapeHtml(student.name) + '</strong><small>' + (score > 0 ? '+' : '') + score + '</small></button>';
+      }).join('') : '';
+      unseated.querySelectorAll('[data-student-id]').forEach(function(button) {
+        button.addEventListener('click', function() { selectStudent(button.getAttribute('data-student-id')); });
+      });
+    }
   }
 
   function renderRulePanel() {
@@ -461,7 +498,8 @@
       .then(function(state) {
         classroomState = state;
         updateIdleActions();
-        renderMode(modeController.mode());
+        if (!managementEnabled() && modeController.mode() !== 'idle') modeController.reset();
+        else renderMode(modeController.mode());
         return state;
       })
       .catch(function(error) {
@@ -610,6 +648,7 @@
   return {
     IDLE_TIMEOUT_MS: IDLE_TIMEOUT_MS,
     createModeController: createModeController,
+    buildSeatGridModel: buildSeatGridModel,
     onBound: onBound,
     onUnbound: onUnbound,
     openMode: openMode,

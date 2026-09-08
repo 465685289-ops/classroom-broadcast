@@ -115,12 +115,31 @@ test('class members can read a normalized empty timetable while outsiders cannot
   assert.equal(memberView.body.is_owner, false);
   assert.deepEqual(Object.keys(memberView.body.timetable.entries), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
   assert.equal(memberView.body.timetable.entries.mon.length, 12);
+  assert.equal(memberView.body.timetable.structure.configured, true, '存量班级保留原 12 节结构');
 
   const outsiderView = await request('/api/classes/' + CLASS_ID + '/timetable', { token: OUTSIDER_TOKEN });
   assert.equal(outsiderView.status, 404);
 
   const anonymousView = await request('/api/classes/' + CLASS_ID + '/timetable', { token: null });
   assert.equal(anonymousView.status, 401);
+});
+
+test('new classes require structure confirmation before timetable editing', async () => {
+  const created = await request('/api/classes', {
+    method: 'POST',
+    body: { name: '小学一年级一班', grade: 'primary' }
+  });
+  assert.equal(created.status, 200);
+  const timetable = await request('/api/classes/' + created.body.id + '/timetable');
+  assert.equal(timetable.status, 200);
+  assert.equal(timetable.body.timetable.structure.configured, false);
+  assert.equal(timetable.body.timetable.structure.regular_count, 8);
+  const prematureSave = await request('/api/classes/' + created.body.id + '/timetable', {
+    method: 'PUT',
+    body: { entries: { mon: ['', '语文'] } }
+  });
+  assert.equal(prematureSave.status, 400);
+  assert.match(prematureSave.body.error, /先确认本班课程结构/);
 });
 
 test('only an active class owner can save the shared timetable', async () => {
@@ -193,6 +212,7 @@ test('class owner can toggle timetable visibility and entries-only saves preserv
   assert.equal(entriesOnly.status, 200);
   assert.equal(entriesOnly.body.timetable.visible, false, '只保存课程内容不得重置显示开关');
   assert.equal(entriesOnly.body.timetable.entries.mon[0], '数学');
+  assert.equal(entriesOnly.body.timetable.structure.regular_count, 8, '只保存内容不得重置课程结构');
 
   const restored = await request('/api/classes/' + CLASS_ID + '/timetable/visibility', {
     method: 'PUT',
@@ -200,4 +220,50 @@ test('class owner can toggle timetable visibility and entries-only saves preserv
   });
   assert.equal(restored.status, 200);
   assert.equal(restored.body.timetable.visible, true);
+});
+
+test('only owner can confirm and later modify course structure while hidden courses remain stored', async () => {
+  const seeded = await request('/api/classes/' + CLASS_ID + '/timetable', {
+    method: 'PUT',
+    body: { entries: { mon: ['早读', '语文', '数学', '英语', '物理', '化学', '体育', '旧第7节', '旧第8节', '旧晚1'] } }
+  });
+  assert.equal(seeded.status, 200);
+
+  const memberChange = await request('/api/classes/' + CLASS_ID + '/timetable/structure', {
+    method: 'PUT',
+    token: MEMBER_TOKEN,
+    body: { morning_reading: false, regular_count: 6, evening_study_count: 0 }
+  });
+  assert.equal(memberChange.status, 403);
+
+  const invalid = await request('/api/classes/' + CLASS_ID + '/timetable/structure', {
+    method: 'PUT',
+    body: { morning_reading: false, regular_count: 0, evening_study_count: 0 }
+  });
+  assert.equal(invalid.status, 400);
+  assert.match(invalid.body.error, /正课节数/);
+
+  const primary = await request('/api/classes/' + CLASS_ID + '/timetable/structure', {
+    method: 'PUT',
+    body: { morning_reading: false, regular_count: 6, evening_study_count: 0 }
+  });
+  assert.equal(primary.status, 200);
+  assert.deepEqual(primary.body.timetable.structure, {
+    configured: true,
+    morning_reading: false,
+    regular_count: 6,
+    evening_study_count: 0
+  });
+  assert.equal(primary.body.timetable.entries.mon[7], '旧第7节');
+  assert.equal(primary.body.timetable.entries.mon[9], '旧晚1');
+
+  const secondary = await request('/api/classes/' + CLASS_ID + '/timetable/structure', {
+    method: 'PUT',
+    body: { morning_reading: true, regular_count: 8, evening_study_count: 1 }
+  });
+  assert.equal(secondary.status, 200);
+  assert.equal(secondary.body.timetable.structure.regular_count, 8);
+  assert.equal(secondary.body.timetable.structure.evening_study_count, 1);
+  assert.equal(secondary.body.timetable.entries.mon[7], '旧第7节');
+  assert.equal(secondary.body.timetable.entries.mon[9], '旧晚1');
 });

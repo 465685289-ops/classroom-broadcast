@@ -120,10 +120,12 @@ test('class management is opt-in and only the class owner can toggle it', async 
   assert.equal(memberToggle.status, 403);
 
   const enabled = await request('/api/classes/' + CLASS_ID + '/management', {
-    method: 'PUT', body: { enabled: true, sound_enabled: false }
+    method: 'PUT', body: { enabled: true, sound_enabled: false, seat_rows: 9, seat_cols: 7 }
   });
   assert.equal(enabled.status, 200);
   assert.equal(enabled.body.management.enabled, true);
+  assert.equal(enabled.body.management.seat_rows, 9);
+  assert.equal(enabled.body.management.seat_cols, 7);
   assert.ok(enabled.body.current_period.id);
   assert.ok(enabled.body.rules.length >= 4);
 });
@@ -145,6 +147,12 @@ test('teacher can configure students and rules for a management-enabled class', 
   assert.equal(memberView.status, 200);
   assert.equal(memberView.body.students[0].id, studentId);
   assert.ok(memberView.body.rules.some(item => item.id === ruleId));
+
+  const shrink = await request('/api/classes/' + CLASS_ID + '/management', {
+    method: 'PUT', body: { seat_rows: 1, seat_cols: 2 }
+  });
+  assert.equal(shrink.status, 400);
+  assert.match(shrink.body.error, /李明/);
 });
 
 test('screen and teacher writes share one idempotent ledger and leaderboard', async () => {
@@ -153,11 +161,15 @@ test('screen and teacher writes share one idempotent ledger and leaderboard', as
   });
   assert.equal(session.status, 200);
   assert.equal(session.body.class.management_enabled, true);
+  assert.equal(session.body.class.seat_rows, 9);
+  assert.equal(session.body.class.seat_cols, 7);
   screenToken = session.body.screen_token;
 
   const state = await request('/api/screen/classroom-state', { token: null, screenToken });
   assert.equal(state.status, 200);
   assert.equal(state.body.students[0].id, studentId);
+  assert.equal(state.body.management.seat_rows, 9);
+  assert.equal(state.body.management.seat_cols, 7);
 
   const screenScoreBody = {
     client_operation_id: 'screen-api-op-1',
@@ -256,6 +268,33 @@ test('batch synchronization is authenticated, subscription-gated, class-scoped a
   assert.equal(first.status, 200);
   assert.deepEqual(first.body, { added: 1, updated: 0 });
   assert.deepEqual((await request(endpoint, { method: 'POST', body })).body, { added: 0, updated: 0 });
+});
+
+test('owner can hide the screen entry without deleting roster, layout or score history', async () => {
+  const disabled = await request('/api/classes/' + CLASS_ID + '/management', {
+    method: 'PUT', body: { enabled: false }
+  });
+  assert.equal(disabled.status, 200);
+  assert.equal(disabled.body.management.enabled, false);
+  assert.equal(disabled.body.management.seat_rows, 9);
+  assert.deepEqual(disabled.body.students, []);
+
+  const screenState = await request('/api/screen/classroom-state', { token: null, screenToken });
+  assert.equal(screenState.status, 200);
+  assert.equal(screenState.body.management.enabled, false);
+  assert.deepEqual(screenState.body.students, []);
+
+  const reenabled = await request('/api/classes/' + CLASS_ID + '/management', {
+    method: 'PUT', body: { enabled: true }
+  });
+  assert.equal(reenabled.status, 200);
+  assert.equal(reenabled.body.management.enabled, true);
+  assert.equal(reenabled.body.management.seat_cols, 7);
+  assert.ok(reenabled.body.students.some(item => item.id === studentId));
+  const previousPeriod = reenabled.body.periods.find(item => item.status === 'ended');
+  const historicalLedger = await request('/api/classes/' + CLASS_ID + '/points/ledger?scope=term&period_id=' + previousPeriod.id);
+  assert.equal(historicalLedger.status, 200);
+  assert.ok(historicalLedger.body.items.length >= 3);
 });
 
 test('deleting a managed class archives its history and removes it from active classes', async () => {

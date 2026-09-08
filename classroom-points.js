@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 
 const SCORE_SOURCES = new Set(['screen', 'teacher']);
+const DEFAULT_SEAT_ROWS = 8;
+const DEFAULT_SEAT_COLS = 6;
 
 function boundedText(value, maxLength) {
   return String(value === undefined || value === null ? '' : value).trim().slice(0, maxLength);
@@ -18,11 +20,28 @@ function integerOrNull(value, name, min, max) {
 function normalizeStudentInput(input) {
   const name = boundedText(input && input.name, 30);
   if (!name) throw new Error('请输入学生姓名');
+  const seatRow = integerOrNull(input && input.seat_row, '座位行号', 1, 30);
+  const seatCol = integerOrNull(input && input.seat_col, '座位列号', 1, 30);
+  if ((seatRow === null) !== (seatCol === null)) throw new Error('座位行号和列号必须同时填写');
   return {
     name,
     student_no: boundedText(input && input.student_no, 30),
-    seat_row: integerOrNull(input && input.seat_row, '座位行号', 1, 30),
-    seat_col: integerOrNull(input && input.seat_col, '座位列号', 1, 30)
+    seat_row: seatRow,
+    seat_col: seatCol
+  };
+}
+
+function normalizeSeatLayout(input, fallback) {
+  const current = fallback || {};
+  const rows = input && input.seat_rows !== undefined ? input.seat_rows : current.seat_rows;
+  const cols = input && input.seat_cols !== undefined ? input.seat_cols : current.seat_cols;
+  const normalizedRows = integerOrNull(rows === undefined ? DEFAULT_SEAT_ROWS : rows, '座位行数', 1, 30);
+  const normalizedCols = integerOrNull(cols === undefined ? DEFAULT_SEAT_COLS : cols, '座位列数', 1, 30);
+  if (normalizedRows === null) throw new Error('座位行数必须是 1 到 30 之间的整数');
+  if (normalizedCols === null) throw new Error('座位列数必须是 1 到 30 之间的整数');
+  return {
+    seat_rows: normalizedRows,
+    seat_cols: normalizedCols
   };
 }
 
@@ -148,7 +167,10 @@ function sourceLabel(source) {
 }
 
 module.exports = {
+  DEFAULT_SEAT_ROWS,
+  DEFAULT_SEAT_COLS,
   normalizeStudentInput,
+  normalizeSeatLayout,
   normalizeRuleInput,
   normalizeScoreSource,
   buildScoreEntries,

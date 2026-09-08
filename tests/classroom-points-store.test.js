@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -51,6 +52,39 @@ test('normalizes students and score rules with bounded values', () => {
     active: 1
   });
   assert.throws(() => points.normalizeRuleInput({ name: '无效', delta: 0 }), /非零整数/);
+
+  assert.deepEqual(points.normalizeSeatLayout({}), { seat_rows: 8, seat_cols: 6 });
+  assert.deepEqual(points.normalizeSeatLayout({ seat_rows: '9', seat_cols: 7 }), { seat_rows: 9, seat_cols: 7 });
+  assert.throws(() => points.normalizeSeatLayout({ seat_rows: 0, seat_cols: 7 }), /座位行数/);
+  assert.throws(() => points.normalizeSeatLayout({ seat_rows: null, seat_cols: 7 }), /座位行数/);
+  assert.throws(() => points.normalizeSeatLayout({ seat_rows: 8, seat_cols: '' }), /座位列数/);
+  assert.throws(() => points.normalizeStudentInput({ name: '不完整座位', seat_row: 2 }), /行号和列号/);
+});
+
+test('custom seat dimensions survive a service restart', () => {
+  const restartDb = path.join(TMP, 'restart.db');
+  const env = {
+    ...process.env,
+    SQLITE_FILE: restartDb,
+    LEGACY_JSON_FILE: path.join(TMP, 'restart-missing-data.json'),
+    BACKUP_DIR: path.join(TMP, 'restart-backups')
+  };
+  execFileSync(process.execPath, ['-e', `
+    const store = require('./db');
+    store.upsertClass({
+      id: 'restart-class', user_id: 'teacher-1', name: '小班', grade: 'junior',
+      bind_code: 'RST123', member_ids: [], created_at: '${NOW}'
+    });
+    store.setClassManagement('restart-class', { seat_rows: 4, seat_cols: 5 });
+  `], { cwd: path.join(__dirname, '..'), env });
+  const output = execFileSync(process.execPath, ['-e', `
+    const store = require('./db');
+    process.stdout.write(JSON.stringify(store.getClassManagement('restart-class')));
+  `], { cwd: path.join(__dirname, '..'), env, encoding: 'utf8' });
+  assert.deepEqual(JSON.parse(output), {
+    class_id: 'restart-class', enabled: false, sound_enabled: false,
+    seat_rows: 4, seat_cols: 5, archived_at: null
+  });
 });
 
 test('class management is opt-in and stores stable students, rules and a current period', () => {
@@ -58,15 +92,21 @@ test('class management is opt-in and stores stable students, rules and a current
     class_id: 'class-1',
     enabled: false,
     sound_enabled: false,
+    seat_rows: 8,
+    seat_cols: 6,
     archived_at: null
   });
 
   const management = dbStore.setClassManagement('class-1', {
     enabled: true,
     sound_enabled: false,
+    seat_rows: 9,
+    seat_cols: 7,
     updated_at: NOW
   });
   assert.equal(management.enabled, true);
+  assert.equal(management.seat_rows, 9);
+  assert.equal(management.seat_cols, 7);
 
   const student = dbStore.createClassStudent({
     id: 'student-1',
@@ -98,6 +138,45 @@ test('class management is opt-in and stores stable students, rules and a current
   assert.equal(period.class_id, 'class-1');
   assert.equal(period.status, 'current');
   assert.equal(dbStore.ensureCurrentClassScorePeriod('class-1', NOW).id, period.id);
+});
+
+test('seat dimensions cannot strand students outside the configured grid', () => {
+  const edge = dbStore.createClassStudent({
+    id: 'student-edge', class_id: 'class-1', name: '边界学生', student_no: '080199',
+    seat_row: 9, seat_col: 7, created_at: NOW, updated_at: NOW
+  });
+  assert.equal(edge.seat_row, 9);
+  assert.throws(() => dbStore.setClassManagement('class-1', { seat_rows: 8, seat_cols: 6 }), /边界学生/);
+  assert.throws(() => dbStore.createClassStudent({
+    id: 'student-outside', class_id: 'class-1', name: '超界学生',
+    seat_row: 10, seat_col: 1, created_at: NOW, updated_at: NOW
+  }), /超出当前 9 行 × 7 列/);
+  dbStore.updateClassStudent('class-1', 'student-edge', { archived: true, updated_at: NOW });
+});
+
+test('batch seat synchronization swaps students without creating duplicate seats', () => {
+  const second = dbStore.createClassStudent({
+    id: 'student-2', class_id: 'class-1', name: '王华', student_no: '080102',
+    seat_row: 2, seat_col: 4, created_at: NOW, updated_at: NOW
+  });
+  assert.equal(second.seat_col, 4);
+  const swapped = dbStore.syncClassStudents('class-1', {
+    students: [],
+    seats: [
+      { id: 'student-1', seat_row: 2, seat_col: 4 },
+      { id: 'student-2', seat_row: 2, seat_col: 3 }
+    ]
+  });
+  assert.equal(swapped.updated, 2);
+  assert.equal(dbStore.getClassStudent('class-1', 'student-1').seat_col, 4);
+  assert.equal(dbStore.getClassStudent('class-1', 'student-2').seat_col, 3);
+  assert.throws(() => dbStore.syncClassStudents('class-1', {
+    students: [],
+    seats: [
+      { id: 'student-1', seat_row: 2, seat_col: 3 },
+      { id: 'student-2', seat_row: 2, seat_col: 3 }
+    ]
+  }), /座位重复/);
 });
 
 test('score entries are idempotent and reversal keeps an auditable pair', () => {
