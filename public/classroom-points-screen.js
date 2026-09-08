@@ -86,11 +86,26 @@
     return { cells: cells, unseated: unseated };
   }
 
+  function rankSeatSelectionStudents(students, leaderboard) {
+    var standings = {};
+    (Array.isArray(leaderboard) ? leaderboard : []).forEach(function(item, index) {
+      standings[item.student_id] = { rank: index, score: Number(item.score) || 0 };
+    });
+    return (Array.isArray(students) ? students : []).slice().sort(function(a, b) {
+      var left = standings[a.id] || { rank: Number.MAX_SAFE_INTEGER, score: 0 };
+      var right = standings[b.id] || { rank: Number.MAX_SAFE_INTEGER, score: 0 };
+      if (left.rank !== right.rank) return left.rank - right.rank;
+      if (left.score !== right.score) return right.score - left.score;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN');
+    });
+  }
+
   if (!root || !root.document) {
     return {
       IDLE_TIMEOUT_MS: IDLE_TIMEOUT_MS,
       createModeController: createModeController,
       buildSeatGridModel: buildSeatGridModel,
+      rankSeatSelectionStudents: rankSeatSelectionStudents,
       openScoreModal: openScoreModal,
       closeScoreModal: closeScoreModal,
       applyRuleForModalStudent: applyRuleForModalStudent,
@@ -113,6 +128,8 @@
   var ledgerDirectionFilter = '';
   var activeScoreOscillator = null;
   var activeScoreGain = null;
+  var seatSelectionStudentId = '';
+  var seatSelectionSaving = false;
 
   function byId(id) { return document.getElementById(id); }
 
@@ -177,11 +194,15 @@
     return !!(classroomState && classroomState.management && classroomState.management.enabled);
   }
 
+  function seatSelectionActive() {
+    return !!(managementEnabled() && classroomState.management.seat_selection_active);
+  }
+
   function updateIdleActions() {
     var actions = byId('pointsIdleActions');
     if (!actions) return;
     actions.hidden = !managementEnabled();
-    actions.style.display = managementEnabled() ? 'block' : 'none';
+    actions.style.display = managementEnabled() ? 'inline-flex' : 'none';
     var daily = byId('pointsDailyStat');
     if (daily) {
       var count = classroomState && Number(classroomState.today_entry_count) || 0;
@@ -205,6 +226,10 @@
     var grid = byId('pointsSeatGrid');
     var unseated = byId('pointsUnseatedStudents');
     if (!grid) return;
+    if (seatSelectionActive()) {
+      renderSeatSelectionGrid(grid, unseated);
+      return;
+    }
     var students = classroomState && classroomState.students || [];
     var scores = rankingMap();
     if (!students.length) {
@@ -250,9 +275,55 @@
     }
   }
 
+  function renderSeatSelectionGrid(grid, unseated) {
+    var students = classroomState && classroomState.students || [];
+    var scores = rankingMap();
+    var management = classroomState && classroomState.management || {};
+    var rows = Number(management.seat_rows) || 8;
+    var cols = Number(management.seat_cols) || 6;
+    var model = buildSeatGridModel(students, rows, cols);
+    var studentMap = {};
+    students.forEach(function(student) { studentMap[student.id] = student; });
+    var html = '';
+    model.cells.forEach(function(studentId, index) {
+      var row = Math.floor(index / cols) + 1;
+      var col = index % cols + 1;
+      if (!studentId) {
+        html += '<button type="button" class="points-seat-empty selectable" data-seat-row="' + row + '" data-seat-col="' + col + '" aria-label="' + row + ' 排 ' + col + ' 列空座位"><span>' + row + '-' + col + '</span></button>';
+        return;
+      }
+      var student = studentMap[studentId];
+      var score = scores[studentId] ? scores[studentId].score : 0;
+      html += '<div class="points-seat-picked" aria-label="' + row + ' 排 ' + col + ' 列 ' + escapeHtml(student.name) + '"><strong>' + escapeHtml(student.name) + '</strong><small>' + (score > 0 ? '+' : '') + score + '</small></div>';
+    });
+    grid.style.setProperty('--points-seat-cols', cols);
+    grid.setAttribute('aria-label', rows + ' 行 ' + cols + ' 列选座表');
+    grid.innerHTML = html;
+    grid.querySelectorAll('[data-seat-row]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        var row = Number(button.getAttribute('data-seat-row'));
+        var col = Number(button.getAttribute('data-seat-col'));
+        if (!seatSelectionStudentId) {
+          var hint = byId('pointsSyncStatus');
+          if (hint) {
+            hint.className = 'points-sync-status pending';
+            hint.textContent = '先点右侧姓名';
+          }
+          return;
+        }
+        assignSeatSelectionStudent(seatSelectionStudentId, row, col);
+      });
+    });
+    if (unseated) unseated.innerHTML = '';
+  }
+
   function renderRulePanel() {
     var panel = byId('pointsRulePanel');
     if (!panel) return;
+    if (seatSelectionActive()) {
+      renderSeatSelectionPanel(panel);
+      return;
+    }
     var names = selectedStudentIds.map(function(id) {
       var student = studentById(id);
       return student ? student.name : '';
@@ -272,6 +343,146 @@
     panel.querySelectorAll('[data-rule-id]').forEach(function(button) {
       button.addEventListener('click', function() { applyRule(button.getAttribute('data-rule-id')); });
     });
+  }
+
+  function renderSeatSelectionPanel(panel) {
+    var students = classroomState && classroomState.students || [];
+    var scores = rankingMap();
+    var ordered = rankSeatSelectionStudents(students, classroomState && classroomState.leaderboard || []);
+    var waiting = ordered.filter(function(student) { return student.seat_row === null || student.seat_col === null; });
+    if (!waiting.some(function(student) { return student.id === seatSelectionStudentId; })) seatSelectionStudentId = '';
+    var html = '<div class="points-selection-panel"><div class="points-selection-hint"><strong>积分榜选座</strong>按当前周期积分从高到低排队；<b>拖动</b>右侧姓名到空座位，也可以先点姓名再点座位。<br>待选 ' + waiting.length + ' 人 / 已入座 ' + (students.length - waiting.length) + ' 人</div>';
+    html += '<div class="points-selection-list">';
+    if (!waiting.length) html += '<div class="points-selection-empty">全部学生已选座。<br>可点击“完成选座”回到积分登记。</div>';
+    waiting.forEach(function(student, index) {
+      var score = scores[student.id] ? scores[student.id].score : 0;
+      html += '<button type="button" class="points-selection-student' + (student.id === seatSelectionStudentId ? ' selected' : '') + '" data-selection-student-id="' + escapeHtml(student.id) + '">';
+      html += '<span class="points-selection-rank">' + (index + 1) + '</span><strong>' + escapeHtml(student.name) + '</strong><b>' + (score > 0 ? '+' : '') + score + '</b></button>';
+    });
+    html += '</div></div>';
+    panel.innerHTML = html;
+    panel.querySelectorAll('[data-selection-student-id]').forEach(function(button) {
+      var studentId = button.getAttribute('data-selection-student-id');
+      button.addEventListener('click', function() {
+        seatSelectionStudentId = studentId;
+        renderRulePanel();
+      });
+      button.addEventListener('pointerdown', function(event) {
+        beginSeatSelectionPointer(event, studentId);
+      });
+    });
+  }
+
+  function seatTargetAt(clientX, clientY) {
+    var target = document.elementFromPoint(clientX, clientY);
+    return target && target.closest ? target.closest('[data-seat-row][data-seat-col]') : null;
+  }
+
+  function markSeatDropTarget(target) {
+    document.querySelectorAll('.points-seat-empty.drop-target').forEach(function(element) {
+      element.classList.toggle('drop-target', element === target);
+    });
+  }
+
+  function beginSeatSelectionPointer(event, studentId) {
+    if (seatSelectionSaving || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    seatSelectionStudentId = studentId;
+    var pointerId = event.pointerId;
+    var target = null;
+    event.preventDefault();
+    function move(moveEvent) {
+      if (moveEvent.pointerId !== pointerId) return;
+      target = seatTargetAt(moveEvent.clientX, moveEvent.clientY);
+      markSeatDropTarget(target);
+    }
+    function finish(upEvent) {
+      if (upEvent.pointerId !== pointerId) return;
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', finish);
+      document.removeEventListener('pointercancel', cancel);
+      var seat = seatTargetAt(upEvent.clientX, upEvent.clientY) || target;
+      markSeatDropTarget(null);
+      if (seat) {
+        assignSeatSelectionStudent(studentId, Number(seat.getAttribute('data-seat-row')), Number(seat.getAttribute('data-seat-col')));
+      } else {
+        renderRulePanel();
+      }
+    }
+    function cancel(cancelEvent) {
+      if (cancelEvent.pointerId !== pointerId) return;
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', finish);
+      document.removeEventListener('pointercancel', cancel);
+      markSeatDropTarget(null);
+      renderRulePanel();
+    }
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', finish);
+    document.addEventListener('pointercancel', cancel);
+  }
+
+  function assignSeatSelectionStudent(studentId, row, col) {
+    if (!studentId || seatSelectionSaving) return;
+    seatSelectionSaving = true;
+    var status = byId('pointsSyncStatus');
+    if (status) {
+      status.className = 'points-sync-status pending';
+      status.textContent = '正在入座';
+    }
+    requestJson('/api/screen/seat-selection/seats', {
+      method: 'POST',
+      body: { student_id: studentId, seat_row: row, seat_col: col }
+    }).then(function(result) {
+      var student = studentById(studentId);
+      if (student && result.student) {
+        student.seat_row = result.student.seat_row;
+        student.seat_col = result.student.seat_col;
+      }
+      seatSelectionStudentId = '';
+      renderScoreMode();
+      return loadState(activeScope);
+    }).catch(function(error) {
+      if (status) {
+        status.className = 'points-sync-status failed';
+        status.textContent = error.message || '入座失败';
+      }
+    }).finally(function() {
+      seatSelectionSaving = false;
+    });
+  }
+
+  function startSeatSelection() {
+    if (!managementEnabled() || seatSelectionActive()) return;
+    if (!root.confirm('开启积分榜选座会清空当前座位表，积分记录不会删除。现在开始吗？')) return;
+    activeScope = 'term';
+    requestJson('/api/screen/seat-selection/start', { method: 'POST', body: {} })
+      .then(function() {
+        seatSelectionStudentId = '';
+        return loadState('term');
+      })
+      .catch(function(error) {
+        var status = byId('pointsSyncStatus');
+        if (status) {
+          status.className = 'points-sync-status failed';
+          status.textContent = error.message || '开启选座失败';
+        }
+      });
+  }
+
+  function finishSeatSelection() {
+    if (!seatSelectionActive()) return;
+    requestJson('/api/screen/seat-selection/finish', { method: 'POST', body: {} })
+      .then(function() {
+        seatSelectionStudentId = '';
+        return loadState(activeScope);
+      })
+      .catch(function(error) {
+        var status = byId('pointsSyncStatus');
+        if (status) {
+          status.className = 'points-sync-status failed';
+          status.textContent = error.message || '结束选座失败';
+        }
+      });
   }
 
   function pendingDisplayRows() {
@@ -330,11 +541,26 @@
   }
 
   function renderScoreMode() {
+    var selecting = seatSelectionActive();
+    var mode = byId('pointsScoreMode');
+    if (mode) mode.classList.toggle('is-seat-selection', selecting);
+    var title = byId('pointsScoreTitle');
+    var subtitle = byId('pointsScoreSubtitle');
+    if (title) title.textContent = selecting ? '积分榜选座' : '班级加扣分';
+    if (subtitle) subtitle.textContent = selecting ? '按当前周期积分依次选座；支持触摸拖动，也可点选姓名后点空座位' : '点座位上的名字直接加减分；多人一起登记用「批量登记」';
+    var start = byId('pointsSeatSelectionStart');
+    var finish = byId('pointsSeatSelectionFinish');
+    var batchButton = byId('pointsBatchToggle');
+    if (start) start.hidden = selecting;
+    if (finish) finish.hidden = !selecting;
+    if (batchButton) batchButton.hidden = selecting;
+    document.querySelectorAll('#pointsScoreMode .points-toolbar > button[onclick*="openMode"], #pointsScoreMode .points-toolbar > button[onclick*="undoLatest"]').forEach(function(button) {
+      button.hidden = selecting;
+    });
     renderSeatGrid();
     renderRulePanel();
-    renderRecent();
+    if (!selecting) renderRecent();
     renderSyncStatus();
-    var batchButton = byId('pointsBatchToggle');
     if (batchButton) {
       batchButton.classList.toggle('active', batchMode);
       batchButton.textContent = batchMode ? '完成批量选择' : '批量登记';
@@ -643,6 +869,8 @@
     if (!managementEnabled()) return;
     selectedStudentIds = [];
     batchMode = false;
+    seatSelectionStudentId = '';
+    if (mode === 'score' && seatSelectionActive()) activeScope = 'term';
     if (mode === 'ledger') activeScope = 'today';
     else if (mode === 'rank' && activeScope === 'today') activeScope = 'term';
     modeController.enter(mode);
@@ -652,6 +880,7 @@
   function backToIdle() {
     selectedStudentIds = [];
     batchMode = false;
+    seatSelectionStudentId = '';
     modeController.enter('idle');
   }
 
@@ -693,6 +922,7 @@
     screenToken = info && info.screen_token || '';
     selectedStudentIds = [];
     batchMode = false;
+    seatSelectionStudentId = '';
     activeScope = 'term';
     ledgerStudentFilter = '';
     ledgerDirectionFilter = '';
@@ -712,6 +942,7 @@
     classroomState = null;
     queue = null;
     selectedStudentIds = [];
+    seatSelectionStudentId = '';
     ledgerStudentFilter = '';
     ledgerDirectionFilter = '';
     var actions = byId('pointsIdleActions');
@@ -747,6 +978,8 @@
     setScope: setScope,
     setLedgerFilter: setLedgerFilter,
     undoLatest: undoLatest,
+    startSeatSelection: startSeatSelection,
+    finishSeatSelection: finishSeatSelection,
     openScoreModal: openScoreModal,
     closeScoreModal: closeScoreModal,
     applyRuleForModalStudent: applyRuleForModalStudent,

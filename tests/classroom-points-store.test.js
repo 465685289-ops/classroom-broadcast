@@ -75,15 +75,16 @@ test('custom seat dimensions survive a service restart', () => {
       id: 'restart-class', user_id: 'teacher-1', name: '小班', grade: 'junior',
       bind_code: 'RST123', member_ids: [], created_at: '${NOW}'
     });
-    store.setClassManagement('restart-class', { seat_rows: 4, seat_cols: 5 });
+    store.setClassManagement('restart-class', { enabled: true, seat_rows: 4, seat_cols: 5 });
+    store.replaceStore(store.loadStore());
   `], { cwd: path.join(__dirname, '..'), env });
   const output = execFileSync(process.execPath, ['-e', `
     const store = require('./db');
     process.stdout.write(JSON.stringify(store.getClassManagement('restart-class')));
   `], { cwd: path.join(__dirname, '..'), env, encoding: 'utf8' });
   assert.deepEqual(JSON.parse(output), {
-    class_id: 'restart-class', enabled: false, sound_enabled: false,
-    seat_rows: 4, seat_cols: 5, archived_at: null
+    class_id: 'restart-class', enabled: true, sound_enabled: false,
+    seat_rows: 4, seat_cols: 5, seat_selection_active: false, archived_at: null
   });
 });
 
@@ -94,6 +95,7 @@ test('class management is opt-in and stores stable students, rules and a current
     sound_enabled: false,
     seat_rows: 8,
     seat_cols: 6,
+    seat_selection_active: false,
     archived_at: null
   });
 

@@ -297,6 +297,34 @@ test('owner can hide the screen entry without deleting roster, layout or score h
   assert.ok(historicalLedger.body.items.length >= 3);
 });
 
+test('screen can begin a ranked seat-selection round, clear seats, assign one student and finish', async () => {
+  const started = await request('/api/screen/seat-selection/start', {
+    method: 'POST', token: null, screenToken, body: {}
+  });
+  assert.equal(started.status, 200);
+  assert.equal(started.body.management.seat_selection_active, true);
+  assert.ok(started.body.students.every((student) => student.seat_row === null && student.seat_col === null));
+
+  const state = await request('/api/screen/classroom-state', { token: null, screenToken });
+  assert.equal(state.status, 200);
+  assert.equal(state.body.management.seat_selection_active, true);
+  assert.ok(state.body.leaderboard.some((item) => item.student_id === studentId));
+
+  const placed = await request('/api/screen/seat-selection/seats', {
+    method: 'POST', token: null, screenToken,
+    body: { student_id: studentId, seat_row: 1, seat_col: 1 }
+  });
+  assert.equal(placed.status, 200);
+  assert.equal(placed.body.student.seat_row, 1);
+  assert.equal(placed.body.student.seat_col, 1);
+
+  const finished = await request('/api/screen/seat-selection/finish', {
+    method: 'POST', token: null, screenToken, body: {}
+  });
+  assert.equal(finished.status, 200);
+  assert.equal(finished.body.management.seat_selection_active, false);
+});
+
 test('screen custom delta entries are validated and settle archives a snapshot then resets to zero', async () => {
   const custom = await request('/api/screen/points/entries', {
     method: 'POST', token: null, screenToken,
