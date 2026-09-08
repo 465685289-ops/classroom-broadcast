@@ -137,6 +137,11 @@ const QWEN_OCR_MODEL = essayConfigValue('QWEN_OCR_MODEL', 'qwen_ocr_model', 'qwe
 // 周测阅卷 GLM 视觉引擎：配置 glm_api_key 后优先生效，未配置回落 Qwen
 const GLM_API_KEY = essayConfigValue('GLM_API_KEY', 'glm_api_key', '');
 const GLM_OCR_MODEL = essayConfigValue('GLM_OCR_MODEL', 'glm_ocr_model', '') || '';
+// GLM 端点：默认个人套餐（Coding 套餐）端点，按套餐额度计费；按量付费改回 /api/paas/v4/chat/completions
+const GLM_API_PATH = (essayConfigValue('GLM_API_PATH', 'glm_api_path', '') || '/api/coding/paas/v4/chat/completions');
+// 周测阅卷 DeepSeek 视觉备用引擎：两者都配且配置模型名才启用（GLM 之后兜底）
+const DEEPSEEK_VISION_API_KEY = essayConfigValue('DEEPSEEK_VISION_API_KEY', 'deepseek_vision_api_key', '');
+const DEEPSEEK_VISION_MODEL = essayConfigValue('DEEPSEEK_VISION_MODEL', 'deepseek_vision_model', '') || '';
 const MINIMAX_API_KEYS = essayConfigValue('MINIMAX_API_KEYS', 'minimax_api_keys', '').split(/[,\s]+/).filter(Boolean);
 const MINIMAX_MODEL = essayConfigValue('MINIMAX_MODEL', 'minimax_model', 'MiniMax-M2.7') || 'MiniMax-M2.7';
 const FREE_ESSAY_CREDITS = 10;
@@ -255,6 +260,9 @@ module.exports = {
   QWEN_OCR_MODEL,
   GLM_API_KEY,
   GLM_OCR_MODEL,
+  GLM_API_PATH,
+  DEEPSEEK_VISION_API_KEY,
+  DEEPSEEK_VISION_MODEL,
   MINIMAX_API_KEYS,
   MINIMAX_MODEL,
   FREE_ESSAY_CREDITS,

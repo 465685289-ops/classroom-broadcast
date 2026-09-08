@@ -138,6 +138,11 @@ function ensureSchema() {
       name TEXT NOT NULL,
       grade TEXT,
       bind_code TEXT,
+      management_enabled INTEGER DEFAULT 0,
+      points_sound_enabled INTEGER DEFAULT 0,
+      seat_rows INTEGER DEFAULT 8,
+      seat_cols INTEGER DEFAULT 6,
+      archived_at TEXT,
       created_at TEXT,
       extra_json TEXT
     );
@@ -770,7 +775,24 @@ function ensureSchema() {
   ensureColumn('users', 'last_login_at', 'TEXT');
   ensureColumn('classes', 'management_enabled', 'INTEGER DEFAULT 0');
   ensureColumn('classes', 'points_sound_enabled', 'INTEGER DEFAULT 0');
+  ensureColumn('classes', 'seat_rows', 'INTEGER DEFAULT 8');
+  ensureColumn('classes', 'seat_cols', 'INTEGER DEFAULT 6');
   ensureColumn('classes', 'archived_at', 'TEXT');
+  db.exec(`
+    UPDATE classes
+    SET seat_rows = MIN(30, MAX(
+          CASE WHEN seat_rows BETWEEN 1 AND 30 THEN seat_rows ELSE 8 END,
+          COALESCE((
+          SELECT MAX(seat_row) FROM class_students
+          WHERE class_id = classes.id AND archived = 0
+        ), 1))),
+        seat_cols = MIN(30, MAX(
+          CASE WHEN seat_cols BETWEEN 1 AND 30 THEN seat_cols ELSE 6 END,
+          COALESCE((
+          SELECT MAX(seat_col) FROM class_students
+          WHERE class_id = classes.id AND archived = 0
+        ), 1)))
+  `);
   ensureColumn('essay_gradings', 'subject', "TEXT NOT NULL DEFAULT 'chinese'");
   ensureColumn('essay_gradings', 'request_id', 'TEXT');
   ensureColumn('essay_classes', 'subject', "TEXT NOT NULL DEFAULT 'chinese'");
@@ -859,6 +881,8 @@ function loadClasses() {
       member_ids: memberMap[row.id] || [],
       management_enabled: Number(row.management_enabled) === 1,
       points_sound_enabled: Number(row.points_sound_enabled) === 1,
+      seat_rows: Number(row.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
+      seat_cols: Number(row.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS,
       archived_at: row.archived_at || null,
       created_at: row.created_at,
       timetable: normalizeClassTimetable(extra.timetable)
@@ -1386,13 +1410,15 @@ function classManagementRow(row) {
     class_id: row.id,
     enabled: Number(row.management_enabled) === 1,
     sound_enabled: Number(row.points_sound_enabled) === 1,
+    seat_rows: Number(row.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
+    seat_cols: Number(row.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS,
     archived_at: row.archived_at || null
   };
 }
 
 function getClassManagement(classId) {
   return classManagementRow(db.prepare(`
-    SELECT id, management_enabled, points_sound_enabled, archived_at
+    SELECT id, management_enabled, points_sound_enabled, seat_rows, seat_cols, archived_at
     FROM classes WHERE id = ?
   `).get(classId));
 }
@@ -1402,10 +1428,37 @@ function setClassManagement(classId, patch) {
   if (!current) throw new Error('班级不存在');
   const enabled = patch && patch.enabled !== undefined ? (patch.enabled ? 1 : 0) : (current.enabled ? 1 : 0);
   const soundEnabled = patch && patch.sound_enabled !== undefined ? (patch.sound_enabled ? 1 : 0) : (current.sound_enabled ? 1 : 0);
+  const layout = classroomPoints.normalizeSeatLayout(patch, current);
+  const outside = db.prepare(`
+    SELECT name FROM class_students
+    WHERE class_id = ? AND archived = 0
+      AND ((seat_row IS NOT NULL AND seat_row > ?) OR (seat_col IS NOT NULL AND seat_col > ?))
+    ORDER BY seat_row, seat_col, name LIMIT 6
+  `).all(classId, layout.seat_rows, layout.seat_cols);
+  if (outside.length) {
+    throw new Error('座位表范围外还有学生：' + outside.map(row => row.name).join('、') + '，请先调整这些学生座位');
+  }
   db.prepare(`
-    UPDATE classes SET management_enabled = ?, points_sound_enabled = ? WHERE id = ?
-  `).run(enabled, soundEnabled, classId);
+    UPDATE classes
+    SET management_enabled = ?, points_sound_enabled = ?, seat_rows = ?, seat_cols = ?
+    WHERE id = ?
+  `).run(enabled, soundEnabled, layout.seat_rows, layout.seat_cols, classId);
   return getClassManagement(classId);
+}
+
+function assertStudentSeat(classId, studentId, student, archived) {
+  if (archived || student.seat_row === null) return;
+  const layout = getClassManagement(classId);
+  if (!layout) throw new Error('班级不存在');
+  if (student.seat_row > layout.seat_rows || student.seat_col > layout.seat_cols) {
+    throw new Error(`座位超出当前 ${layout.seat_rows} 行 × ${layout.seat_cols} 列`);
+  }
+  const occupied = db.prepare(`
+    SELECT name FROM class_students
+    WHERE class_id = ? AND archived = 0 AND seat_row = ? AND seat_col = ? AND id <> ?
+    LIMIT 1
+  `).get(classId, student.seat_row, student.seat_col, studentId || '');
+  if (occupied) throw new Error(`座位重复：${student.seat_row} 排 ${student.seat_col} 列已有 ${occupied.name}`);
 }
 
 function mapClassStudent(row) {
@@ -1435,6 +1488,7 @@ function createClassStudent(input) {
     updated_at: now
   };
   if (!db.prepare('SELECT id FROM classes WHERE id = ?').get(row.class_id)) throw new Error('班级不存在');
+  assertStudentSeat(row.class_id, row.id, normalized, !!input.archived);
   db.prepare(`
     INSERT INTO class_students (
       id, class_id, name, student_no, seat_row, seat_col, archived, created_at, updated_at
@@ -1461,16 +1515,36 @@ function syncClassStudents(classId, input) {
       if (!matches.length) { createClassStudent({ ...student, class_id: classId }); added++; }
     }
     const ids = new Set();
+    const seatUpdates = [];
     for (const seat of seats) {
       if (!seat || ids.has(seat.id)) throw new Error('座位学生重复');
       ids.add(seat.id);
       const current = getClassStudent(classId, seat.id);
       if (!current || current.archived) throw new Error('座位学生不属于当前班级');
       const normalized = classroomPoints.normalizeStudentInput({ ...current, seat_row: seat.seat_row, seat_col: seat.seat_col });
-      if (current.seat_row !== normalized.seat_row || current.seat_col !== normalized.seat_col) {
-        updateClassStudent(classId, seat.id, { seat_row: normalized.seat_row, seat_col: normalized.seat_col });
-        updated++;
+      seatUpdates.push({ id: current.id, current, ...normalized });
+    }
+    const layout = getClassManagement(classId);
+    const finalSeats = new Map(listClassStudents(classId).map(student => [student.id, {
+      name: student.name, seat_row: student.seat_row, seat_col: student.seat_col
+    }]));
+    seatUpdates.forEach(student => finalSeats.set(student.id, student));
+    const occupied = new Map();
+    finalSeats.forEach((student, id) => {
+      if (student.seat_row === null) return;
+      if (student.seat_row > layout.seat_rows || student.seat_col > layout.seat_cols) {
+        throw new Error(`座位超出当前 ${layout.seat_rows} 行 × ${layout.seat_cols} 列`);
       }
+      const key = student.seat_row + ':' + student.seat_col;
+      if (occupied.has(key)) throw new Error(`座位重复：${student.seat_row} 排 ${student.seat_col} 列`);
+      occupied.set(key, id);
+    });
+    const updateSeat = db.prepare('UPDATE class_students SET seat_row = ?, seat_col = ?, updated_at = ? WHERE class_id = ? AND id = ?');
+    const now = new Date().toISOString();
+    for (const student of seatUpdates) {
+      if (student.current.seat_row === student.seat_row && student.current.seat_col === student.seat_col) continue;
+      updateSeat.run(student.seat_row, student.seat_col, now, classId, student.id);
+      updated++;
     }
     return { added, updated };
   })();
@@ -1499,6 +1573,7 @@ function updateClassStudent(classId, studentId, patch) {
     seat_col: patch.seat_col === undefined ? current.seat_col : patch.seat_col
   });
   const archived = patch.archived === undefined ? current.archived : !!patch.archived;
+  assertStudentSeat(classId, studentId, normalized, archived);
   db.prepare(`
     UPDATE class_students SET
       name = ?, student_no = ?, seat_row = ?, seat_col = ?, archived = ?, updated_at = ?

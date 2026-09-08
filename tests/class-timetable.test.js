@@ -16,9 +16,11 @@ process.env.BACKUP_DIR = path.join(TMP, 'backups');
 const {
   TIMETABLE_DAYS,
   TIMETABLE_SLOTS,
+  activeClassTimetableSlots,
   classTimetableHasEntries,
   emptyClassTimetable,
-  normalizeClassTimetable
+  normalizeClassTimetable,
+  validateClassTimetableStructure
 } = require('../class-timetable');
 const dbStore = require('../db');
 
@@ -63,12 +65,59 @@ test('class timetable normalizes fixed weekdays and twelve bounded slots', () =>
   assert.equal(result.entries.sat[0], '周六竞赛');
   assert.equal(result.entries.zhouba, undefined);
   assert.equal(result.updated_at, NOW);
+  assert.deepEqual(result.structure, {
+    configured: true,
+    morning_reading: true,
+    regular_count: 8,
+    evening_study_count: 3
+  }, '旧课表按原 12 节兼容，不因升级被隐藏');
 });
 
 test('empty and populated timetables are distinguished by their real cells', () => {
   const empty = emptyClassTimetable();
   assert.equal(classTimetableHasEntries(empty), false);
+  assert.equal(empty.structure.configured, false, '新班级必须先由教师确认课程结构');
   assert.equal(classTimetableHasEntries({ entries: { fri: ['', '班会'] } }), true);
+});
+
+test('teacher-confirmed structure selects primary or secondary periods without deleting hidden cells', () => {
+  const primary = normalizeClassTimetable({
+    version: 2,
+    structure: { configured: true, morning_reading: false, regular_count: 6, evening_study_count: 0 },
+    entries: { mon: ['晨读', '语文', '数学', '英语', '科学', '体育', '美术', '隐藏第7节', '隐藏第8节', '隐藏晚1'] }
+  });
+  assert.deepEqual(activeClassTimetableSlots(primary.structure), [
+    { index: 1, label: '第1节' }, { index: 2, label: '第2节' }, { index: 3, label: '第3节' },
+    { index: 4, label: '第4节' }, { index: 5, label: '第5节' }, { index: 6, label: '第6节' }
+  ]);
+  assert.equal(primary.entries.mon[0], '晨读');
+  assert.equal(primary.entries.mon[7], '隐藏第7节');
+  assert.equal(primary.entries.mon[9], '隐藏晚1');
+
+  const secondary = normalizeClassTimetable({
+    ...primary,
+    structure: { configured: true, morning_reading: true, regular_count: 8, evening_study_count: 2 }
+  });
+  assert.equal(activeClassTimetableSlots(secondary.structure).length, 11);
+  assert.equal(secondary.entries.mon[7], '隐藏第7节', '中途扩回节次后原课程仍在');
+  assert.equal(secondary.entries.mon[9], '隐藏晚1', '重新开启晚自习后原课程仍在');
+});
+
+test('course structure rejects invalid teacher input instead of silently coercing it', () => {
+  assert.deepEqual(validateClassTimetableStructure({
+    morning_reading: false,
+    regular_count: 6,
+    evening_study_count: 0
+  }), {
+    configured: true,
+    morning_reading: false,
+    regular_count: 6,
+    evening_study_count: 0
+  });
+  assert.throws(() => validateClassTimetableStructure({ morning_reading: true, regular_count: 0, evening_study_count: 0 }), /正课节数/);
+  assert.throws(() => validateClassTimetableStructure({ morning_reading: true, regular_count: 6.5, evening_study_count: 0 }), /正课节数/);
+  assert.throws(() => validateClassTimetableStructure({ morning_reading: true, regular_count: 6, evening_study_count: 4 }), /晚自习节数/);
+  assert.throws(() => validateClassTimetableStructure({ morning_reading: 'no', regular_count: 6, evening_study_count: 0 }), /早读设置/);
 });
 
 test('class timetable persists through the classes extra_json field', () => {

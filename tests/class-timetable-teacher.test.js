@@ -47,6 +47,23 @@ test('class timetable editor renders five weekdays and twelve mobile-scrollable 
   assert.match(context.result, /readonly/);
 });
 
+test('legacy teacher editor follows the workbench-confirmed structure and keeps hidden values', () => {
+  const start = page.indexOf('var CLASS_TIMETABLE_DAYS');
+  const end = page.indexOf('function loadClassTimetable', start);
+  const context = {
+    result: '',
+    esc(value) { return String(value); }
+  };
+  vm.runInNewContext(page.slice(start, end) + `
+    result = buildTimetableEditorHtml({
+      structure: { configured:true, morning_reading:false, regular_count:6, evening_study_count:0 },
+      entries: { mon:['晨读','语文','数学','','','','','隐藏第7节'] }
+    }, true);
+  `, context);
+  assert.equal((context.result.match(/<tr/g) || []).length, 7);
+  assert.doesNotMatch(context.result, /早读|第7节|晚自习/);
+});
+
 test('timetable uses the class API and keeps collaborator editing server-enforced', () => {
   assert.match(page, /fetch\(API \+ '\/api\/classes\/' \+ classId \+ '\/timetable'/);
   assert.match(page, /method:\s*'PUT'/);

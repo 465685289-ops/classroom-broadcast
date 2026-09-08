@@ -13,26 +13,31 @@ test('classroom idle screen has a weekly timetable beside the bulletin board', (
   assert.match(page, /class="idle-right"/);
 });
 
-test('weekly timetable renders 12 school periods, highlights only today, and escapes course names', () => {
+test('weekly timetable renders only teacher-confirmed periods, highlights today, and escapes course names', () => {
   const source = page.match(/var SCREEN_TIMETABLE_DAYS[\s\S]*?(?=function\s+renderClassTimetable)/);
   assert.ok(source, '缺少教室端课表渲染函数');
 
   const context = {};
   vm.runInNewContext(`${source[0]};
-    monday = buildScreenTimetableHtml({ entries: { mon: ['语文', '<script>'], fri: ['班会'] } }, 1);
+    monday = buildScreenTimetableHtml({ structure: { configured: true, morning_reading: false, regular_count: 6, evening_study_count: 0 }, entries: { mon: ['晨读', '<script>', '数学'], fri: ['', '班会'] } }, 1);
+    highSchool = buildScreenTimetableHtml({ structure: { configured: true, morning_reading: true, regular_count: 8, evening_study_count: 3 }, entries: { mon: ['语文'] } }, 1);
+    unconfigured = buildScreenTimetableHtml({ structure: { configured: false, morning_reading: true, regular_count: 8, evening_study_count: 3 }, entries: { mon: ['不应展示'] } }, 1);
     saturday = buildScreenTimetableHtml({ entries: { mon: ['语文'] } }, 6);
     empty = buildScreenTimetableHtml({}, 1);`, context);
 
   assert.equal(context.monday.hasEntries, true);
-  assert.equal((context.monday.html.match(/<tr/g) || []).length, 13, '应为表头加 12 个时段');
-  assert.equal((context.monday.html.match(/class="today"/g) || []).length, 13, '当天表头和 12 个格子都应高亮');
+  assert.equal((context.monday.html.match(/<tr/g) || []).length, 7, '小学应为表头加 6 节正课');
+  assert.equal((context.monday.html.match(/class="today"/g) || []).length, 7, '当天表头和 6 个格子都应高亮');
+  assert.doesNotMatch(context.monday.html, /早读|晚自习|第7节/);
+  assert.equal((context.highSchool.html.match(/<tr/g) || []).length, 13, '中学完整结构仍为 12 个时段');
+  assert.equal(context.unconfigured.hasEntries, false, '新班级未确认节次时不应展示课程表');
   assert.match(context.monday.html, /周一/);
   assert.match(context.monday.html, /周五/);
   assert.match(context.monday.html, /今天/);
   assert.match(context.monday.html, /&lt;script&gt;/);
   assert.doesNotMatch(context.monday.html, /<script>/);
   // 2026-09 规格：周末也算教学日，周六上课时当日列正常高亮
-  assert.equal((context.saturday.html.match(/class="today"/g) || []).length, 13, '周六教学日应全列高亮');
+  assert.equal((context.saturday.html.match(/class="today"/g) || []).length, 13, '未带结构的存量课表继续兼容 12 节');
   assert.match(context.saturday.html, /周六<span class="today-chip">今天<\/span>/);
   assert.equal(context.empty.hasEntries, false);
 });

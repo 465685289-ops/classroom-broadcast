@@ -11,9 +11,6 @@ test('screen loads the optional points assets and keeps student data out of the 
   assert.match(screenHtml, /classroom-points-queue\.js/);
   assert.match(screenHtml, /classroom-points-screen\.js/);
   assert.match(screenHtml, /id="pointsIdleActions"[^>]*hidden/);
-  assert.match(screenHtml, />加扣分</);
-  assert.match(screenHtml, />积分榜</);
-  assert.match(screenHtml, />流水记录</);
   assert.match(screenHtml, /id="pointsScoreMode"/);
   assert.match(screenHtml, /id="pointsRankMode"/);
   assert.match(screenHtml, /id="pointsLedgerMode"/);
@@ -23,6 +20,21 @@ test('screen loads the optional points assets and keeps student data out of the 
   const idle = screenHtml.match(/<div class="screen-idle" id="screenIdle">([\s\S]*?)<div class="points-mode"/);
   assert.ok(idle, 'idle section should end before points modes');
   assert.doesNotMatch(idle[1], /pointsSeatGrid|student_name|学生积分/);
+  assert.match(idle[1], />座位积分</);
+  assert.doesNotMatch(idle[1], />积分榜</);
+  assert.doesNotMatch(idle[1], />流水记录</);
+});
+
+test('screen seat model follows teacher dimensions and leaves unassigned students outside the grid', () => {
+  const { buildSeatGridModel } = require('../public/classroom-points-screen');
+  assert.deepEqual(buildSeatGridModel([
+    { id: 'a', seat_row: 1, seat_col: 2 },
+    { id: 'b', seat_row: null, seat_col: null },
+    { id: 'outside', seat_row: 3, seat_col: 1 }
+  ], 2, 2), {
+    cells: [null, 'a', null, null],
+    unseated: ['b', 'outside']
+  });
 });
 
 test('mode controller restores the interrupted mode and restarts a 60 second timer', () => {
