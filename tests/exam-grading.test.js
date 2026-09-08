@@ -162,6 +162,8 @@ test('exam docx pipeline prompt and glm engine wiring exist', () => {
     assert.ok(enginesSrc.includes('function ' + fn) || enginesSrc.includes('async function ' + fn), 'ai-engines 缺少 ' + fn);
   }
   assert.match(enginesSrc, /open\.bigmodel\.cn/);
+  assert.match(enginesSrc, /apiPath: GLM_API_PATH/, 'GLM 调用应使用可配置端点（默认个人套餐）');
+  assert.doesNotMatch(enginesSrc, /GLM_VISION_CANDIDATES = \[[^\]]*glm-5\.3-flash/, '5.3-flash 不得进自动候选');
   assert.match(enginesSrc, /api\.deepseek\.com/);
   assert.match(enginesSrc, /glm-4\.6v/, 'GLM 候选应以视觉模型 glm-4.6v 优先');
   // 识别链：GLM 失败时转 DeepSeek 视觉/Qwen 兜底

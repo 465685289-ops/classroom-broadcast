@@ -7,7 +7,7 @@ const {
   commentHost, deviceCookieOptions, encodeInviteCookie, essayHost, learningHost, parseCookieHeader, referralCookieOptions, roundtableHost
 } = require('./http-utils');
 const {
-  DEEPSEEK_API_KEY, DEEPSEEK_MODEL, DEEPSEEK_VISION_API_KEY, DEEPSEEK_VISION_MODEL, DEVICE_COOKIE_NAME, ESSAY_OCR_DAILY_LIMIT, GLM_API_KEY, GLM_OCR_MODEL, INVITE_COOKIE_MAX_AGE_MS, INVITE_COOKIE_NAME, INVITE_COOKIE_SECRET, LEARNING_MODEL, MINIMAX_API_KEYS, MINIMAX_MODEL, QWEN_API_KEY, QWEN_OCR_MODEL
+  DEEPSEEK_API_KEY, DEEPSEEK_MODEL, DEEPSEEK_VISION_API_KEY, DEEPSEEK_VISION_MODEL, DEVICE_COOKIE_NAME, ESSAY_OCR_DAILY_LIMIT, GLM_API_KEY, GLM_API_PATH, GLM_OCR_MODEL, INVITE_COOKIE_MAX_AGE_MS, INVITE_COOKIE_NAME, INVITE_COOKIE_SECRET, LEARNING_MODEL, MINIMAX_API_KEYS, MINIMAX_MODEL, QWEN_API_KEY, QWEN_OCR_MODEL
 } = require('./platform-config');
 
 function normalizeCommentStudent(input) {
@@ -840,8 +840,8 @@ function examAIConfigured() {
 // ---------- 周测阅卷 GLM 视觉引擎（配置 glm_api_key 后优先，未配置回落 Qwen） ----------
 const GLM_VISION_PROBE_JPEG = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCABAAEADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD06iiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD//2Q==';
 // 候选顺序：视觉原生模型优先。glm-5.3-flash 支持图片但"始终思考"，复杂识别任务会耗尽 max_tokens
-// 且正文为空（实测 237s 无输出），只留作末位兜底；glm-4.6v 实测单张 ~20s 且姓名/题号/批阅框质量最好。
-const GLM_VISION_CANDIDATES = ['glm-4.6v', 'glm-4.5v', 'glm-5.3-flash'];
+// 且正文为空（实测 237s 无输出），且小探测它能通过、真实任务必败，故不进自动候选，只允许 glm_ocr_model 手动指定。
+const GLM_VISION_CANDIDATES = ['glm-4.6v', 'glm-4.5v'];
 let glmVisionModelCache = '';
 
 function glmVisionReady() {
@@ -856,7 +856,7 @@ async function glmVisionModel() {
   for (const model of GLM_VISION_CANDIDATES) {
     try {
       await openAICompatChat({
-        label: 'GLM-探测', hostname: 'open.bigmodel.cn', apiPath: '/api/paas/v4/chat/completions',
+        label: 'GLM-探测', hostname: 'open.bigmodel.cn', apiPath: GLM_API_PATH,
         apiKey: GLM_API_KEY, model, temperature: 0.01, maxTokens: 1024, timeoutMs: 60000,
         messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: GLM_VISION_PROBE_JPEG } }, { type: 'text', text: '图里是纯白方块，回复OK即可' }] }]
       });
@@ -874,7 +874,7 @@ async function glmVisionModel() {
 async function glmVisionChat(imageDataUrl, promptText, maxTokens) {
   const model = await glmVisionModel();
   const result = await openAICompatChat({
-    label: 'GLM-周测', hostname: 'open.bigmodel.cn', apiPath: '/api/paas/v4/chat/completions',
+    label: 'GLM-周测', hostname: 'open.bigmodel.cn', apiPath: GLM_API_PATH,
     apiKey: GLM_API_KEY, model, temperature: 0.05, maxTokens: maxTokens || 8000, timeoutMs: 180000,
     messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: imageDataUrl } }, { type: 'text', text: promptText }] }]
   });
