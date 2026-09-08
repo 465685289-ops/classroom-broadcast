@@ -107,13 +107,11 @@
 .points-podium { flex:0 0 auto; width:34%; min-width:190px; margin:0 auto 12px; padding:7px 16px; border:1px solid #d2bf9c; border-radius:8px; background:#ead9ba; color:#76552a; text-align:center; font-size:13px; font-weight:700; letter-spacing:10px; }
 .points-seat-grid {
   --points-seat-cols: 6;
-  min-height: 0;
-  flex: 1;
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(var(--points-seat-cols), minmax(70px, 1fr));
-  grid-auto-rows: minmax(54px, 1fr);
+  grid-auto-rows: minmax(58px, auto);
   gap: 10px;
-  align-content: stretch;
 }
 .points-seat-empty { min-width:0; display:grid; place-items:center; border:1px dashed #dfd3bf; border-radius:13px; background:rgba(255,253,247,.35); color:#c6baa6; }
 .points-seat-empty span { font-size:10px; }
@@ -138,7 +136,7 @@
 .points-student-card.selected { border-color: #9c6c28; background: #f4dfb5; box-shadow: 0 0 0 3px rgba(156, 108, 40, .13); }
 .points-student-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(15px, 1.45vw, 21px); font-weight: 700; }
 .points-student-score { color: #9a6f2e; font: 700 14px/1 Georgia, serif; }
-.points-unseated { flex:0 0 auto; display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.points-unseated { flex:0 0 auto; display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:12px; padding-top:10px; border-top:1px dashed #e3d5bd; max-height:118px; overflow:auto; }
 .points-unseated:empty { display:none; }
 .points-unseated > span { color:#9d8c75; font-size:11px; }
 .points-unseated button { display:flex; align-items:center; gap:6px; padding:6px 9px; border:1px solid #d8c9ae; border-radius:999px; background:#fffdf7; color:#594b39; font-family:inherit; cursor:pointer; }
