@@ -82,3 +82,27 @@ test('broadcast preempts and stops any active score sound immediately', () => {
   assert.match(source, /function suspendForBroadcast\(\)\s*\{\s*stopScoreSound\(\);/);
   assert.match(source, /suspendForBroadcast:\s*suspendForBroadcast/);
 });
+
+test('score modal opens on a single student tap with quick rules, custom delta and cycle scope', () => {
+  const controller = require('../public/classroom-points-screen');
+  for (const fn of ['openScoreModal', 'closeScoreModal', 'applyRuleForModalStudent', 'applyCustomForModalStudent']) {
+    assert.equal(typeof controller[fn], 'function', '缺少 ' + fn);
+  }
+
+  assert.match(screenHtml, /id="pointsScoreModal"[^>]*hidden/);
+  assert.match(screenHtml, /id="pointsModalName"/);
+  assert.match(screenHtml, /id="pointsModalScore"/);
+  assert.match(screenHtml, /id="pointsModalRules"/);
+  assert.match(screenHtml, /id="pointsModalCustomDelta"/);
+  assert.match(screenHtml, /id="pointsModalCustomReason"/);
+  assert.match(screenHtml, /ClassroomPointsScreen\.applyCustomForModalStudent\(\)/);
+  assert.match(screenHtml, /if\(event\.target===this\)ClassroomPointsScreen\.closeScoreModal\(\)/);
+  assert.match(screenHtml, /class-score-period-settled/);
+  assert.match(screenHtml, /data-points-scope="term"[^>]*>本周期</, '排行榜默认口径=本周期');
+  assert.doesNotMatch(screenHtml, /data-points-scope="term"[^>]*>本学期</);
+
+  const source = fs.readFileSync(path.join(ROOT, 'public', 'classroom-points-screen.js'), 'utf8');
+  assert.match(source, /custom_delta/, '自定义分值应随入队载荷提交');
+  assert.match(source, /custom_reason/);
+  assert.doesNotMatch(source, /if \(!batchMode\) batchMode = false;/, '旧的批量分支残留应清理');
+});

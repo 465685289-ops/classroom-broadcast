@@ -245,13 +245,14 @@ function classResponse(cls, userId, onlineCounts) {
   };
 }
 
+// 贺老师班常用的六项（2026-09-08 确认）：新班级默认、教师端可一键套用
 const DEFAULT_CLASS_SCORE_RULES = [
-  { name: '认真听讲', delta: 1 },
-  { name: '课堂发言', delta: 2 },
-  { name: '作业优秀', delta: 3 },
-  { name: '帮助同学', delta: 2 },
-  { name: '课堂提醒', delta: -1 },
-  { name: '作业未交', delta: -2 }
+  { name: '积极发言', delta: 2 },
+  { name: '违纪讲话', delta: -1 },
+  { name: '作业优秀', delta: 5 },
+  { name: '未交作业', delta: -2 },
+  { name: '好人好事', delta: 3 },
+  { name: '严重违纪', delta: -3 }
 ];
 
 function ensureDefaultClassScoreRules(classId) {
@@ -1180,17 +1181,33 @@ function classScoreScope(classId, scope, periodId) {
 }
 
 function createClassScoreEntries(cls, body, source, actorUserId) {
-  const rule = dbStore.getClassScoreRule(cls.id, String(body.rule_id || ''));
-  if (!rule || !rule.active) throw new Error('积分规则不存在或已停用');
   const period = dbStore.ensureCurrentClassScorePeriod(cls.id, new Date().toISOString());
+  let ruleId = null;
+  let ruleName;
+  let delta;
+  if (body.rule_id) {
+    const rule = dbStore.getClassScoreRule(cls.id, String(body.rule_id));
+    if (!rule || !rule.active) throw new Error('积分规则不存在或已停用');
+    ruleId = rule.id;
+    ruleName = rule.name;
+    delta = rule.delta;
+  } else {
+    // 教室大屏点人名后的「自定义分值」：事由可选，分值必须为 -100~100 的非零整数
+    const customDelta = Number(body.custom_delta);
+    if (!Number.isInteger(customDelta) || customDelta === 0 || customDelta < -100 || customDelta > 100) {
+      throw new Error('自定义分值必须是 -100 到 100 之间的非零整数');
+    }
+    ruleName = String(body.custom_reason || '').trim().slice(0, 30) || '自定义加减分';
+    delta = customDelta;
+  }
   const entries = classroomPoints.buildScoreEntries({
     client_operation_id: body.client_operation_id,
     student_ids: body.student_ids,
     class_id: cls.id,
     period_id: period.id,
-    rule_id: rule.id,
-    rule_name_snapshot: rule.name,
-    delta: rule.delta,
+    rule_id: ruleId,
+    rule_name_snapshot: ruleName,
+    delta,
     source,
     actor_user_id: actorUserId || null,
     client_created_at: body.client_created_at,
@@ -1437,6 +1454,29 @@ app.post('/api/classes/:classId/score-periods', userAuth, requireActivePlan, (re
     });
     const payload = classManagementPayload(cls);
     io.to(`class:${cls.id}`).emit('class-management-update', { class_id: cls.id, ...payload });
+    res.json(payload);
+  } catch (error) {
+    sendClassPointsError(res, error);
+  }
+});
+
+// 半月周期结算：封存当前周期快照（含挑座位顺序的全员排名）并开启新周期
+app.post('/api/classes/:classId/score-periods/settle', userAuth, requireActivePlan, (req, res) => {
+  const cls = enabledManagementClass(req, res);
+  if (!cls) return;
+  if (cls.user_id !== req.user.id) return res.status(403).json({ error: '只有班级创建者可以结算周期' });
+  try {
+    const result = dbStore.settleClassScorePeriod(cls.id, {
+      name: req.body.name,
+      settled_at: new Date().toISOString()
+    });
+    const payload = classManagementPayload(cls);
+    io.to(`class:${cls.id}`).emit('class-management-update', { class_id: cls.id, ...payload });
+    io.to(`class:${cls.id}`).emit('class-score-period-settled', {
+      class_id: cls.id,
+      settled_name: result.ended.name,
+      snapshot: result.ended.snapshot
+    });
     res.json(payload);
   } catch (error) {
     sendClassPointsError(res, error);

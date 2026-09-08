@@ -87,7 +87,15 @@
   }
 
   if (!root || !root.document) {
-    return { IDLE_TIMEOUT_MS: IDLE_TIMEOUT_MS, createModeController: createModeController, buildSeatGridModel: buildSeatGridModel };
+    return {
+      IDLE_TIMEOUT_MS: IDLE_TIMEOUT_MS,
+      createModeController: createModeController,
+      buildSeatGridModel: buildSeatGridModel,
+      openScoreModal: openScoreModal,
+      closeScoreModal: closeScoreModal,
+      applyRuleForModalStudent: applyRuleForModalStudent,
+      applyCustomForModalStudent: applyCustomForModalStudent
+    };
   }
 
   var document = root.document;
@@ -389,10 +397,11 @@
       var index = selectedStudentIds.indexOf(studentId);
       if (index >= 0) selectedStudentIds.splice(index, 1);
       else selectedStudentIds.push(studentId);
+      renderScoreMode();
     } else {
-      selectedStudentIds = [studentId];
+      // 主路径：点座位上的名字直接弹快捷评分面板
+      openScoreModal(studentId);
     }
-    renderScoreMode();
   }
 
   function toggleBatchMode() {
@@ -465,13 +474,94 @@
     var rule = (classroomState.rules || []).find(function(item) { return item.id === ruleId; });
     if (!rule) return;
     var ids = selectedStudentIds.slice();
-    queue.enqueue({ student_ids: ids, rule_id: ruleId });
-    optimisticScore(ids, rule);
-    playScoreSound(rule.delta);
     selectedStudentIds = [];
-    if (!batchMode) batchMode = false;
+    submitEntries(ids, { student_ids: ids, rule_id: ruleId }, rule.delta);
+  }
+
+  function submitEntries(ids, payload, delta) {
+    if (!queue || !ids.length) return;
+    queue.enqueue(payload);
+    optimisticScore(ids, { delta: delta });
+    playScoreSound(delta);
     renderScoreMode();
     flushQueue();
+  }
+
+  // ---------- 点人名快捷评分面板：六项规则 + 自定义分值（事由可选） ----------
+  var modalStudentId = null;
+
+  function openScoreModal(studentId) {
+    var student = studentById(studentId);
+    if (!student) return;
+    modeController.touch();
+    modalStudentId = studentId;
+    renderScoreModal();
+    var overlay = byId('pointsScoreModal');
+    if (overlay) overlay.hidden = false;
+  }
+
+  function closeScoreModal() {
+    modalStudentId = null;
+    var overlay = byId('pointsScoreModal');
+    if (overlay) overlay.hidden = true;
+  }
+
+  function renderScoreModal() {
+    var overlay = byId('pointsScoreModal');
+    if (!overlay || !modalStudentId) return;
+    var student = studentById(modalStudentId);
+    var scoreItem = rankingMap()[modalStudentId];
+    var currentScore = scoreItem ? scoreItem.score : 0;
+    var nameEl = byId('pointsModalName');
+    var scoreEl = byId('pointsModalScore');
+    if (nameEl) nameEl.textContent = student ? student.name : '';
+    if (scoreEl) {
+      scoreEl.textContent = (currentScore > 0 ? '+' : '') + currentScore + ' 分';
+      scoreEl.className = 'points-modal-score' + (currentScore < 0 ? ' negative' : '');
+    }
+    var rulesEl = byId('pointsModalRules');
+    if (rulesEl) {
+      rulesEl.innerHTML = (classroomState.rules || []).filter(function(rule) { return rule.active !== false; }).map(function(rule) {
+        return '<button type="button" class="points-rule-button ' + (rule.delta > 0 ? 'positive' : 'negative') + '" data-rule-id="' + escapeHtml(rule.id) + '"><span>' + escapeHtml(rule.name) + '</span><b>' + (rule.delta > 0 ? '+' : '') + rule.delta + '</b></button>';
+      }).join('');
+      rulesEl.querySelectorAll('[data-rule-id]').forEach(function(button) {
+        button.addEventListener('click', function() { applyRuleForModalStudent(button.getAttribute('data-rule-id')); });
+      });
+    }
+    var deltaInput = byId('pointsModalCustomDelta');
+    var reasonInput = byId('pointsModalCustomReason');
+    if (deltaInput) deltaInput.value = '';
+    if (reasonInput) reasonInput.value = '';
+  }
+
+  function applyRuleForModalStudent(ruleId) {
+    if (!modalStudentId) return;
+    modeController.touch();
+    var rule = (classroomState.rules || []).find(function(item) { return item.id === ruleId; });
+    if (!rule) return;
+    var ids = [modalStudentId];
+    closeScoreModal();
+    submitEntries(ids, { student_ids: ids, rule_id: ruleId }, rule.delta);
+  }
+
+  function applyCustomForModalStudent() {
+    if (!modalStudentId) return;
+    modeController.touch();
+    var deltaInput = byId('pointsModalCustomDelta');
+    var delta = Number(deltaInput && deltaInput.value);
+    if (!Number.isInteger(delta) || delta === 0 || delta < -100 || delta > 100) {
+      var status = byId('pointsSyncStatus');
+      if (status) {
+        status.className = 'points-sync-status failed';
+        status.textContent = '分值需为 -100~100 的非零整数';
+      }
+      return;
+    }
+    var reasonInput = byId('pointsModalCustomReason');
+    var ids = [modalStudentId];
+    var payload = { student_ids: ids, custom_delta: delta, custom_reason: String(reasonInput && reasonInput.value || '').trim().slice(0, 30) };
+    closeScoreModal();
+    submitEntries(ids, payload, delta);
   }
 
   function ensureScreenSession() {
@@ -657,6 +747,10 @@
     setScope: setScope,
     setLedgerFilter: setLedgerFilter,
     undoLatest: undoLatest,
+    openScoreModal: openScoreModal,
+    closeScoreModal: closeScoreModal,
+    applyRuleForModalStudent: applyRuleForModalStudent,
+    applyCustomForModalStudent: applyCustomForModalStudent,
     suspendForBroadcast: suspendForBroadcast,
     resumeAfterBroadcast: modeController.resumeAfterBroadcast,
     handleSocketEvent: handleSocketEvent,
