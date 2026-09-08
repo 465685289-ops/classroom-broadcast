@@ -389,9 +389,34 @@
     seatSelectionStudentId = studentId;
     var pointerId = event.pointerId;
     var target = null;
+    var chip = event.currentTarget;
+    var ghost = null;
     event.preventDefault();
+    // 拖动时生成跟随指针的名字浮影（pointer 事件同时适配触摸屏黑板电脑）
+    function ensureGhost(x, y) {
+      if (ghost) return;
+      ghost = chip.cloneNode(true);
+      ghost.className = chip.className + ' seat-selection-ghost';
+      ghost.style.width = chip.offsetWidth + 'px';
+      ghost.style.left = x + 'px';
+      ghost.style.top = y + 'px';
+      document.body.appendChild(ghost);
+      if (chip.classList) chip.classList.add('seat-selection-source');
+    }
+    function moveGhost(x, y) {
+      if (!ghost) return;
+      ghost.style.left = x + 'px';
+      ghost.style.top = y + 'px';
+    }
+    function cleanup() {
+      if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+      ghost = null;
+      if (chip && chip.classList) chip.classList.remove('seat-selection-source');
+    }
     function move(moveEvent) {
       if (moveEvent.pointerId !== pointerId) return;
+      ensureGhost(moveEvent.clientX, moveEvent.clientY);
+      moveGhost(moveEvent.clientX, moveEvent.clientY);
       target = seatTargetAt(moveEvent.clientX, moveEvent.clientY);
       markSeatDropTarget(target);
     }
@@ -401,6 +426,7 @@
       document.removeEventListener('pointerup', finish);
       document.removeEventListener('pointercancel', cancel);
       var seat = seatTargetAt(upEvent.clientX, upEvent.clientY) || target;
+      cleanup();
       markSeatDropTarget(null);
       if (seat) {
         assignSeatSelectionStudent(studentId, Number(seat.getAttribute('data-seat-row')), Number(seat.getAttribute('data-seat-col')));
@@ -413,6 +439,7 @@
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', finish);
       document.removeEventListener('pointercancel', cancel);
+      cleanup();
       markSeatDropTarget(null);
       renderRulePanel();
     }

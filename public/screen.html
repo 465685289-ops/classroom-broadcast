@@ -44,8 +44,6 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
 /* ---------- 大屏页 ---------- */
 .screen-page { display:none; height:100vh; position:relative; }
 .screen-header { position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:20px 38px; z-index:10; }
-.screen-header .class-name { font-size:20px; color:var(--cream-60); font-weight:500; letter-spacing:3px; display:flex; align-items:center; gap:10px; }
-.screen-header .class-name::before { content:'❧'; color:var(--brass); font-size:15px; }
 .screen-header .right-btns { display:flex; align-items:center; gap:14px; }
 .screen-header .status { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--cream-25); letter-spacing:1px; }
 .screen-header .status .dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px rgba(138,168,106,.6); }
@@ -195,7 +193,6 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
 }
 
 @media(max-width:640px){
-  .screen-header .class-name { max-width:42vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .screen-header .right-btns { gap:7px; }
   .screen-header .screen-btn { padding:5px 9px; }
   .screen-idle { padding-top:60px; }
@@ -290,8 +287,6 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
 .history-panel .h-item .h-content { font-size:15px; line-height:1.6; margin-bottom:6px; color:var(--cream-90); }
 .history-panel .h-item .h-meta { font-size:12px; color:var(--cream-25); }
 
-.unbind-btn { position:absolute; bottom:16px; left:16px; padding:6px 14px; background:rgba(248,240,226,.04); border:1px solid rgba(199,154,74,.18); border-radius:8px; color:var(--cream-25); font-size:12px; cursor:pointer; z-index:10; transition:.2s; }
-.unbind-btn:hover { color:var(--cream-60); border-color:var(--brass-soft); }
 </style>
 <link rel="stylesheet" href="/classroom-points-screen.css">
 <link rel="stylesheet" href="/classroom-screen-premium.css">
@@ -314,8 +309,8 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
 <div class="screen-page" id="screenPage">
   <div class="screen-bg"></div>
   <div class="screen-header">
-    <span class="class-name" id="screenClassName"></span>
     <div class="right-btns">
+      <button class="screen-btn" type="button" onclick="unbind()">解除绑定</button>
       <button class="screen-btn" id="fullscreenBtn" type="button" onclick="toggleFullscreen()">全屏</button>
       <button class="screen-btn" type="button" onclick="toggleHistory()">历史记录</button>
       <button class="screen-btn points-idle-actions" id="pointsIdleActions" type="button" onclick="ClassroomPointsScreen.openMode('score')" aria-label="打开座位积分" hidden>座位积分</button>
@@ -504,7 +499,6 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
     <div id="historyList"></div>
   </div>
 
-  <div class="unbind-btn" onclick="unbind()">解除绑定</div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -1026,7 +1020,6 @@ function initSocket() {
     savedBind = persistScreenBind(savedBind);
     document.getElementById('bindPage').style.display = 'none';
     document.getElementById('screenPage').style.display = 'block';
-    document.getElementById('screenClassName').textContent = cls.name;
     document.getElementById('idleClassName').textContent = cls.name;
     currentGrade = cls.grade || 'junior';
     document.getElementById('savedHint').style.display = 'none';

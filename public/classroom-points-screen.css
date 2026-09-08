@@ -1,5 +1,10 @@
 .points-idle-actions {
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  padding-left: 15px; /* 抵消 letter-spacing 末尾多出的 1px，让文字视觉居中 */
 }
 
 .points-idle-actions[hidden] { display: none !important; }
@@ -115,8 +120,18 @@
 
 .points-mode.is-seat-selection .points-score-side { grid-template-rows: 1fr; }
 .points-mode.is-seat-selection .points-recent-panel { display:none; }
-.points-mode.is-seat-selection .points-seat-area { overflow:hidden; }
-.points-mode.is-seat-selection .points-seat-grid { flex:1 1 auto; grid-auto-rows:minmax(64px, 1fr); }
+/* 选座模式：座位格缩小约 30%，区域可滚动并显示滚动条，保证大班级也完整可见 */
+.points-mode.is-seat-selection .points-seat-area { overflow-y:auto; scrollbar-width:thin; scrollbar-color:#cbb287 rgba(248,240,226,.25); }
+.points-mode.is-seat-selection .points-seat-area::-webkit-scrollbar { width:10px; }
+.points-mode.is-seat-selection .points-seat-area::-webkit-scrollbar-thumb { background:#cbb287; border-radius:8px; }
+.points-mode.is-seat-selection .points-seat-area::-webkit-scrollbar-track { background:rgba(248,240,226,.25); border-radius:8px; }
+.points-mode.is-seat-selection .points-seat-grid { flex:0 0 auto; grid-template-columns:repeat(var(--points-seat-cols), minmax(49px, 1fr)); grid-auto-rows:minmax(45px, auto); gap:7px; }
+.points-mode.is-seat-selection .points-seat-empty span { font-size:9px; }
+.points-mode.is-seat-selection .points-seat-empty, .points-mode.is-seat-selection .points-seat-picked { border-radius:9px; }
+.points-mode.is-seat-selection .points-seat-picked strong { font-size:13px; }
+.points-mode.is-seat-selection .points-seat-picked small { font-size:11px; }
+.points-selection-student.seat-selection-source { opacity:.35; }
+.seat-selection-ghost { position:fixed; z-index:10000; pointer-events:none; margin:0; transform:translate(-50%,-50%); box-shadow:0 14px 34px rgba(40,30,12,.35); opacity:.95; cursor:grabbing; }
 .points-seat-empty.selectable { cursor:pointer; transition:background .15s ease,border-color .15s ease,transform .15s ease; }
 .points-seat-empty.selectable:hover,.points-seat-empty.selectable.drop-target { border-color:#9c6c28; background:#f4dfb5; transform:translateY(-1px); }
 .points-seat-picked { min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid #d8c8ab; border-radius:13px; background:#fffdf7; color:#3a3026; }
