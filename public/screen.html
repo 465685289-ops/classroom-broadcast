@@ -378,7 +378,7 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
       <header class="points-mode-header">
         <div class="points-mode-title">
           <button class="points-back-button" type="button" onclick="ClassroomPointsScreen.backToIdle()">← 返回日常页</button>
-          <div><h2>班级加扣分</h2><p>点学生，再点右侧规则；支持批量登记</p></div>
+          <div><h2>班级加扣分</h2><p>点座位上的名字直接加减分；多人一起登记用「批量登记」</p></div>
         </div>
         <div class="points-toolbar">
           <span class="points-sync-status" id="pointsSyncStatus">已同步</span>
@@ -413,13 +413,29 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
           <div><h2>班级积分榜</h2><p>只在需要时展示，60 秒无操作自动返回</p></div>
         </div>
         <nav class="points-scope-tabs" aria-label="积分榜时间范围">
+          <button type="button" data-points-scope="term" onclick="ClassroomPointsScreen.setScope('term')">本周期</button>
           <button type="button" data-points-scope="today" onclick="ClassroomPointsScreen.setScope('today')">今日</button>
           <button type="button" data-points-scope="week" onclick="ClassroomPointsScreen.setScope('week')">本周</button>
           <button type="button" data-points-scope="month" onclick="ClassroomPointsScreen.setScope('month')">本月</button>
-          <button type="button" data-points-scope="term" onclick="ClassroomPointsScreen.setScope('term')">本学期</button>
         </nav>
       </header>
       <main class="points-list-content"><div class="points-ranking-list" id="pointsRankingList"></div></main>
+    </section>
+  </div>
+
+  <div class="points-score-modal-overlay" id="pointsScoreModal" hidden>
+    <section class="points-score-modal" role="dialog" aria-modal="true" aria-label="快速加减分" onmousedown="if(event.target===this)ClassroomPointsScreen.closeScoreModal()">
+      <header class="points-modal-head">
+        <strong id="pointsModalName">学生</strong>
+        <b class="points-modal-score" id="pointsModalScore">0 分</b>
+      </header>
+      <div class="points-modal-rules" id="pointsModalRules"></div>
+      <div class="points-modal-custom">
+        <input type="number" id="pointsModalCustomDelta" placeholder="自定义分值" aria-label="自定义分值">
+        <input type="text" id="pointsModalCustomReason" maxlength="30" placeholder="事由（可选）" aria-label="事由">
+        <button type="button" class="points-modal-apply" onclick="ClassroomPointsScreen.applyCustomForModalStudent()">确定</button>
+      </div>
+      <button type="button" class="points-modal-close" onclick="ClassroomPointsScreen.closeScoreModal()">取消 / 关闭</button>
     </section>
   </div>
 
@@ -1042,7 +1058,7 @@ function initSocket() {
     renderClassTimetable(timetable);
   });
 
-  ['class-management-update', 'class-roster-update', 'class-score-rules-update', 'class-score-entry', 'class-score-reversal'].forEach(function(eventName) {
+  ['class-management-update', 'class-roster-update', 'class-score-rules-update', 'class-score-entry', 'class-score-reversal', 'class-score-period-settled'].forEach(function(eventName) {
     socket.on(eventName, function() { ClassroomPointsScreen.handleSocketEvent(); });
   });
 }

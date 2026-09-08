@@ -297,6 +297,45 @@ test('owner can hide the screen entry without deleting roster, layout or score h
   assert.ok(historicalLedger.body.items.length >= 3);
 });
 
+test('screen custom delta entries are validated and settle archives a snapshot then resets to zero', async () => {
+  const custom = await request('/api/screen/points/entries', {
+    method: 'POST', token: null, screenToken,
+    body: { client_operation_id: 'screen-custom-op-1', student_ids: [studentId], custom_delta: 3, custom_reason: '自订加分' }
+  });
+  assert.equal(custom.status, 200);
+  assert.equal(custom.body.entries[0].delta, 3);
+  assert.equal(custom.body.entries[0].rule_name_snapshot, '自订加分');
+
+  for (const bad of [{ custom_delta: 0 }, { custom_delta: 500 }, { custom_delta: 'abc' }, {}]) {
+    const rejected = await request('/api/screen/points/entries', {
+      method: 'POST', token: null, screenToken,
+      body: { client_operation_id: 'screen-custom-bad-' + JSON.stringify(bad), student_ids: [studentId], ...bad }
+    });
+    assert.equal(rejected.status, 400, '应拒绝 ' + JSON.stringify(bad));
+  }
+
+  const memberSettle = await request('/api/classes/' + CLASS_ID + '/score-periods/settle', {
+    method: 'POST', token: MEMBER_TOKEN, body: { name: '2026-09 上' }
+  });
+  assert.equal(memberSettle.status, 403);
+
+  const settled = await request('/api/classes/' + CLASS_ID + '/score-periods/settle', {
+    method: 'POST', body: { name: '2026-09 上' }
+  });
+  assert.equal(settled.status, 200);
+  const ended = settled.body.periods.find(item => item.status === 'ended' && item.name === '2026-09 上');
+  assert.ok(ended, '应生成同名已结算周期');
+  assert.ok(Array.isArray(ended.snapshot) && ended.snapshot.length >= 1, '快照应包含学生');
+  assert.equal(ended.snapshot[0].rank, 1);
+  assert.equal(ended.snapshot[0].score, 3, '快照积分应为结算时刻的本周期累计');
+  assert.ok(settled.body.current_period.id !== ended.id, '结算后应开启新周期');
+  assert.ok(settled.body.current_period.starts_at === ended.ends_at, '新周期起点=结算时刻');
+
+  const freshLeaderboard = await request('/api/classes/' + CLASS_ID + '/points/leaderboard?scope=term');
+  assert.equal(freshLeaderboard.status, 200);
+  assert.equal(freshLeaderboard.body.items[0].score, 0, '结算后本周期从零累计');
+});
+
 test('deleting a managed class archives its history and removes it from active classes', async () => {
   const removed = await request('/api/classes/' + CLASS_ID, { method: 'DELETE' });
   assert.equal(removed.status, 200);

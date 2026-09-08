@@ -778,6 +778,7 @@ function ensureSchema() {
   ensureColumn('classes', 'seat_rows', 'INTEGER DEFAULT 8');
   ensureColumn('classes', 'seat_cols', 'INTEGER DEFAULT 6');
   ensureColumn('classes', 'archived_at', 'TEXT');
+  ensureColumn('class_score_periods', 'snapshot_json', 'TEXT');
   db.exec(`
     UPDATE classes
     SET seat_rows = MIN(30, MAX(
@@ -1647,6 +1648,10 @@ function listClassScoreRules(classId, options = {}) {
 
 function mapClassScorePeriod(row) {
   if (!row) return null;
+  let snapshot = null;
+  if (row.snapshot_json) {
+    try { snapshot = JSON.parse(row.snapshot_json); } catch (e) { snapshot = null; }
+  }
   return {
     id: row.id,
     class_id: row.class_id,
@@ -1654,6 +1659,7 @@ function mapClassScorePeriod(row) {
     starts_at: row.starts_at,
     ends_at: row.ends_at || null,
     status: row.status,
+    snapshot: Array.isArray(snapshot) ? snapshot : null,
     created_at: row.created_at
   };
 }
@@ -1684,6 +1690,64 @@ function ensureCurrentClassScorePeriod(classId, nowValue) {
     VALUES (@id, @class_id, @name, @starts_at, @ends_at, @status, @created_at)
   `).run(row);
   return mapClassScorePeriod(row);
+}
+
+// 半月周期结算（贺老师班的玩法）：封存当前周期快照并开启新周期，
+// 「清零」是逻辑上的——新周期从结算时刻起算，历史流水完整保留。
+function settleClassScorePeriod(classId, options = {}) {
+  const settledAtRaw = options.settled_at || new Date().toISOString();
+  const settledAt = new Date(settledAtRaw);
+  if (Number.isNaN(settledAt.getTime())) throw new Error('结算时间无效');
+  const settledAtIso = settledAt.toISOString();
+  if (!db.prepare('SELECT id FROM classes WHERE id = ?').get(classId)) throw new Error('班级不存在');
+
+  const current = ensureCurrentClassScorePeriod(classId, settledAtIso);
+  const leaderboard = getClassScoreLeaderboard({
+    class_id: classId,
+    period_id: current.id,
+    to: settledAtIso
+  });
+  const snapshot = leaderboard.map((row, index) => ({
+    rank: index + 1,
+    student_id: row.student_id,
+    name: row.student_name,
+    score: Number(row.score) || 0
+  }));
+
+  const endedAt = settledAtIso;
+  const name = String(options.name || '').trim().slice(0, 40) || current.name;
+  db.prepare(`
+    UPDATE class_score_periods
+    SET name = @name, ends_at = @ends_at, status = 'ended', snapshot_json = @snapshot_json
+    WHERE id = @id AND status = 'current'
+  `).run({
+    id: current.id,
+    name,
+    ends_at: endedAt,
+    snapshot_json: JSON.stringify(snapshot)
+  });
+
+  const nowDate = settledAt;
+  const nextMonth = nowDate.getUTCMonth() + 1;
+  const termName = `${nowDate.getUTCFullYear()}年${nextMonth >= 2 && nextMonth <= 7 ? '春季' : '秋季'}学期`;
+  const nextRow = {
+    id: crypto.randomUUID(),
+    class_id: classId,
+    name: termName,
+    starts_at: endedAt,
+    ends_at: null,
+    status: 'current',
+    created_at: endedAt
+  };
+  db.prepare(`
+    INSERT INTO class_score_periods (id, class_id, name, starts_at, ends_at, status, created_at)
+    VALUES (@id, @class_id, @name, @starts_at, @ends_at, @status, @created_at)
+  `).run(nextRow);
+
+  return {
+    ended: mapClassScorePeriod(db.prepare('SELECT * FROM class_score_periods WHERE id = ?').get(current.id)),
+    next: mapClassScorePeriod(db.prepare('SELECT * FROM class_score_periods WHERE id = ?').get(nextRow.id))
+  };
 }
 
 function startClassScorePeriod(classId, input = {}) {
@@ -4391,6 +4455,7 @@ module.exports = {
   getClassScoreRule,
   listClassScoreRules,
   ensureCurrentClassScorePeriod,
+  settleClassScorePeriod,
   startClassScorePeriod,
   listClassScorePeriods,
   appendClassScoreEntries,
