@@ -241,6 +241,7 @@ function classResponse(cls, userId, onlineCounts) {
     points_sound_enabled: !!cls.points_sound_enabled,
     seat_rows: Number(cls.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
     seat_cols: Number(cls.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS,
+    seat_selection_active: !!cls.seat_selection_active,
     online: onlineCounts ? (onlineCounts[cls.id] || 0) : 0
   };
 }
@@ -279,6 +280,7 @@ function classManagementPayload(cls) {
     sound_enabled: false,
     seat_rows: classroomPoints.DEFAULT_SEAT_ROWS,
     seat_cols: classroomPoints.DEFAULT_SEAT_COLS,
+    seat_selection_active: false,
     archived_at: null
   };
   const periods = management.enabled ? dbStore.listClassScorePeriods(cls.id) : [];
@@ -1333,6 +1335,7 @@ app.put('/api/classes/:classId/management', userAuth, requireActivePlan, (req, r
     cls.points_sound_enabled = management.sound_enabled;
     cls.seat_rows = management.seat_rows;
     cls.seat_cols = management.seat_cols;
+    cls.seat_selection_active = management.seat_selection_active;
     if (management.enabled) {
       ensureDefaultClassScoreRules(cls.id);
       dbStore.ensureCurrentClassScorePeriod(cls.id, new Date().toISOString());
@@ -1392,6 +1395,53 @@ app.patch('/api/classes/:classId/students/:studentId', userAuth, requireActivePl
     });
     io.to(`class:${cls.id}`).emit('class-roster-update', { class_id: cls.id });
     res.json({ student });
+  } catch (error) {
+    sendClassPointsError(res, error);
+  }
+});
+
+// 选座只在已绑定的教室端发起；开始时原子清空当前座位，断线/刷新后状态仍保留。
+app.post('/api/screen/seat-selection/start', screenSessionAuth, requireActiveScreenClassPlan, (req, res) => {
+  const cls = req.screenClass;
+  if (!cls.management_enabled) return res.status(400).json({ error: '该班级尚未开启班级管理' });
+  try {
+    const management = dbStore.startClassSeatSelection(cls.id);
+    cls.seat_selection_active = management.seat_selection_active;
+    const payload = classManagementPayload(cls);
+    io.to(`class:${cls.id}`).emit('class-management-update', { class_id: cls.id, ...payload });
+    io.to(`class:${cls.id}`).emit('class-roster-update', { class_id: cls.id });
+    res.json(payload);
+  } catch (error) {
+    sendClassPointsError(res, error);
+  }
+});
+
+app.post('/api/screen/seat-selection/seats', screenSessionAuth, requireActiveScreenClassPlan, (req, res) => {
+  const cls = req.screenClass;
+  if (!cls.management_enabled) return res.status(400).json({ error: '该班级尚未开启班级管理' });
+  try {
+    const student = dbStore.assignClassSeatSelectionStudent(
+      cls.id,
+      String(req.body.student_id || ''),
+      req.body.seat_row,
+      req.body.seat_col
+    );
+    io.to(`class:${cls.id}`).emit('class-roster-update', { class_id: cls.id });
+    res.json({ student });
+  } catch (error) {
+    sendClassPointsError(res, error);
+  }
+});
+
+app.post('/api/screen/seat-selection/finish', screenSessionAuth, requireActiveScreenClassPlan, (req, res) => {
+  const cls = req.screenClass;
+  if (!cls.management_enabled) return res.status(400).json({ error: '该班级尚未开启班级管理' });
+  try {
+    const management = dbStore.finishClassSeatSelection(cls.id);
+    cls.seat_selection_active = management.seat_selection_active;
+    const payload = classManagementPayload(cls);
+    io.to(`class:${cls.id}`).emit('class-management-update', { class_id: cls.id, ...payload });
+    res.json(payload);
   } catch (error) {
     sendClassPointsError(res, error);
   }
@@ -1568,7 +1618,8 @@ app.post('/api/screen/session', (req, res) => {
       management_enabled: !!cls.management_enabled,
       points_sound_enabled: !!cls.points_sound_enabled,
       seat_rows: Number(cls.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
-      seat_cols: Number(cls.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS
+      seat_cols: Number(cls.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS,
+      seat_selection_active: !!cls.seat_selection_active
     }
   });
 });

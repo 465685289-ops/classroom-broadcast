@@ -142,6 +142,7 @@ function ensureSchema() {
       points_sound_enabled INTEGER DEFAULT 0,
       seat_rows INTEGER DEFAULT 8,
       seat_cols INTEGER DEFAULT 6,
+      seat_selection_active INTEGER DEFAULT 0,
       archived_at TEXT,
       created_at TEXT,
       extra_json TEXT
@@ -777,6 +778,7 @@ function ensureSchema() {
   ensureColumn('classes', 'points_sound_enabled', 'INTEGER DEFAULT 0');
   ensureColumn('classes', 'seat_rows', 'INTEGER DEFAULT 8');
   ensureColumn('classes', 'seat_cols', 'INTEGER DEFAULT 6');
+  ensureColumn('classes', 'seat_selection_active', 'INTEGER DEFAULT 0');
   ensureColumn('classes', 'archived_at', 'TEXT');
   ensureColumn('class_score_periods', 'snapshot_json', 'TEXT');
   db.exec(`
@@ -884,6 +886,7 @@ function loadClasses() {
       points_sound_enabled: Number(row.points_sound_enabled) === 1,
       seat_rows: Number(row.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
       seat_cols: Number(row.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS,
+      seat_selection_active: Number(row.seat_selection_active) === 1,
       archived_at: row.archived_at || null,
       created_at: row.created_at,
       timetable: normalizeClassTimetable(extra.timetable)
@@ -1253,13 +1256,23 @@ function deleteAccountPasswordAliases(userId) {
 
 const upsertClassTx = db.transaction((cls) => {
   db.prepare(`
-    INSERT INTO classes (id, user_id, name, grade, bind_code, created_at, extra_json)
-    VALUES (@id, @user_id, @name, @grade, @bind_code, @created_at, @extra_json)
+    INSERT INTO classes (
+      id, user_id, name, grade, bind_code, management_enabled, points_sound_enabled,
+      seat_rows, seat_cols, seat_selection_active, created_at, extra_json
+    ) VALUES (
+      @id, @user_id, @name, @grade, @bind_code, @management_enabled, @points_sound_enabled,
+      @seat_rows, @seat_cols, @seat_selection_active, @created_at, @extra_json
+    )
     ON CONFLICT(id) DO UPDATE SET
       user_id = excluded.user_id,
       name = excluded.name,
       grade = excluded.grade,
       bind_code = excluded.bind_code,
+      management_enabled = CASE WHEN @has_management_enabled THEN excluded.management_enabled ELSE classes.management_enabled END,
+      points_sound_enabled = CASE WHEN @has_points_sound_enabled THEN excluded.points_sound_enabled ELSE classes.points_sound_enabled END,
+      seat_rows = CASE WHEN @has_seat_rows THEN excluded.seat_rows ELSE classes.seat_rows END,
+      seat_cols = CASE WHEN @has_seat_cols THEN excluded.seat_cols ELSE classes.seat_cols END,
+      seat_selection_active = CASE WHEN @has_seat_selection_active THEN excluded.seat_selection_active ELSE classes.seat_selection_active END,
       created_at = excluded.created_at,
       extra_json = excluded.extra_json
   `).run({
@@ -1268,6 +1281,16 @@ const upsertClassTx = db.transaction((cls) => {
     name: cls.name,
     grade: cls.grade || 'junior',
     bind_code: cls.bind_code,
+    management_enabled: cls.management_enabled ? 1 : 0,
+    points_sound_enabled: cls.points_sound_enabled ? 1 : 0,
+    seat_rows: Number(cls.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
+    seat_cols: Number(cls.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS,
+    seat_selection_active: cls.seat_selection_active ? 1 : 0,
+    has_management_enabled: Object.prototype.hasOwnProperty.call(cls, 'management_enabled') ? 1 : 0,
+    has_points_sound_enabled: Object.prototype.hasOwnProperty.call(cls, 'points_sound_enabled') ? 1 : 0,
+    has_seat_rows: Object.prototype.hasOwnProperty.call(cls, 'seat_rows') ? 1 : 0,
+    has_seat_cols: Object.prototype.hasOwnProperty.call(cls, 'seat_cols') ? 1 : 0,
+    has_seat_selection_active: Object.prototype.hasOwnProperty.call(cls, 'seat_selection_active') ? 1 : 0,
     created_at: cls.created_at || new Date().toISOString(),
     extra_json: cls.timetable ? jsonString({ timetable: normalizeClassTimetable(cls.timetable) }) : null
   });
@@ -1398,7 +1421,7 @@ function archiveClass(classId, archivedAt) {
   const timestamp = archivedAt || new Date().toISOString();
   const result = db.prepare(`
     UPDATE classes
-    SET archived_at = ?, management_enabled = 0, points_sound_enabled = 0
+    SET archived_at = ?, management_enabled = 0, points_sound_enabled = 0, seat_selection_active = 0
     WHERE id = ?
   `).run(timestamp, classId);
   if (!result.changes) throw new Error('班级不存在');
@@ -1413,13 +1436,14 @@ function classManagementRow(row) {
     sound_enabled: Number(row.points_sound_enabled) === 1,
     seat_rows: Number(row.seat_rows) || classroomPoints.DEFAULT_SEAT_ROWS,
     seat_cols: Number(row.seat_cols) || classroomPoints.DEFAULT_SEAT_COLS,
+    seat_selection_active: Number(row.seat_selection_active) === 1,
     archived_at: row.archived_at || null
   };
 }
 
 function getClassManagement(classId) {
   return classManagementRow(db.prepare(`
-    SELECT id, management_enabled, points_sound_enabled, seat_rows, seat_cols, archived_at
+    SELECT id, management_enabled, points_sound_enabled, seat_rows, seat_cols, seat_selection_active, archived_at
     FROM classes WHERE id = ?
   `).get(classId));
 }
@@ -1429,6 +1453,9 @@ function setClassManagement(classId, patch) {
   if (!current) throw new Error('班级不存在');
   const enabled = patch && patch.enabled !== undefined ? (patch.enabled ? 1 : 0) : (current.enabled ? 1 : 0);
   const soundEnabled = patch && patch.sound_enabled !== undefined ? (patch.sound_enabled ? 1 : 0) : (current.sound_enabled ? 1 : 0);
+  const seatSelectionActive = enabled && patch && patch.seat_selection_active !== undefined
+    ? (patch.seat_selection_active ? 1 : 0)
+    : (enabled && current.seat_selection_active ? 1 : 0);
   const layout = classroomPoints.normalizeSeatLayout(patch, current);
   const outside = db.prepare(`
     SELECT name FROM class_students
@@ -1441,9 +1468,9 @@ function setClassManagement(classId, patch) {
   }
   db.prepare(`
     UPDATE classes
-    SET management_enabled = ?, points_sound_enabled = ?, seat_rows = ?, seat_cols = ?
+    SET management_enabled = ?, points_sound_enabled = ?, seat_rows = ?, seat_cols = ?, seat_selection_active = ?
     WHERE id = ?
-  `).run(enabled, soundEnabled, layout.seat_rows, layout.seat_cols, classId);
+  `).run(enabled, soundEnabled, layout.seat_rows, layout.seat_cols, seatSelectionActive, classId);
   return getClassManagement(classId);
 }
 
@@ -1460,6 +1487,58 @@ function assertStudentSeat(classId, studentId, student, archived) {
     LIMIT 1
   `).get(classId, student.seat_row, student.seat_col, studentId || '');
   if (occupied) throw new Error(`座位重复：${student.seat_row} 排 ${student.seat_col} 列已有 ${occupied.name}`);
+}
+
+// 积分榜选座：换座位周期开始时一键清空全班座位（流水与花名册不受影响）
+function clearClassStudentSeats(classId) {
+  return db.prepare(`
+    UPDATE class_students SET seat_row = NULL, seat_col = NULL, updated_at = ?
+    WHERE class_id = ? AND archived = 0
+  `).run(new Date().toISOString(), classId).changes;
+}
+
+// 教室触摸屏选座由一次持久的班级状态控制：刷新或断线后仍可以继续。
+const startClassSeatSelectionTx = db.transaction((classId) => {
+  const management = getClassManagement(classId);
+  if (!management || !management.enabled) throw new Error('该班级尚未开启班级管理');
+  db.prepare('UPDATE classes SET seat_selection_active = 1 WHERE id = ?').run(classId);
+  clearClassStudentSeats(classId);
+  return getClassManagement(classId);
+});
+
+function startClassSeatSelection(classId) {
+  return startClassSeatSelectionTx(classId);
+}
+
+function finishClassSeatSelection(classId) {
+  const management = getClassManagement(classId);
+  if (!management) throw new Error('班级不存在');
+  db.prepare('UPDATE classes SET seat_selection_active = 0 WHERE id = ?').run(classId);
+  return getClassManagement(classId);
+}
+
+const assignClassSeatSelectionStudentTx = db.transaction((classId, studentId, seatRow, seatCol) => {
+  const management = getClassManagement(classId);
+  if (!management || !management.enabled) throw new Error('该班级尚未开启班级管理');
+  if (!management.seat_selection_active) throw new Error('请先开启积分榜选座');
+  const current = getClassStudent(classId, studentId);
+  if (!current || current.archived) throw new Error('学生不属于当前班级');
+  if (current.seat_row !== null || current.seat_col !== null) throw new Error('该学生已经完成选座');
+  const normalized = classroomPoints.normalizeStudentInput({
+    ...current,
+    seat_row: seatRow,
+    seat_col: seatCol
+  });
+  assertStudentSeat(classId, current.id, normalized, false);
+  db.prepare(`
+    UPDATE class_students SET seat_row = ?, seat_col = ?, updated_at = ?
+    WHERE class_id = ? AND id = ?
+  `).run(normalized.seat_row, normalized.seat_col, new Date().toISOString(), classId, current.id);
+  return getClassStudent(classId, current.id);
+});
+
+function assignClassSeatSelectionStudent(classId, studentId, seatRow, seatCol) {
+  return assignClassSeatSelectionStudentTx(classId, studentId, seatRow, seatCol);
 }
 
 function mapClassStudent(row) {
@@ -4456,6 +4535,10 @@ module.exports = {
   listClassScoreRules,
   ensureCurrentClassScorePeriod,
   settleClassScorePeriod,
+  clearClassStudentSeats,
+  startClassSeatSelection,
+  finishClassSeatSelection,
+  assignClassSeatSelectionStudent,
   startClassScorePeriod,
   listClassScorePeriods,
   appendClassScoreEntries,

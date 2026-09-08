@@ -20,7 +20,7 @@ test('screen loads the optional points assets and keeps student data out of the 
   const idle = screenHtml.match(/<div class="screen-idle" id="screenIdle">([\s\S]*?)<div class="points-mode"/);
   assert.ok(idle, 'idle section should end before points modes');
   assert.doesNotMatch(idle[1], /pointsSeatGrid|student_name|学生积分/);
-  assert.match(idle[1], />座位积分</);
+  assert.match(screenHtml, />座位积分</);
   assert.doesNotMatch(idle[1], />积分榜</);
   assert.doesNotMatch(idle[1], />流水记录</);
 });
@@ -35,6 +35,33 @@ test('screen seat model follows teacher dimensions and leaves unassigned student
     cells: [null, 'a', null, null],
     unseated: ['b', 'outside']
   });
+});
+
+test('idle page keeps the points entry beside the top-right controls and bulletin list remains scrollable', () => {
+  assert.match(screenHtml, /<div class="right-btns">[\s\S]*?id="pointsIdleActions"[\s\S]*?<\/div>/);
+  assert.match(screenHtml, /\.bulletin-list\s*\{[^}]*overflow-y:\s*auto/);
+  assert.match(screenHtml, /\.bulletin-list::-webkit-scrollbar-thumb/);
+});
+
+test('seat selection puts current-cycle higher scorers first and keeps no-score students available', () => {
+  const { rankSeatSelectionStudents } = require('../public/classroom-points-screen');
+  assert.deepEqual(rankSeatSelectionStudents([
+    { id: 'no-score', name: '周敏' },
+    { id: 'second', name: '王华' },
+    { id: 'first', name: '李明' },
+  ], [
+    { student_id: 'first', score: 18 },
+    { student_id: 'second', score: 8 },
+  ]).map((student) => student.id), ['first', 'second', 'no-score']);
+});
+
+test('screen selection exposes pointer-drag plus tap-to-place fallback controls', () => {
+  const source = fs.readFileSync(path.join(ROOT, 'public', 'classroom-points-screen.js'), 'utf8');
+  assert.match(screenHtml, /开启积分榜选座/);
+  assert.match(source, /pointerdown/);
+  assert.match(source, /data-seat-row/);
+  assert.match(source, /seat-selection\/seats/);
+  assert.match(source, /seat-selection\/start/);
 });
 
 test('mode controller restores the interrupted mode and restarts a 60 second timer', () => {

@@ -1,38 +1,14 @@
 .points-idle-actions {
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 12;
-  display: block;
-  padding: 6px;
-  border: 1px solid rgba(199, 154, 74, .24);
-  border-radius: 16px;
-  background: rgba(23, 17, 9, .78);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, .3);
-  backdrop-filter: blur(16px);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  padding-left: 15px; /* 抵消 letter-spacing 末尾多出的 1px，让文字视觉居中 */
 }
 
 .points-idle-actions[hidden] { display: none !important; }
-.points-idle-actions button {
-  width: 62px;
-  min-height: 86px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 9px 7px;
-  border: 1px solid rgba(199, 154, 74, .3);
-  border-radius: 12px;
-  background: linear-gradient(180deg, #b8893f, #8a6228);
-  color: #fff8e9;
-  font: 600 12px/1.25 inherit;
-  cursor: pointer;
-}
-.points-idle-actions button b { width:34px; height:34px; display:grid; place-items:center; border-radius:10px; background:rgba(255,255,255,.12); font-size:19px; }
-.points-idle-actions button span { writing-mode:vertical-rl; letter-spacing:2px; }
-.points-idle-actions button:hover { border-color: rgba(199, 154, 74, .68); filter: brightness(1.08); }
+.points-idle-actions:hover { color:var(--cream-60); border-color:var(--brass-soft); }
 
 .points-mode {
   position: absolute;
@@ -142,6 +118,38 @@
 .points-unseated button { display:flex; align-items:center; gap:6px; padding:6px 9px; border:1px solid #d8c9ae; border-radius:999px; background:#fffdf7; color:#594b39; font-family:inherit; cursor:pointer; }
 .points-unseated button small { color:#9a6f2e; font-weight:700; }
 
+.points-mode.is-seat-selection .points-score-side { grid-template-rows: 1fr; }
+.points-mode.is-seat-selection .points-recent-panel { display:none; }
+/* 选座模式：座位格缩小约 30%，区域可滚动并显示滚动条，保证大班级也完整可见 */
+.points-mode.is-seat-selection .points-seat-area { overflow-y:auto; scrollbar-width:thin; scrollbar-color:#cbb287 rgba(248,240,226,.25); }
+.points-mode.is-seat-selection .points-seat-area::-webkit-scrollbar { width:10px; }
+.points-mode.is-seat-selection .points-seat-area::-webkit-scrollbar-thumb { background:#cbb287; border-radius:8px; }
+.points-mode.is-seat-selection .points-seat-area::-webkit-scrollbar-track { background:rgba(248,240,226,.25); border-radius:8px; }
+.points-mode.is-seat-selection .points-seat-grid { flex:0 0 auto; grid-template-columns:repeat(var(--points-seat-cols), minmax(49px, 1fr)); grid-auto-rows:minmax(45px, auto); gap:7px; }
+.points-mode.is-seat-selection .points-seat-empty span { font-size:9px; }
+.points-mode.is-seat-selection .points-seat-empty, .points-mode.is-seat-selection .points-seat-picked { border-radius:9px; }
+.points-mode.is-seat-selection .points-seat-picked strong { font-size:13px; }
+.points-mode.is-seat-selection .points-seat-picked small { font-size:11px; }
+.points-selection-student.seat-selection-source { opacity:.35; }
+.seat-selection-ghost { position:fixed; z-index:10000; pointer-events:none; margin:0; transform:translate(-50%,-50%); box-shadow:0 14px 34px rgba(40,30,12,.35); opacity:.95; cursor:grabbing; }
+.points-seat-empty.selectable { cursor:pointer; transition:background .15s ease,border-color .15s ease,transform .15s ease; }
+.points-seat-empty.selectable:hover,.points-seat-empty.selectable.drop-target { border-color:#9c6c28; background:#f4dfb5; transform:translateY(-1px); }
+.points-seat-picked { min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid #d8c8ab; border-radius:13px; background:#fffdf7; color:#3a3026; }
+.points-seat-picked strong { max-width:90%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:clamp(15px,1.45vw,21px); }
+.points-seat-picked small { color:#9a6f2e; font-weight:700; }
+.points-selection-panel { height:100%; display:flex; flex-direction:column; min-height:0; }
+.points-selection-hint { flex:0 0 auto; padding:18px 18px 12px; border-bottom:1px solid #e3d7c0; color:#796951; font-size:13px; line-height:1.55; }
+.points-selection-hint strong { display:block; margin-bottom:4px; color:#61451f; font-size:18px; }
+.points-selection-hint b { color:#9a6f2e; }
+.points-selection-list { min-height:0; overflow:auto; padding:12px 14px 18px; display:grid; grid-template-columns:1fr; gap:8px; }
+.points-selection-student { min-height:54px; display:grid; grid-template-columns:34px minmax(0,1fr) auto; align-items:center; gap:9px; padding:8px 11px; border:1px solid #d8c8ab; border-radius:12px; background:#fffdf7; color:#3a3026; font-family:inherit; text-align:left; cursor:grab; touch-action:none; }
+.points-selection-student:active { cursor:grabbing; }
+.points-selection-student.selected { border-color:#9c6c28; background:#f4dfb5; box-shadow:0 0 0 3px rgba(156,108,40,.13); }
+.points-selection-rank { width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:#eee3ce; color:#8d6733; font:700 13px/1 Georgia,serif; }
+.points-selection-student strong { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:17px; }
+.points-selection-student b { color:#9a6f2e; font:700 15px/1 Georgia,serif; }
+.points-selection-empty { padding:22px 10px; color:#9d8c75; text-align:center; line-height:1.6; }
+
 .points-score-side {
   min-height: 0;
   display: grid;
@@ -236,7 +244,6 @@
   .points-score-layout { grid-template-columns: minmax(0, 1fr) 300px; }
   .points-seat-grid { grid-template-columns: repeat(var(--points-seat-cols), minmax(64px, 1fr)); }
   .points-rule-list { grid-template-columns: 1fr; }
-  .points-idle-actions { right: 12px; }
 }
 
 @media (max-width: 760px) {
@@ -248,8 +255,6 @@
   .points-recent-panel { border-top: 0; border-left: 1px solid #e3d7c0; }
   .points-seat-grid { grid-template-columns: repeat(var(--points-seat-cols), minmax(56px, 1fr)); }
   .points-ranking-list { grid-template-columns: 1fr; }
-  .points-idle-actions { left:auto; right:8px; top:auto; bottom:14px; transform:none; }
-  .points-idle-actions button { width:auto; min-height:44px; flex-direction:row; padding:7px 12px; }
-  .points-idle-actions button b { width:28px; height:28px; font-size:15px; }
-  .points-idle-actions button span { writing-mode:horizontal-tb; letter-spacing:1px; }
+  .points-selection-hint { padding:12px; }
+  .points-selection-list { padding:10px; }
 }
