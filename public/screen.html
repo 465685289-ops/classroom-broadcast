@@ -86,9 +86,10 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
 .idle-promo .promo-line2 { font-size:12px; color:#9a8a72; margin-top:6px; letter-spacing:.3px; word-break:break-all; }
 .idle-promo .promo-line2 b { color:#7c5722; font-weight:600; }
 
-/* 右侧信息区：有课表时上下分区，没有课表时告示栏自动占满 */
+/* 右侧信息区：有课表时左右并列，没有课表时告示栏自动占满 */
 .idle-right { flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; gap:14px; }
-.timetable-board { flex:2 1 64%; min-height:0; display:flex; flex-direction:column; overflow:hidden;
+.idle-right.has-timetable { flex-direction:row; }
+.timetable-board { flex:2 1 68%; min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden;
   border:1px solid rgba(255,255,255,.1); border-radius:20px; color:var(--ink);
   background:radial-gradient(700px 300px at 100% 0%,rgba(199,154,74,.1),transparent 58%),var(--paper);
   box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.86); }
@@ -109,7 +110,7 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
 .screen-timetable thead .today { background:#b67d2d; color:#fffaf0; box-shadow:none; }
 .today-chip { display:inline-block; margin-left:4px; padding:1px 4px; border-radius:999px; background:rgba(255,255,255,.2); font-size:8px; vertical-align:1px; }
 .course-empty { color:rgba(78,70,59,.22); font-weight:400; }
-.idle-right .bulletin-board { flex:1 1 36%; }
+.idle-right .bulletin-board { flex:1 1 32%; }
 .idle-right.has-timetable .bulletin-head { min-height:66px; padding:11px 20px 9px; }
 .idle-right.has-timetable .bulletin-kicker { margin-bottom:3px; font-size:8px; }
 .idle-right.has-timetable .bulletin-head h2 { font-size:20px; }
@@ -183,7 +184,7 @@ body { font-family:"Songti SC","STSong","SimSun","Microsoft YaHei","SimHei",seri
   .bulletin-head { padding:16px 22px 12px; }
   .bulletin-head h2 { font-size:27px; }
   .bulletin-list { padding:14px 18px 18px; }
-  .idle-right.has-timetable { flex-direction:row; gap:10px; }
+  .idle-right.has-timetable { gap:10px; }
   .idle-right.has-timetable .timetable-board { flex:2 1 68%; }
   .idle-right.has-timetable .bulletin-board { flex:1 1 32%; }
   .timetable-head { min-height:56px; padding:8px 14px 7px; }

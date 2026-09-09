@@ -43,6 +43,12 @@ test('idle page keeps the points entry beside the top-right controls and bulleti
   assert.match(screenHtml, /\.bulletin-list::-webkit-scrollbar-thumb/);
 });
 
+test('idle page puts the timetable left of the bulletin board when both are visible', () => {
+  assert.match(screenHtml, /\.idle-right\.has-timetable\s*\{\s*flex-direction:\s*row;/);
+  assert.match(screenHtml, /\.timetable-board\s*\{\s*flex:\s*2\s+1\s+68%/);
+  assert.match(screenHtml, /@media\(max-width:640px\)\{[\s\S]*?\.idle-right\.has-timetable\s*\{\s*flex-direction:\s*column;/);
+});
+
 test('seat selection puts current-cycle higher scorers first and keeps no-score students available', () => {
   const { rankSeatSelectionStudents } = require('../public/classroom-points-screen');
   assert.deepEqual(rankSeatSelectionStudents([
