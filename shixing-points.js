@@ -4,7 +4,11 @@ const POINT_COSTS = Object.freeze({
   english: 50,
   roundtable: 50,
   edulab: 75,
-  family_message: 10
+  family_message: 10,
+  observation_structure: 10,
+  student_profile: 10,
+  class_report: 10,
+  intervention_plan: 10
 });
 
 const POINT_PACKAGES = Object.freeze({

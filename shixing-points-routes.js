@@ -24,6 +24,22 @@ const {
 const { POINT_COSTS } = require('./shixing-points');
 const state = require('./state');
 
+const WORKBENCH_POINT_PRODUCTS = new Set([
+  'family_message',
+  'observation_structure',
+  'student_profile',
+  'class_report',
+  'intervention_plan'
+]);
+
+const WORKBENCH_POINT_NOTES = {
+  family_message: '家校沟通建议生成',
+  observation_structure: 'AI 整理观察',
+  student_profile: 'AI 生成学生画像',
+  class_report: 'AI 生成班级共育周报',
+  intervention_plan: 'AI 生成干预方案'
+};
+
 function serviceSecretValid(req) {
   const supplied = String(req.headers['x-workbench-points-secret'] || '');
   return Boolean(WORKBENCH_POINTS_SECRET && supplied && safeEqual(supplied, WORKBENCH_POINTS_SECRET));
@@ -38,7 +54,13 @@ function installShixingPointsRoutes(app) {
       payment_enabled: yungouConfigured(),
       balance,
       point_balance: balance,
-      point_costs: { family_message: POINT_COSTS.family_message },
+      point_costs: {
+        family_message: POINT_COSTS.family_message,
+        observation_structure: POINT_COSTS.observation_structure,
+        student_profile: POINT_COSTS.student_profile,
+        class_report: POINT_COSTS.class_report,
+        intervention_plan: POINT_COSTS.intervention_plan
+      },
       first_topup_available: !dbStore.hasShixingPointTopup(req.user.id),
       packages: publicPointPackages(req.user.id),
       ledger: dbStore.listShixingPointLedger(req.user.id, 30)
@@ -115,7 +137,7 @@ function installShixingPointsRoutes(app) {
     if (!serviceSecretValid(req)) return res.status(403).json({ error: '不允许的积分操作' });
     const operationId = String(req.body.operation_id || '').trim();
     const product = String(req.body.product || '').trim();
-    if (product !== 'family_message') return res.status(400).json({ error: '不支持的积分用途' });
+    if (!WORKBENCH_POINT_PRODUCTS.has(product)) return res.status(400).json({ error: '不支持的积分用途' });
     if (!/^[A-Za-z0-9_-]{12,100}$/.test(operationId)) return res.status(400).json({ error: '扣分操作号无效' });
     try {
       const result = dbStore.consumeShixingPoints({
@@ -123,12 +145,12 @@ function installShixingPointsRoutes(app) {
         username: req.user.username,
         operation_id: operationId,
         product,
-        note: '家校沟通建议生成'
+        note: WORKBENCH_POINT_NOTES[product]
       });
       res.json({ ok: true, ...result });
     } catch (error) {
       if (error.code === 'SHIXING_POINTS_EXHAUSTED') {
-        return res.status(402).json({ error: '师行积分不足，本次需要 ' + POINT_COSTS.family_message + ' 积分', balance: error.balance });
+        return res.status(402).json({ error: '师行积分不足，本次需要 ' + POINT_COSTS[product] + ' 积分', balance: error.balance });
       }
       if (/操作号已被/.test(error.message)) return res.status(409).json({ error: error.message });
       res.status(400).json({ error: error.message || '积分扣除失败' });

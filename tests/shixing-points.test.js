@@ -41,43 +41,53 @@ test('preserves all unclaimed signup allowances for a new account', () => {
   assert.equal(points.getBalance('new'), 1625);
 });
 
-test('charges the five AI products from one shared balance', () => {
+test('charges platform and workbench AI products from one shared balance', () => {
   const db = testDb();
   db.prepare('INSERT INTO users (id, username) VALUES (?, ?)').run('u1', 'teacher');
   const points = createShixingPoints(db);
 
-  assert.deepEqual(POINT_COSTS, { comment: 25, essay: 50, english: 50, roundtable: 50, edulab: 75, family_message: 10 });
+  assert.deepEqual(POINT_COSTS, {
+    comment: 25,
+    essay: 50,
+    english: 50,
+    roundtable: 50,
+    edulab: 75,
+    family_message: 10,
+    observation_structure: 10,
+    student_profile: 10,
+    class_report: 10,
+    intervention_plan: 10,
+  });
   assert.equal(points.debit({ user_id: 'u1', product: 'comment', note: '评语' }).balance, 1600);
   assert.equal(points.debit({ user_id: 'u1', product: 'essay', note: '作文' }).balance, 1550);
   assert.equal(points.debit({ user_id: 'u1', product: 'english', note: '英语作文' }).balance, 1500);
   assert.equal(points.debit({ user_id: 'u1', product: 'roundtable', note: '圆桌' }).balance, 1450);
   assert.equal(points.debit({ user_id: 'u1', product: 'edulab', note: '数学' }).balance, 1375);
+  assert.equal(points.debit({ user_id: 'u1', product: 'observation_structure', note: '观察整理' }).balance, 1365);
+  assert.equal(points.debit({ user_id: 'u1', product: 'student_profile', note: '学生画像' }).balance, 1355);
+  assert.equal(points.debit({ user_id: 'u1', product: 'class_report', note: '班级周报' }).balance, 1345);
+  assert.equal(points.debit({ user_id: 'u1', product: 'intervention_plan', note: '干预方案' }).balance, 1335);
   assert.throws(
     () => points.debit({ user_id: 'u1', product: 'edulab', cost: 1500 }),
-    err => err && err.code === 'SHIXING_POINTS_EXHAUSTED' && err.balance === 1375
+    err => err && err.code === 'SHIXING_POINTS_EXHAUSTED' && err.balance === 1335
   );
 });
 
-test('family message usage debits only once for one operation id', () => {
+test('workbench AI usages debit only once for each operation id', () => {
   const db = testDb();
   db.prepare('INSERT INTO users (id, username) VALUES (?, ?)').run('u1', 'teacher');
   const points = createShixingPoints(db);
   const before = points.getBalance('u1');
-  const first = points.consume({
-    user_id: 'u1',
-    product: 'family_message',
-    operation_id: 'family-message-op-001'
-  });
-  assert.equal(first.points, 10);
-  assert.equal(first.balance, before - 10);
-  assert.equal(first.duplicate, false);
-  const duplicate = points.consume({
-    user_id: 'u1',
-    product: 'family_message',
-    operation_id: 'family-message-op-001'
-  });
-  assert.deepEqual(duplicate, { balance: before - 10, points: 10, duplicate: true });
-  assert.equal(points.getBalance('u1'), before - 10);
+  const products = ['family_message', 'observation_structure', 'student_profile', 'class_report', 'intervention_plan'];
+  for (const product of products) {
+    const operationId = `${product}-op-001`;
+    const first = points.consume({ user_id: 'u1', product, operation_id: operationId });
+    assert.equal(first.points, 10, product);
+    assert.equal(first.duplicate, false, product);
+    const duplicate = points.consume({ user_id: 'u1', product, operation_id: operationId });
+    assert.deepEqual(duplicate, { balance: first.balance, points: 10, duplicate: true }, product);
+  }
+  assert.equal(points.getBalance('u1'), before - 50);
 });
 
 test('adds the essay migration once for accounts migrated before essay joined shared points', () => {

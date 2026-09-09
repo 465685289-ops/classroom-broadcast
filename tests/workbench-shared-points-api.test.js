@@ -14,9 +14,13 @@ test('shared points expose one workbench-neutral config and payment flow', () =>
   assert.match(server, /installShixingPointsRoutes\(app\)/);
 });
 
-test('family-message debit is server-authenticated, fixed-price and idempotent', () => {
+test('workbench AI debit is server-authenticated, fixed-price and idempotent', () => {
   assert.match(source, /x-workbench-points-secret/);
-  assert.match(source, /product !== 'family_message'/);
+  assert.match(source, /WORKBENCH_POINT_PRODUCTS\.has\(product\)/);
+  assert.match(source, /observation_structure/);
+  assert.match(source, /student_profile/);
+  assert.match(source, /class_report/);
+  assert.match(source, /intervention_plan/);
   assert.match(source, /consumeShixingPoints/);
   assert.doesNotMatch(source, /req\.body\.(cost|points)/);
 });
