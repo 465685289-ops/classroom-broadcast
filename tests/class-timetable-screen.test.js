@@ -21,6 +21,7 @@ test('weekly timetable renders only teacher-confirmed periods, highlights today,
   vm.runInNewContext(`${source[0]};
     monday = buildScreenTimetableHtml({ structure: { configured: true, morning_reading: false, regular_count: 6, evening_study_count: 0 }, entries: { mon: ['晨读', '<script>', '数学'], fri: ['', '班会'] } }, 1);
     highSchool = buildScreenTimetableHtml({ structure: { configured: true, morning_reading: true, regular_count: 8, evening_study_count: 3 }, entries: { mon: ['语文'] } }, 1);
+    nineAndFour = buildScreenTimetableHtml({ structure: { configured: true, morning_reading: true, regular_count: 9, evening_study_count: 4 }, entries: { mon: ['', '', '', '', '', '', '', '', '', '晚自习1', '', '', '第9节课程', '晚自习4'] } }, 1);
     unconfigured = buildScreenTimetableHtml({ structure: { configured: false, morning_reading: true, regular_count: 8, evening_study_count: 3 }, entries: { mon: ['不应展示'] } }, 1);
     saturday = buildScreenTimetableHtml({ entries: { mon: ['语文'] } }, 6);
     empty = buildScreenTimetableHtml({}, 1);`, context);
@@ -30,6 +31,10 @@ test('weekly timetable renders only teacher-confirmed periods, highlights today,
   assert.equal((context.monday.html.match(/class="today"/g) || []).length, 7, '当天表头和 6 个格子都应高亮');
   assert.doesNotMatch(context.monday.html, /早读|晚自习|第7节/);
   assert.equal((context.highSchool.html.match(/<tr/g) || []).length, 13, '中学完整结构仍为 12 个时段');
+  assert.equal((context.nineAndFour.html.match(/<tr/g) || []).length, 15, '9 节正课和 4 节晚自习应展示 14 个时段');
+  assert.match(context.nineAndFour.html, /第9节/);
+  assert.match(context.nineAndFour.html, /晚自习4/);
+  assert.match(context.nineAndFour.html, /第9节课程/);
   assert.equal(context.unconfigured.hasEntries, false, '新班级未确认节次时不应展示课程表');
   assert.match(context.monday.html, /周一/);
   assert.match(context.monday.html, /周五/);

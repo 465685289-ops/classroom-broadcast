@@ -40,7 +40,7 @@ test.before(() => {
   });
 });
 
-test('class timetable normalizes fixed weekdays and twelve bounded slots', () => {
+test('class timetable normalizes fixed weekdays and compatible fourteen storage slots', () => {
   const result = normalizeClassTimetable({
     entries: {
       mon: [' 语文 ', 'x'.repeat(35)],
@@ -54,14 +54,14 @@ test('class timetable normalizes fixed weekdays and twelve bounded slots', () =>
   assert.deepEqual(TIMETABLE_DAYS, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
   assert.deepEqual(TIMETABLE_SLOTS, [
     '早读', '第1节', '第2节', '第3节', '第4节', '第5节',
-    '第6节', '第7节', '第8节', '晚自习1', '晚自习2', '晚自习3'
+    '第6节', '第7节', '第8节', '晚自习1', '晚自习2', '晚自习3', '第9节', '晚自习4'
   ]);
   assert.deepEqual(Object.keys(result.entries), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
-  assert.equal(result.entries.mon.length, 12);
+  assert.equal(result.entries.mon.length, 14);
   assert.equal(result.entries.mon[0], '语文');
   assert.equal(result.entries.mon[1], 'x'.repeat(30));
   assert.equal(result.entries.tue.every(value => value === ''), true);
-  assert.equal(result.entries.sat.length, 12);
+  assert.equal(result.entries.sat.length, 14);
   assert.equal(result.entries.sat[0], '周六竞赛');
   assert.equal(result.entries.zhouba, undefined);
   assert.equal(result.updated_at, NOW);
@@ -70,7 +70,7 @@ test('class timetable normalizes fixed weekdays and twelve bounded slots', () =>
     morning_reading: true,
     regular_count: 8,
     evening_study_count: 3
-  }, '旧课表按原 12 节兼容，不因升级被隐藏');
+  }, '旧课表仍按原 12 个可见时段兼容，不因升级被隐藏');
 });
 
 test('empty and populated timetables are distinguished by their real cells', () => {
@@ -103,6 +103,30 @@ test('teacher-confirmed structure selects primary or secondary periods without d
   assert.equal(secondary.entries.mon[9], '隐藏晚1', '重新开启晚自习后原课程仍在');
 });
 
+test('nine regular periods and four evening studies use new storage cells without moving legacy evening courses', () => {
+  const expanded = normalizeClassTimetable({
+    structure: validateClassTimetableStructure({
+      morning_reading: true,
+      regular_count: 9,
+      evening_study_count: 4
+    }),
+    entries: {
+      mon: ['早读', '语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '原晚自习1', '原晚自习2', '原晚自习3', '第9节课程', '晚自习4']
+    }
+  });
+
+  assert.deepEqual(activeClassTimetableSlots(expanded.structure), [
+    { index: 0, label: '早读' },
+    { index: 1, label: '第1节' }, { index: 2, label: '第2节' }, { index: 3, label: '第3节' },
+    { index: 4, label: '第4节' }, { index: 5, label: '第5节' }, { index: 6, label: '第6节' },
+    { index: 7, label: '第7节' }, { index: 8, label: '第8节' }, { index: 12, label: '第9节' },
+    { index: 9, label: '晚自习1' }, { index: 10, label: '晚自习2' }, { index: 11, label: '晚自习3' }, { index: 13, label: '晚自习4' }
+  ]);
+  assert.equal(expanded.entries.mon[9], '原晚自习1', '已有晚自习1必须仍在原存储位');
+  assert.equal(expanded.entries.mon[12], '第9节课程');
+  assert.equal(expanded.entries.mon[13], '晚自习4');
+});
+
 test('course structure rejects invalid teacher input instead of silently coercing it', () => {
   assert.deepEqual(validateClassTimetableStructure({
     morning_reading: false,
@@ -116,7 +140,7 @@ test('course structure rejects invalid teacher input instead of silently coercin
   });
   assert.throws(() => validateClassTimetableStructure({ morning_reading: true, regular_count: 0, evening_study_count: 0 }), /正课节数/);
   assert.throws(() => validateClassTimetableStructure({ morning_reading: true, regular_count: 6.5, evening_study_count: 0 }), /正课节数/);
-  assert.throws(() => validateClassTimetableStructure({ morning_reading: true, regular_count: 6, evening_study_count: 4 }), /晚自习节数/);
+  assert.throws(() => validateClassTimetableStructure({ morning_reading: true, regular_count: 6, evening_study_count: 5 }), /晚自习节数/);
   assert.throws(() => validateClassTimetableStructure({ morning_reading: 'no', regular_count: 6, evening_study_count: 0 }), /早读设置/);
 });
 
@@ -130,7 +154,7 @@ test('class timetable persists through the classes extra_json field', () => {
   const cls = dbStore.loadClasses().find(item => item.id === 'class-1');
   assert.equal(cls.timetable.entries.mon[0], '语文');
   assert.equal(cls.timetable.entries.fri[1], '班会');
-  assert.equal(cls.timetable.entries.fri.length, 12);
+  assert.equal(cls.timetable.entries.fri.length, 14);
   assert.equal(cls.timetable.updated_at, NOW);
 });
 

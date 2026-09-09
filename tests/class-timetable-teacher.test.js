@@ -64,6 +64,21 @@ test('legacy teacher editor follows the workbench-confirmed structure and keeps 
   assert.doesNotMatch(context.result, /早读|第7节|晚自习/);
 });
 
+test('legacy teacher editor renders the ninth regular period and fourth evening study from their compatible storage cells', () => {
+  const start = page.indexOf('var CLASS_TIMETABLE_DAYS');
+  const end = page.indexOf('function loadClassTimetable', start);
+  const context = { result: '', esc(value) { return String(value); } };
+  vm.runInNewContext(page.slice(start, end) + `
+    result = buildTimetableEditorHtml({
+      structure: { configured:true, morning_reading:true, regular_count:9, evening_study_count:4 },
+      entries: { mon:['','','','','','','','','','晚自习1','','','第9节课程','晚自习4'] }
+    }, true);
+  `, context);
+  assert.equal((context.result.match(/<tr/g) || []).length, 15);
+  assert.match(context.result, /第9节课程/);
+  assert.match(context.result, /晚自习4/);
+});
+
 test('timetable uses the class API and keeps collaborator editing server-enforced', () => {
   assert.match(page, /fetch\(API \+ '\/api\/classes\/' \+ classId \+ '\/timetable'/);
   assert.match(page, /method:\s*'PUT'/);

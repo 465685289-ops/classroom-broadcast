@@ -1759,8 +1759,10 @@ var CLASS_TIMETABLE_DAYS = [
 ];
 var CLASS_TIMETABLE_SLOTS = [
   '早读', '第1节', '第2节', '第3节', '第4节', '第5节',
-  '第6节', '第7节', '第8节', '晚自习1', '晚自习2', '晚自习3'
+  '第6节', '第7节', '第8节', '晚自习1', '晚自习2', '晚自习3', '第9节', '晚自习4'
 ];
+var CLASS_TIMETABLE_REGULAR_SLOT_INDICES = [null,1,2,3,4,5,6,7,8,12];
+var CLASS_TIMETABLE_EVENING_STUDY_SLOT_INDICES = [null,9,10,11,13];
 
 function normalizeTimetableForEditor(timetable) {
   var source = timetable && timetable.entries ? timetable.entries : {};
@@ -1775,14 +1777,20 @@ function normalizeTimetableForEditor(timetable) {
   var structure = structureSource ? {
     configured: structureSource.configured !== false,
     morning_reading: structureSource.morning_reading !== false,
-    regular_count: Number.isInteger(Number(structureSource.regular_count)) && Number(structureSource.regular_count) >= 1 && Number(structureSource.regular_count) <= 8 ? Number(structureSource.regular_count) : 8,
-    evening_study_count: Number.isInteger(Number(structureSource.evening_study_count)) && Number(structureSource.evening_study_count) >= 0 && Number(structureSource.evening_study_count) <= 3 ? Number(structureSource.evening_study_count) : 3
+    regular_count: Number.isInteger(Number(structureSource.regular_count)) && Number(structureSource.regular_count) >= 1 && Number(structureSource.regular_count) <= 9 ? Number(structureSource.regular_count) : 8,
+    evening_study_count: Number.isInteger(Number(structureSource.evening_study_count)) && Number(structureSource.evening_study_count) >= 0 && Number(structureSource.evening_study_count) <= 4 ? Number(structureSource.evening_study_count) : 3
   } : { configured:true, morning_reading:true, regular_count:8, evening_study_count:3 };
   var slots = [];
   if (structure.configured && structure.morning_reading) slots.push({ index:0, label:CLASS_TIMETABLE_SLOTS[0] });
   if (structure.configured) {
-    for (var regular = 1; regular <= structure.regular_count; regular++) slots.push({ index:regular, label:CLASS_TIMETABLE_SLOTS[regular] });
-    for (var evening = 0; evening < structure.evening_study_count; evening++) slots.push({ index:9 + evening, label:CLASS_TIMETABLE_SLOTS[9 + evening] });
+    for (var regular = 1; regular <= structure.regular_count; regular++) {
+      var regularIndex = CLASS_TIMETABLE_REGULAR_SLOT_INDICES[regular];
+      slots.push({ index:regularIndex, label:CLASS_TIMETABLE_SLOTS[regularIndex] });
+    }
+    for (var evening = 1; evening <= structure.evening_study_count; evening++) {
+      var eveningIndex = CLASS_TIMETABLE_EVENING_STUDY_SLOT_INDICES[evening];
+      slots.push({ index:eveningIndex, label:CLASS_TIMETABLE_SLOTS[eveningIndex] });
+    }
   }
   return { entries: entries, structure:structure, slots:slots };
 }

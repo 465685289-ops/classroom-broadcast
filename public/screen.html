@@ -614,7 +614,9 @@ var SCREEN_TIMETABLE_DAYS = [
   { key:'sat', label:'周六', dayIndex:6, weekend:true },
   { key:'sun', label:'周日', dayIndex:0, weekend:true }
 ];
-var SCREEN_TIMETABLE_SLOTS = ['早读','第1节','第2节','第3节','第4节','第5节','第6节','第7节','第8节','晚自习1','晚自习2','晚自习3'];
+var SCREEN_TIMETABLE_SLOTS = ['早读','第1节','第2节','第3节','第4节','第5节','第6节','第7节','第8节','晚自习1','晚自习2','晚自习3','第9节','晚自习4'];
+var SCREEN_REGULAR_SLOT_INDICES = [null,1,2,3,4,5,6,7,8,12];
+var SCREEN_EVENING_STUDY_SLOT_INDICES = [null,9,10,11,13];
 
 function screenTimetableStructure(value) {
   var input = value && value.structure && typeof value.structure === 'object' ? value.structure : null;
@@ -624,8 +626,8 @@ function screenTimetableStructure(value) {
   return {
     configured: input.configured !== false,
     morning_reading: input.morning_reading !== false,
-    regular_count: Number.isInteger(regularCount) && regularCount >= 1 && regularCount <= 8 ? regularCount : 8,
-    evening_study_count: Number.isInteger(eveningCount) && eveningCount >= 0 && eveningCount <= 3 ? eveningCount : 3
+    regular_count: Number.isInteger(regularCount) && regularCount >= 1 && regularCount <= 9 ? regularCount : 8,
+    evening_study_count: Number.isInteger(eveningCount) && eveningCount >= 0 && eveningCount <= 4 ? eveningCount : 3
   };
 }
 
@@ -635,10 +637,12 @@ function screenTimetableSlots(value) {
   if (!structure.configured) return slots;
   if (structure.morning_reading) slots.push({ index:0, label:SCREEN_TIMETABLE_SLOTS[0] });
   for (var regular = 1; regular <= structure.regular_count; regular++) {
-    slots.push({ index:regular, label:SCREEN_TIMETABLE_SLOTS[regular] });
+    var regularIndex = SCREEN_REGULAR_SLOT_INDICES[regular];
+    slots.push({ index:regularIndex, label:SCREEN_TIMETABLE_SLOTS[regularIndex] });
   }
-  for (var evening = 0; evening < structure.evening_study_count; evening++) {
-    slots.push({ index:9 + evening, label:SCREEN_TIMETABLE_SLOTS[9 + evening] });
+  for (var evening = 1; evening <= structure.evening_study_count; evening++) {
+    var eveningIndex = SCREEN_EVENING_STUDY_SLOT_INDICES[evening];
+    slots.push({ index:eveningIndex, label:SCREEN_TIMETABLE_SLOTS[eveningIndex] });
   }
   return slots;
 }

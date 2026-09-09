@@ -13,8 +13,14 @@ const TIMETABLE_SLOTS = Object.freeze([
   '第8节',
   '晚自习1',
   '晚自习2',
-  '晚自习3'
+  '晚自习3',
+  // 为避免把存量「晚自习1—3」挪位，第9节与晚自习4追加到尾部。
+  '第9节',
+  '晚自习4'
 ]);
+
+const REGULAR_SLOT_INDICES = Object.freeze([null, 1, 2, 3, 4, 5, 6, 7, 8, 12]);
+const EVENING_STUDY_SLOT_INDICES = Object.freeze([null, 9, 10, 11, 13]);
 
 const DEFAULT_TIMETABLE_STRUCTURE = Object.freeze({
   configured: true,
@@ -39,13 +45,13 @@ function normalizeClassTimetableStructure(value, configuredFallback = true) {
       input.regular_count,
       DEFAULT_TIMETABLE_STRUCTURE.regular_count,
       1,
-      8
+      9
     ),
     evening_study_count: boundedInteger(
       input.evening_study_count,
       DEFAULT_TIMETABLE_STRUCTURE.evening_study_count,
       0,
-      3
+      4
     )
   };
 }
@@ -53,13 +59,13 @@ function normalizeClassTimetableStructure(value, configuredFallback = true) {
 function validateClassTimetableStructure(value) {
   const input = value && typeof value === 'object' ? value : {};
   if (typeof input.morning_reading !== 'boolean') throw new Error('早读设置必须为开启或关闭');
-  if (!Number.isInteger(input.regular_count) || input.regular_count < 1 || input.regular_count > 8) {
-    throw new Error('正课节数必须是 1 到 8 的整数');
+  if (!Number.isInteger(input.regular_count) || input.regular_count < 1 || input.regular_count > 9) {
+    throw new Error('正课节数必须是 1 到 9 的整数');
   }
   if (!Number.isInteger(input.evening_study_count)
     || input.evening_study_count < 0
-    || input.evening_study_count > 3) {
-    throw new Error('晚自习节数必须是 0 到 3 的整数');
+    || input.evening_study_count > 4) {
+    throw new Error('晚自习节数必须是 0 到 4 的整数');
   }
   return {
     configured: true,
@@ -74,11 +80,12 @@ function activeClassTimetableSlots(value) {
   if (!structure.configured) return [];
   const slots = [];
   if (structure.morning_reading) slots.push({ index: 0, label: TIMETABLE_SLOTS[0] });
-  for (let index = 1; index <= structure.regular_count; index += 1) {
+  for (let period = 1; period <= structure.regular_count; period += 1) {
+    const index = REGULAR_SLOT_INDICES[period];
     slots.push({ index, label: TIMETABLE_SLOTS[index] });
   }
-  for (let offset = 0; offset < structure.evening_study_count; offset += 1) {
-    const index = 9 + offset;
+  for (let study = 1; study <= structure.evening_study_count; study += 1) {
+    const index = EVENING_STUDY_SLOT_INDICES[study];
     slots.push({ index, label: TIMETABLE_SLOTS[index] });
   }
   return slots;

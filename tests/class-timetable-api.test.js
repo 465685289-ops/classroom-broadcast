@@ -114,7 +114,7 @@ test('class members can read a normalized empty timetable while outsiders cannot
   assert.equal(memberView.status, 200);
   assert.equal(memberView.body.is_owner, false);
   assert.deepEqual(Object.keys(memberView.body.timetable.entries), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
-  assert.equal(memberView.body.timetable.entries.mon.length, 12);
+  assert.equal(memberView.body.timetable.entries.mon.length, 14);
   assert.equal(memberView.body.timetable.structure.configured, true, '存量班级保留原 12 节结构');
 
   const outsiderView = await request('/api/classes/' + CLASS_ID + '/timetable', { token: OUTSIDER_TOKEN });
@@ -259,11 +259,11 @@ test('only owner can confirm and later modify course structure while hidden cour
 
   const secondary = await request('/api/classes/' + CLASS_ID + '/timetable/structure', {
     method: 'PUT',
-    body: { morning_reading: true, regular_count: 8, evening_study_count: 1 }
+    body: { morning_reading: true, regular_count: 9, evening_study_count: 4 }
   });
   assert.equal(secondary.status, 200);
-  assert.equal(secondary.body.timetable.structure.regular_count, 8);
-  assert.equal(secondary.body.timetable.structure.evening_study_count, 1);
+  assert.equal(secondary.body.timetable.structure.regular_count, 9);
+  assert.equal(secondary.body.timetable.structure.evening_study_count, 4);
   assert.equal(secondary.body.timetable.entries.mon[7], '旧第7节');
-  assert.equal(secondary.body.timetable.entries.mon[9], '旧晚1');
+  assert.equal(secondary.body.timetable.entries.mon[9], '旧晚1', '扩展结构不能挪动旧晚自习');
 });
