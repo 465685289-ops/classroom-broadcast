@@ -8,6 +8,10 @@ const { createUnifiedReferrals } = require('./unified-referrals');
 const classroomPoints = require('./classroom-points');
 const { normalizeClassTimetable } = require('./class-timetable');
 const { normalizeBroadcastMode } = require('./broadcast-notification');
+const {
+  claimTeacherDayPopup: claimTeacherDayPopupForUser,
+  ensureTeacherDayCampaignTables,
+} = require('./teacher-day-campaign');
 
 const SQLITE_FILE = process.env.SQLITE_FILE || path.join(__dirname, 'broadcast.db');
 const LEGACY_JSON_FILE = process.env.LEGACY_JSON_FILE || path.join(__dirname, 'data.json');
@@ -1175,6 +1179,7 @@ function getConversionReport(days) {
 }
 
 ensureSchema();
+ensureTeacherDayCampaignTables(db);
 
 const insertUserStmt = db.prepare(`
   INSERT INTO users (id, username, display_name, teacher_code, contact_type, contact_value, registration_email, minutes_per_notice, password_hash, password_salt, plan, plan_expires, token, token_expires, avatar, created_at, last_login_at, extra_json)
@@ -1220,6 +1225,10 @@ function upsertUser(user) {
     last_login_at: user.last_login_at || null,
     extra_json: null
   });
+}
+
+function claimTeacherDayPopup(userId, now) {
+  return claimTeacherDayPopupForUser(db, userId, { now });
 }
 
 const upsertAccountPasswordAliasStmt = db.prepare(`
@@ -4532,6 +4541,7 @@ module.exports = {
   backupLegacyJson,
   setCounter,
   upsertUser,
+  claimTeacherDayPopup,
   upsertAccountPasswordAlias,
   listAccountPasswordAliases,
   deleteAccountPasswordAliases,

@@ -120,6 +120,11 @@ const {
   paidPlanExpiresFromNow, paidPlanExpiresForUser, activateYearlyPlan, genCode, genUniqueBindCode, genUniqueTeacherCode, hashPassword, verifyPassword, setUserPassword, genToken, safeEqual, issueUserToken, revokeUserToken, findUserByToken, refreshUserTokenExpiry, getUserPlanStatus
 } = require('./auth-core');
 
+function teachersDayCampaignNow() {
+  const testTime = process.env.NODE_ENV === 'test' ? Date.parse(String(process.env.TEACHERS_DAY_TEST_NOW || '')) : NaN;
+  return Number.isFinite(testTime) ? new Date(testTime) : new Date();
+}
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -935,6 +940,12 @@ app.get('/api/profile', userAuth, (req, res) => {
     point_balance: dbStore.getShixingPointBalance(u.id),
     feature_subscriptions: featureSubscriptions
   });
+});
+
+app.post('/api/campaigns/teachers-day-2026/popup', userAuth, (req, res) => {
+  const popup = dbStore.claimTeacherDayPopup(req.user.id, teachersDayCampaignNow());
+  res.set('Cache-Control', 'no-store');
+  res.json({ popup });
 });
 
 app.post('/api/profile', userAuth, (req, res) => {
