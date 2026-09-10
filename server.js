@@ -1925,6 +1925,102 @@ async function mergedAdminUsers() {
   };
 }
 
+const ADMIN_PRODUCT_USAGE_META = Object.freeze({
+  broadcast: { name: '教室广播' },
+  comment: { name: '期末评语' },
+  essay: { name: '作文批改' },
+  english: { name: '英语批改' },
+  roundtable: { name: '思想圆桌' },
+  edulab: { name: '数学课件' },
+  learning: { name: '作文学习' },
+  points: { name: '师行积分' },
+  workbench: { name: '教师工作台' }
+});
+
+function latestAdminUsageAt(...values) {
+  return values.filter(value => value && Number.isFinite(Date.parse(value)))
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] || null;
+}
+
+function listBroadcastProductUsage() {
+  const rows = new Map();
+  const ensure = userId => {
+    const id = String(userId || '');
+    if (!id) return null;
+    if (!rows.has(id)) rows.set(id, { user_id: id, usage_count: 0, class_count: 0, notification_count: 0, active_member: false, last_used_at: null });
+    return rows.get(id);
+  };
+  for (const cls of store.classes || []) {
+    const row = ensure(cls.user_id);
+    if (!row) continue;
+    row.class_count += 1;
+    row.usage_count += 1;
+    row.last_used_at = latestAdminUsageAt(row.last_used_at, cls.created_at);
+  }
+  for (const notification of store.notifications || []) {
+    const row = ensure(notification.user_id);
+    if (!row) continue;
+    row.notification_count += 1;
+    row.usage_count += 1;
+    row.last_used_at = latestAdminUsageAt(row.last_used_at, notification.created_at);
+  }
+  for (const user of store.users || []) {
+    const plan = getUserPlanStatus(user);
+    if (!plan.active) continue;
+    const row = ensure(user.id);
+    if (!row) continue;
+    row.active_member = true;
+  }
+  return [...rows.values()];
+}
+
+function listWorkbenchProductUsage(merged) {
+  return merged.users.filter(user => user.workbench).map(user => {
+    const profile = user.workbench || {};
+    const classCount = Number(profile.classCount) || 0;
+    const observationCount = Number(profile.observationCount) || 0;
+    return {
+      user_id: String(user.id),
+      usage_count: classCount + observationCount,
+      class_count: classCount,
+      observation_count: observationCount,
+      last_used_at: latestAdminUsageAt(profile.lastLoginAt, user.last_login_at)
+    };
+  });
+}
+
+function productUsageLabel(product, row) {
+  if (product === 'broadcast') {
+    const parts = [String(row.class_count || 0) + ' 个班级', String(row.notification_count || 0) + ' 条通知'];
+    if (row.active_member) parts.push('有效会员');
+    return parts.join(' · ');
+  }
+  if (product === 'workbench') return String(row.class_count || 0) + ' 个班级 · ' + String(row.observation_count || 0) + ' 条观察';
+  if (product === 'points') return String(row.usage_count || 0) + ' 条积分记录';
+  return String(row.usage_count || 0) + ' 次使用';
+}
+
+function adminProductUsageRows(product, merged) {
+  const sourceRows = product === 'broadcast'
+    ? listBroadcastProductUsage()
+    : product === 'workbench'
+      ? listWorkbenchProductUsage(merged)
+      : dbStore.listAdminProductUsage(product);
+  const usersById = new Map(merged.users.map(user => [String(user.id), user]));
+  return sourceRows.map(row => {
+    const user = usersById.get(String(row.user_id));
+    return {
+      user_id: String(row.user_id),
+      display_name: user ? (user.display_name || user.username || '未命名账号') : '历史未关联账号',
+      username: user ? (user.username || '') : '',
+      usage_count: Number(row.usage_count) || 0,
+      usage_label: productUsageLabel(product, row),
+      last_used_at: row.last_used_at || null,
+      linked: !!user
+    };
+  }).sort((a, b) => String(b.last_used_at || '').localeCompare(String(a.last_used_at || '')) || b.usage_count - a.usage_count);
+}
+
 app.get('/api/admin/users', adminAuth, async (req, res) => {
   const merged = await mergedAdminUsers();
   const users = merged.users.map(u => ({
@@ -2033,6 +2129,21 @@ app.get('/api/admin/products', adminAuth, (req, res) => {
     edulab: dbStore.getEdulabAdminStats(),
     learning: dbStore.getLearningAdminStats(now),
     shared_points: dbStore.getSharedPointAdminStats()
+  });
+});
+
+app.get('/api/admin/product-users', adminAuth, async (req, res) => {
+  const product = String(req.query.product || '').trim();
+  if (!Object.prototype.hasOwnProperty.call(ADMIN_PRODUCT_USAGE_META, product)) {
+    return res.status(400).json({ error: '不支持的产品' });
+  }
+  const merged = await mergedAdminUsers();
+  res.json({
+    ok: true,
+    product,
+    product_name: ADMIN_PRODUCT_USAGE_META[product].name,
+    items: adminProductUsageRows(product, merged),
+    workbench_available: merged.workbenchAvailable
   });
 });
 

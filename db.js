@@ -4323,6 +4323,28 @@ function getSharedPointAdminStats() {
   };
 }
 
+const ADMIN_PRODUCT_USAGE_QUERIES = Object.freeze({
+  comment: 'SELECT user_id, COUNT(*) AS usage_count, MAX(created_at) AS last_used_at FROM comment_generations GROUP BY user_id',
+  essay: "SELECT user_id, COUNT(*) AS usage_count, MAX(created_at) AS last_used_at FROM essay_gradings WHERE subject = 'chinese' GROUP BY user_id",
+  english: "SELECT user_id, COUNT(*) AS usage_count, MAX(created_at) AS last_used_at FROM essay_gradings WHERE subject = 'english' GROUP BY user_id",
+  roundtable: 'SELECT user_id, COUNT(*) AS usage_count, MAX(created_at) AS last_used_at FROM roundtable_generations GROUP BY user_id',
+  edulab: 'SELECT user_id, COUNT(*) AS usage_count, MAX(created_at) AS last_used_at FROM edulab_generations GROUP BY user_id',
+  learning: 'SELECT user_id, COUNT(*) AS usage_count, MAX(created_at) AS last_used_at FROM learning_usage GROUP BY user_id',
+  points: 'SELECT user_id, COUNT(*) AS usage_count, MAX(created_at) AS last_used_at FROM shixing_point_ledger GROUP BY user_id'
+});
+
+function listAdminProductUsage(product) {
+  const key = String(product || '').trim();
+  const query = ADMIN_PRODUCT_USAGE_QUERIES[key];
+  if (!query) throw new Error('不支持的产品使用名单');
+  if (key === 'edulab' && !sqliteTableExists('edulab_generations')) return [];
+  return db.prepare(query).all().map(row => ({
+    user_id: String(row.user_id || ''),
+    usage_count: Number(row.usage_count) || 0,
+    last_used_at: row.last_used_at || null
+  }));
+}
+
 // ==================== 周测阅卷 exam ====================
 function examId(prefix) {
   return prefix + '_' + crypto.randomBytes(10).toString('hex');
@@ -4686,6 +4708,7 @@ module.exports = {
   getEdulabAdminStats,
   listEdulabAdminPayments,
   getSharedPointAdminStats,
+  listAdminProductUsage,
   getRoundtableCreditBalance,
   getShixingPointBalance,
   listShixingPointLedger,

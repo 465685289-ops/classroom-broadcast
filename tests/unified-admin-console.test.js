@@ -102,17 +102,6 @@ test('admin authentication uses a revocable HttpOnly session instead of persisti
   assert.equal((await request('/api/admin/stats', { cookie })).status, 401);
 });
 
-test('admin login keeps the existing failed-attempt rate limit', async () => {
-  const resetFailures = await request('/api/admin/login', { method: 'POST', body: { password: 'test-admin-pass' } });
-  assert.equal(resetFailures.status, 200);
-  for (let i = 0; i < 10; i++) {
-    const attempt = await request('/api/admin/login', { method: 'POST', body: { password: 'wrong-' + i } });
-    assert.equal(attempt.status, 401);
-  }
-  const limited = await request('/api/admin/login', { method: 'POST', body: { password: 'still-wrong' } });
-  assert.equal(limited.status, 429);
-});
-
 test('the one admin page contains all eight modules and loads them independently', () => {
   const html = read('public/admin.html');
   for (const name of ['概览', '转化', '用户', '财务', '产品', '邀请', '客服', '系统']) assert.match(html, new RegExp(name));
@@ -123,6 +112,35 @@ test('the one admin page contains all eight modules and loads them independently
   assert.doesNotMatch(html, /\bprompt\s*\(|\bconfirm\s*\(/);
   assert.match(html, /半年会员/);
   compileInlineScripts('public/admin.html');
+});
+
+test('admin product roster exposes linked platform users without generated content', async () => {
+  const login = await request('/api/admin/login', { method: 'POST', body: { password: 'test-admin-pass' } });
+  const cookie = String(login.headers.get('set-cookie') || '').match(/shixing_admin=[^;]+/)[0];
+  const products = ['broadcast', 'comment', 'essay', 'english', 'roundtable', 'edulab', 'learning', 'points', 'workbench'];
+  for (const product of products) {
+    const response = await request('/api/admin/product-users?product=' + product, { cookie });
+    assert.equal(response.status, 200, product);
+    assert.equal(response.body.product, product);
+    assert.ok(Array.isArray(response.body.items));
+  }
+  assert.equal((await request('/api/admin/product-users?product=unknown', { cookie })).status, 400);
+
+  const html = read('public/admin.html');
+  assert.match(html, /平台使用用户/);
+  assert.match(html, /productUserProduct/);
+  assert.match(html, /\/api\/admin\/product-users/);
+});
+
+test('admin login keeps the existing failed-attempt rate limit', async () => {
+  const resetFailures = await request('/api/admin/login', { method: 'POST', body: { password: 'test-admin-pass' } });
+  assert.equal(resetFailures.status, 200);
+  for (let i = 0; i < 10; i++) {
+    const attempt = await request('/api/admin/login', { method: 'POST', body: { password: 'wrong-' + i } });
+    assert.equal(attempt.status, 401);
+  }
+  const limited = await request('/api/admin/login', { method: 'POST', body: { password: 'still-wrong' } });
+  assert.equal(limited.status, 429);
 });
 
 test('the old dashboard redirects and duplicate mutation routes are removed', () => {
