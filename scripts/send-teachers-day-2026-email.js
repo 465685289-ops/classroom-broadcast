@@ -4,8 +4,9 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
-const { getMailTransporter, mailConfigured } = require('../mail-center');
-const { MAIL_FROM } = require('../platform-config');
+const nodemailer = require('nodemailer');
+const { mailConfigured } = require('../mail-center');
+const { MAIL_FROM, SMTP_HOST, SMTP_PASS, SMTP_PORT, SMTP_SECURE, SMTP_USER } = require('../platform-config');
 const {
   isTeachersDay2026,
   previewTeacherDayEmails,
@@ -32,6 +33,20 @@ function usage() {
   ].join('\n');
 }
 
+function createCampaignTransporter() {
+  return nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+    pool: true,
+    maxConnections: 1,
+    maxMessages: 100,
+    rateDelta: 60_000,
+    rateLimit: 20,
+  });
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
@@ -44,12 +59,18 @@ async function main() {
   if (options.apply && !mailConfigured()) throw new Error('SMTP 未配置，未发送邮件');
 
   const db = new Database(options.db);
+  let mailer = null;
   try {
     const result = options.apply
-      ? await sendTeacherDayEmails(db, { from: MAIL_FROM, mailer: getMailTransporter(), retryFailed: options.retryFailed })
+      ? await (async () => {
+        mailer = createCampaignTransporter();
+        await mailer.verify();
+        return sendTeacherDayEmails(db, { from: MAIL_FROM, mailer, retryFailed: options.retryFailed });
+      })()
       : previewTeacherDayEmails(db);
     process.stdout.write(JSON.stringify({ ok: true, mode: options.apply ? 'applied' : 'dry-run', ...result }) + '\n');
   } finally {
+    mailer?.close();
     db.close();
   }
 }
