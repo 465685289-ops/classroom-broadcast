@@ -143,6 +143,51 @@ test('只有工作台账号的新老师会自动获得广播身份，无需再�
   assert.equal(me.contact_value, 'new-teacher@example.test')
 })
 
+test('新老师无需创建班级，提供教师码后即可收到班主任的广播协作邀请', async () => {
+  const ownerExchange = await post({ Authorization: 'Bearer wb-token-1' })
+  const owner = await ownerExchange.json()
+  const newcomerExchange = await post({ Authorization: 'Bearer wb-token-new' })
+  const newcomer = await newcomerExchange.json()
+
+  const beforeInvite = await fetch(`http://127.0.0.1:${port}/api/classes`, {
+    headers: { 'X-Token': newcomer.token },
+  })
+  assert.deepEqual(await beforeInvite.json(), [])
+
+  const newcomerProfile = await fetch(`http://127.0.0.1:${port}/api/profile`, {
+    headers: { 'X-Token': newcomer.token },
+  })
+  const newcomerIdentity = await newcomerProfile.json()
+  assert.match(newcomerIdentity.teacher_code, /^[A-Z0-9]{6}$/)
+
+  const created = await fetch(`http://127.0.0.1:${port}/api/classes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Token': owner.token },
+    body: JSON.stringify({ name: '七年级一班', grade: 'junior' }),
+  })
+  assert.equal(created.status, 200)
+  const classItem = await created.json()
+
+  const invited = await fetch(`http://127.0.0.1:${port}/api/classes/${classItem.id}/invite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Token': owner.token },
+    body: JSON.stringify({ teacher_code: newcomerIdentity.teacher_code }),
+  })
+  assert.equal(invited.status, 200)
+
+  const newcomerClasses = await fetch(`http://127.0.0.1:${port}/api/classes`, {
+    headers: { 'X-Token': newcomer.token },
+  })
+  const classes = await newcomerClasses.json()
+  assert.equal(classes.length, 1)
+  assert.equal(classes[0].id, classItem.id)
+
+  const messages = await fetch(`http://127.0.0.1:${port}/api/messages`, {
+    headers: { 'X-Token': newcomer.token },
+  })
+  assert.equal((await messages.json())[0].title, '班级协作邀请')
+})
+
 test.after(async () => {
   app.kill()
   workbench.close()

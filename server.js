@@ -239,6 +239,7 @@ function classResponse(cls, userId, onlineCounts) {
   const owner = store.users.find(u => u.id === cls.user_id);
   return {
     ...cls,
+    owner_id: cls.user_id,
     is_owner: cls.user_id === userId,
     owner_name: owner ? owner.display_name : '',
     members: getClassUsers(cls),
@@ -1314,6 +1315,18 @@ app.post('/api/classes/:id/invite', userAuth, requireActivePlan, (req, res) => {
   );
   dbStore.upsertClass(cls);
   res.json({ ok: true, class: classResponse(cls, req.user.id), teacher: { id: target.id, display_name: target.display_name, teacher_code: target.teacher_code } });
+});
+
+app.delete('/api/classes/:id/members/:memberId', userAuth, requireActivePlan, (req, res) => {
+  const cls = store.classes.find(c => c.id === req.params.id && c.user_id === req.user.id);
+  if (!cls) return res.status(404).json({ error: '只有班级创建者可以移除协作老师' });
+  const memberId = String(req.params.memberId || '');
+  if (memberId === cls.user_id) return res.status(400).json({ error: '不能移除班级创建者' });
+  const before = Array.isArray(cls.member_ids) ? cls.member_ids : [];
+  if (!before.includes(memberId)) return res.status(404).json({ error: '协作老师不在这个班级中' });
+  cls.member_ids = before.filter(id => id !== memberId);
+  dbStore.upsertClass(cls);
+  res.json({ ok: true, class: classResponse(cls, req.user.id) });
 });
 
 function sendClassPointsError(res, error) {
